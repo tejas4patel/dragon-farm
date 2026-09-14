@@ -1,0 +1,21 @@
+# dragonfarm 0.1.0
+
+First release.
+
+* `dragon_dataset()`, `dragon_map()`, and `dragon_split()` turn a table into
+  chat-format training data with glue templates for combining columns.
+* `dragon_train()` runs LoRA fine-tuning of any Hugging Face causal language
+  model in a background Python process. Runs live on disk and survive the R
+  session; `dragon_run()` reopens them.
+* `dragon_status()`, `dragon_progress()`, `dragon_logs()`, `dragon_wait()`,
+  `dragon_cancel()`, and `dragon_resume()` manage a run.
+* `dragon_evaluate()`, `dragon_generate()`, and `dragon_merge()` cover
+  held-out evaluation, generation from the adapter or the base model, and
+  merging into a standalone model. `dragon_export_gguf()` wraps the llama.cpp
+  converter when one is available.
+* `dragon_app()` launches a Shiny app with drag-and-drop dataset upload,
+  drag-and-drop column mapping, a live loss curve, and a before-and-after
+  comparison panel. `dragon_code()` returns the R script for any run.
+* Python dependencies are declared with `reticulate::py_require()` and built
+  automatically. On Windows with an NVIDIA GPU the CUDA build of torch is
+  selected on first use.

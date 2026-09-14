@@ -13,3 +13,5 @@
 ^inst/python/.*/__pycache__$
 ^inst/python/tests$
 ^\.claude$
+^cran-comments\.md$
+^CRAN-SUBMISSION$

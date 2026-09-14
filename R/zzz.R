@@ -3,7 +3,8 @@
   # Declare Python dependencies. reticulate resolves them with uv into an
   # ephemeral environment the first time Python is actually needed.
   reticulate::py_require(reqs$packages, python_version = reqs$python_version)
-  configure_torch_index()
+  # The CUDA wheel index is configured on first Python use, not here: CRAN
+  # policy forbids changing the user's environment at load time.
   invisible()
 }
 

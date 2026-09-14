@@ -11,7 +11,7 @@ runs in a background Python process that the package sets up for you.
 
 ```r
 # install.packages("pak")
-pak::pak("Algocrat/dragon-farm")
+pak::pak("tejas4patel/dragon-farm")
 ```
 
 Then check the machine. The first call builds a Python environment with torch
@@ -116,7 +116,7 @@ The Python side has its own tests: `PYTHONPATH=inst/python python -m pytest inst
 | Variable | Effect |
 |---|---|
 | `DRAGONFARM_PYTHON` | Use this interpreter instead of the one reticulate builds. It must already have the packages from `dragon_python_requirements()`. |
-| `DRAGONFARM_TORCH_INDEX` | Windows only. `auto` (default) uses the CUDA wheel index when an NVIDIA GPU is present. Set to `""` to use PyPI's CPU build, or to another index URL. |
+| `DRAGONFARM_TORCH_INDEX` | Windows only. `auto` (default) selects the CUDA wheel index matching your NVIDIA driver on first Python use. Set to `""` to use PyPI's CPU build, or to another index URL. |
 | `DRAGONFARM_RUNS_DIR` | Where runs are stored. Default `dragonfarm_runs`. |
 | `HF_TOKEN` | Hugging Face token for gated models. |
 | `LLAMA_CPP_DIR` | A llama.cpp checkout, for `dragon_export_gguf()`. |

@@ -37,6 +37,9 @@ dragon_python <- function(quiet = FALSE) {
   if (!quiet) {
     cli::cli_alert_info("Preparing the Python environment. The first time this downloads torch and transformers (2 to 3 GB) and can take several minutes.")
   }
+  if (configure_torch_index() && !quiet) {
+    cli::cli_alert_info("NVIDIA GPU detected: using the CUDA build of torch from {.url {Sys.getenv('UV_EXTRA_INDEX_URL')}}. Set {.envvar DRAGONFARM_TORCH_INDEX} to \"\" to use the CPU build instead.")
+  }
   reticulate::py_config()
   py <- reticulate::py_exe()
   if (is.null(py) || !nzchar(py)) cli::cli_abort("reticulate could not report a Python executable.")

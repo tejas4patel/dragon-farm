@@ -39,6 +39,6 @@ VignetteBuilder: knitr
 Config/testthat/edition: 3
 SystemRequirements: Python (>= 3.10). The 'uv' tool is installed
     automatically by 'reticulate' to build the Python environment.
-URL: https://github.com/Algocrat/dragon-farm
-BugReports: https://github.com/Algocrat/dragon-farm/issues
+URL: https://github.com/tejas4patel/dragon-farm
+BugReports: https://github.com/tejas4patel/dragon-farm/issues
 Config/roxygen2/version: 8.1.0
