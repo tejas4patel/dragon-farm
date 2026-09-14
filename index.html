@@ -244,7 +244,7 @@
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">test</span><span class="op">(</span><span class="op">)</span>                                  <span class="co"># unit tests, no Python needed</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>DRAGONFARM_INTEGRATION <span class="op">=</span> <span class="st">"true"</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">test</span><span class="op">(</span>filter <span class="op">=</span> <span class="st">"integration"</span><span class="op">)</span>            <span class="co"># trains SmolLM2-135M for 6 steps</span></span></code></pre></div>
-<p>The Python side has its own tests: <code>PYTHONPATH=inst/python python -m pytest inst/python/tests</code>.</p>
+<p>The Python side has its own tests: <code>PYTHONPATH=inst/python python inst/python/tests/run.py</code> (or <code>python -m pytest inst/python/tests</code> if pytest is installed).</p>
 </div>
 <div class="section level2">
 <h2 id="environment-variables">Environment variables<a class="anchor" aria-label="anchor" href="#environment-variables"></a>
