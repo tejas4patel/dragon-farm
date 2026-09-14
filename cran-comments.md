@@ -1,12 +1,15 @@
 ## R CMD check results
 
-0 errors | 0 warnings | 0 notes
+0 errors | 0 warnings | 1 note
+
+The note is "New submission". win-builder (R-devel and R-release) reports
+the same single note.
 
 ## Test environments
 
 * local Windows 11, R 4.6.1
 * GitHub Actions: ubuntu-latest (release, devel), macos-latest (release), windows-latest (release)
-* win-builder (devel)
+* win-builder (devel, release)
 
 ## Python dependencies
 
