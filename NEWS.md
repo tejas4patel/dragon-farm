@@ -1,3 +1,11 @@
+# dragonfarm (development version)
+
+* `dragon_check()` now explains a CPU-only result on a machine with an NVIDIA
+  GPU: no driver, a driver too old for the installed torch, or a CPU-only
+  torch build, each with the one-line fix.
+* README gains a Requirements section covering the driver requirement, disk
+  space, and that the CUDA Toolkit is not needed.
+
 # dragonfarm 0.1.0
 
 First release.

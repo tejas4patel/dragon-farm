@@ -22,9 +22,28 @@ library(dragonfarm)
 dragon_check()
 ```
 
-You need Python 3.10 or newer somewhere on the machine, or nothing at all:
-`reticulate` downloads one if none is found. On Windows with an NVIDIA GPU the
-package points the installer at the CUDA build of torch automatically.
+## Requirements
+
+- **R 4.1 or newer.**
+- **Disk:** about 3 GB for the Python environment, plus 0.3 to 4 GB per model
+  in the Hugging Face cache.
+- **Python:** nothing to install. `reticulate` uses a Python 3.10 to 3.13 it
+  finds on the machine, or downloads one. torch, transformers, and peft are
+  installed automatically on first use.
+- **GPU training on NVIDIA:** the only thing you install yourself is the
+  NVIDIA driver, from [nvidia.com/drivers](https://www.nvidia.com/drivers).
+  Driver 580 or newer gets the CUDA 13 build of torch, 570 or newer gets CUDA
+  12.8, and older drivers get CUDA 12.6. The CUDA Toolkit and cuDNN are not
+  needed; torch wheels bundle their own CUDA libraries. Check your driver
+  with `nvidia-smi`.
+- **Apple Silicon:** trains on the GPU through Metal with no setup.
+- **No GPU:** training runs on the CPU. Fine for the 135M and 360M models,
+  slow beyond that.
+
+Run `dragon_check()` after installing. It reports the device it will train
+on, and if that is the CPU on a machine with an NVIDIA GPU it says why (no
+driver, a driver too old for the installed torch, or a CPU-only torch build)
+and prints the one-line fix.
 
 ## The five-line version
 

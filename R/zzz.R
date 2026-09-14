@@ -23,12 +23,8 @@ configure_torch_index <- function() {
   idx <- Sys.getenv("DRAGONFARM_TORCH_INDEX", unset = "auto")
   if (identical(idx, "")) return(invisible(FALSE))
   if (identical(idx, "auto")) {
-    driver <- nvidia_driver_version()
-    if (is.na(driver)) return(invisible(FALSE))
-    # CUDA 13 wheels need driver 580 or newer; CUDA 12.8 wheels need 570.
-    idx <- if (driver >= 580) "https://download.pytorch.org/whl/cu130"
-           else if (driver >= 570) "https://download.pytorch.org/whl/cu128"
-           else "https://download.pytorch.org/whl/cu126"
+    idx <- torch_index_for_driver(nvidia_driver_version())
+    if (is.na(idx)) return(invisible(FALSE))
   }
   Sys.setenv(UV_EXTRA_INDEX_URL = idx, UV_INDEX_STRATEGY = "unsafe-best-match")
   invisible(TRUE)

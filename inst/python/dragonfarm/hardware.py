@@ -22,6 +22,9 @@ def describe():
 
     info = {
         "torch": torch.__version__,
+        # None for a CPU-only wheel, e.g. "13.0" for a CUDA build. Reported
+        # even when CUDA is unavailable so dragon_check() can say why.
+        "torch_cuda_build": torch.version.cuda,
         "cuda_available": torch.cuda.is_available(),
         "mps_available": bool(getattr(torch.backends, "mps", None) and torch.backends.mps.is_available()),
         "device": "cpu",

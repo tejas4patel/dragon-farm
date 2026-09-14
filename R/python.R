@@ -126,18 +126,14 @@ dragon_check <- function() {
   cli::cli_alert_success("torch {info$torch} \u00b7 transformers {info$transformers} \u00b7 peft {info$peft}")
   dev <- info$device
   if (identical(dev, "cuda")) {
-    cli::cli_alert_success("Device: CUDA \u00b7 {info$device_name} \u00b7 {round(info$vram_gb, 1)} GB \u00b7 bf16 {if (isTRUE(info$bf16)) 'yes' else 'no'}")
+    cli::cli_alert_success("Device: CUDA {info$cuda_version} \u00b7 {info$device_name} \u00b7 {round(info$vram_gb, 1)} GB \u00b7 bf16 {if (isTRUE(info$bf16)) 'yes' else 'no'}")
   } else if (identical(dev, "mps")) {
     cli::cli_alert_success("Device: Apple MPS")
   } else {
     cli::cli_alert_warning("Device: CPU only. Training works but is slow; stick to models of 360M parameters or fewer.")
-    if (is_windows() && !is.na(nvidia_driver_version())) {
-      cli::cli_alert_warning(c(
-        "An NVIDIA GPU is present but this torch build ({info$torch}) has no CUDA support. ",
-        "Set {.envvar DRAGONFARM_TORCH_INDEX} to a PyTorch wheel index that carries a current torch ",
-        "(for example {.url https://download.pytorch.org/whl/cu130}), restart R, and run {.fn dragon_check} again."
-      ))
-    }
+    diagnosis <- cpu_diagnosis(info$torch_cuda_build, nvidia_driver_version())
+    result$cpu_reason <- diagnosis$reason
+    cli::cli_bullets(diagnosis$lines)
   }
   if (hf_token_present()) {
     cli::cli_alert_success("Hugging Face token found (needed for gated models such as Gemma and Llama).")

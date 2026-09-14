@@ -1,6 +1,6 @@
 Package: dragonfarm
 Title: Fine-Tune Small Language Models with 'LoRA' from R
-Version: 0.1.0
+Version: 0.1.0.9000
 Authors@R:
     person("Tejas", "Patel", role = c("aut", "cre"), email = "algocrat@gmail.com")
 Description: Fine-tune small (100M to 3B parameter) causal language models
