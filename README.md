@@ -109,7 +109,7 @@ Sys.setenv(DRAGONFARM_INTEGRATION = "true")
 devtools::test(filter = "integration")            # trains SmolLM2-135M for 6 steps
 ```
 
-The Python side has its own tests: `PYTHONPATH=inst/python python -m pytest inst/python/tests`.
+The Python side has its own tests: `PYTHONPATH=inst/python python inst/python/tests/run.py` (or `python -m pytest inst/python/tests` if pytest is installed).
 
 ## Environment variables
 

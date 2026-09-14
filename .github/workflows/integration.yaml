@@ -31,7 +31,8 @@ jobs:
             ~/.cache/huggingface
           key: py-${{ runner.os }}-${{ hashFiles('R/python.R') }}
       - name: Python unit tests
+        # The uv-built environment has no pip, so run the test functions directly.
         run: |
-          Rscript -e 'devtools::load_all(); py <- dragonfarm:::dragon_python(); system2(py, c("-m", "pip", "install", "pytest")); q(status = system2(py, c("-m", "pytest", "inst/python/tests"), env = "PYTHONPATH=inst/python"))'
+          Rscript -e 'devtools::load_all(); py <- dragonfarm:::dragon_python(); q(status = system2(py, c("inst/python/tests/run.py"), env = "PYTHONPATH=inst/python"))'
       - name: Integration tests
         run: Rscript -e 'devtools::test(filter = "integration", stop_on_failure = TRUE)'
