@@ -1,0 +1,113 @@
+mod_mapping_ui <- function(id) {
+  ns <- shiny::NS(id)
+  shiny::tagList(
+    bslib::card(
+      bslib::card_header("Drag columns into the slots"),
+      shiny::p(class = "text-muted small",
+        "Drop one or more columns into Prompt and Response. Several columns in one slot are joined with a blank line. ",
+        "System is optional. Edit the templates below for anything fancier."),
+      shiny::uiOutput(ns("buckets"))
+    ),
+    bslib::layout_columns(
+      col_widths = c(6, 6),
+      bslib::card(
+        bslib::card_header("Templates"),
+        shiny::p(class = "text-muted small", "Filled in from the slots. Use {column} and \\n for a line break."),
+        shiny::textInput(ns("system_tpl"), "System (optional)", value = "", width = "100%",
+                         placeholder = "You are a support agent for a smart-home company."),
+        shiny::textInput(ns("prompt_tpl"), "Prompt", value = "", width = "100%"),
+        shiny::textInput(ns("response_tpl"), "Response", value = "", width = "100%"),
+        shiny::uiOutput(ns("status"))
+      ),
+      bslib::card(
+        bslib::card_header("How the model will see it"),
+        shiny::uiOutput(ns("preview"))
+      )
+    )
+  )
+}
+
+chips_to_template <- function(chips) {
+  chips <- chips[nzchar(chips)]
+  if (!length(chips)) return("")
+  paste0("{", chips, "}", collapse = "\\n\\n")
+}
+
+mod_mapping_server <- function(id, state, nav_to) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+
+    output$buckets <- shiny::renderUI({
+      ds <- state$dataset
+      if (is.null(ds)) return(shiny::p(class = "hint", "Load a dataset first."))
+      cols <- names(ds$data)
+      # Pointer-event fallback instead of native HTML5 drag: works on touch
+      # screens and with automated browsers. Set per list; bucket_list() does
+      # not pass options down.
+      drag_opts <- sortable::sortable_options(forceFallback = TRUE, fallbackTolerance = 3, animation = 120)
+      sortable::bucket_list(
+        header = NULL,
+        group_name = ns("buckets"),
+        orientation = "horizontal",
+        class = "default-sortable dragon-buckets",
+        sortable::add_rank_list("Columns", labels = cols, input_id = ns("cols"), options = drag_opts),
+        sortable::add_rank_list("System", labels = NULL, input_id = ns("system"), options = drag_opts),
+        sortable::add_rank_list("Prompt", labels = NULL, input_id = ns("prompt"), options = drag_opts),
+        sortable::add_rank_list("Response", labels = NULL, input_id = ns("response"), options = drag_opts)
+      )
+    })
+
+    # Chips dropped into a slot rewrite that slot's template.
+    shiny::observeEvent(input$prompt, {
+      shiny::updateTextInput(session, "prompt_tpl", value = chips_to_template(input$prompt))
+    }, ignoreNULL = FALSE, ignoreInit = TRUE)
+    shiny::observeEvent(input$response, {
+      shiny::updateTextInput(session, "response_tpl", value = chips_to_template(input$response))
+    }, ignoreNULL = FALSE, ignoreInit = TRUE)
+    shiny::observeEvent(input$system, {
+      if (length(input$system)) shiny::updateTextInput(session, "system_tpl", value = chips_to_template(input$system))
+    }, ignoreNULL = FALSE, ignoreInit = TRUE)
+
+    shiny::observeEvent(state$dataset, {
+      shiny::updateTextInput(session, "prompt_tpl", value = "")
+      shiny::updateTextInput(session, "response_tpl", value = "")
+      shiny::updateTextInput(session, "system_tpl", value = "")
+    })
+
+    mapped <- shiny::reactive({
+      ds <- state$dataset
+      if (is.null(ds)) return(NULL)
+      p <- unescape_newlines(input$prompt_tpl %||% "")
+      r <- unescape_newlines(input$response_tpl %||% "")
+      s <- unescape_newlines(input$system_tpl %||% "")
+      if (!nzchar(trimws(p)) || !nzchar(trimws(r))) return(NULL)
+      tryCatch(
+        dragon_map(ds, prompt = p, response = r, system = if (nzchar(trimws(s))) s),
+        error = function(e) structure(list(message = conditionMessage(e)), class = "mapping_error")
+      )
+    })
+
+    shiny::observe({
+      m <- mapped()
+      state$mapped <- if (inherits(m, "dragon_dataset")) m else NULL
+    })
+
+    output$status <- shiny::renderUI({
+      m <- mapped()
+      if (is.null(m)) return(shiny::p(class = "hint", "Fill Prompt and Response to continue."))
+      if (inherits(m, "mapping_error")) return(shiny::p(class = "text-danger small", m$message))
+      shiny::tagList(
+        shiny::p(class = "text-success small", "Mapping is valid."),
+        shiny::actionButton(ns("next"), "Next: choose a model", class = "btn-primary")
+      )
+    })
+    shiny::observeEvent(input$`next`, nav_to("model"))
+
+    output$preview <- shiny::renderUI({
+      m <- mapped()
+      if (!inherits(m, "dragon_dataset")) return(shiny::p(class = "hint", "The first three rows appear here as chat turns."))
+      rows <- dataset_messages(m, seq_len(min(3, nrow(m$data))))
+      chat_preview_ui(rows)
+    })
+  })
+}

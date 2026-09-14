@@ -1,0 +1,529 @@
+<title>dragon-farm Architecture</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F6F7F5; --surface:#FFFFFF; --ink:#1B2230; --muted:#5C6675; --line:#D8DDDA;
+  --accent:#2F6F8F; --accent-soft:#E2EDF3; --py:#B8702A; --py-soft:#F6E9DA;
+  --ok:#3D7A4E; --warn:#A8651C; --code-bg:#EEF1EF;
+  --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans","Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151A20; --surface:#1C222A; --ink:#E6EAEE; --muted:#98A3AF; --line:#2C3541;
+    --accent:#72B3D1; --accent-soft:#1F3542; --py:#E09A4E; --py-soft:#3A2C1C;
+    --ok:#7DBB8E; --warn:#D9A055; --code-bg:#11161B;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151A20; --surface:#1C222A; --ink:#E6EAEE; --muted:#98A3AF; --line:#2C3541;
+  --accent:#72B3D1; --accent-soft:#1F3542; --py:#E09A4E; --py-soft:#3A2C1C;
+  --ok:#7DBB8E; --warn:#D9A055; --code-bg:#11161B;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;margin:0}
+.page{max-width:1080px;margin:0 auto;padding:48px 32px 96px}
+.prose{max-width:68ch}
+h1,h2,h3{font-family:var(--serif);font-weight:600;text-wrap:balance;margin:0}
+h1{font-size:2.4rem;line-height:1.15;letter-spacing:-0.01em}
+h2{font-size:1.5rem;margin-top:64px;padding-top:20px;border-top:1px solid var(--line)}
+h3{font-size:1.1rem;margin-top:28px}
+p{margin:12px 0}
+a{color:var(--accent)}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.lede{font-size:1.15rem;color:var(--muted);margin-top:16px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:20px;font-size:.9rem;color:var(--muted)}
+.meta b{color:var(--ink);font-weight:500}
+nav.toc{margin-top:32px;padding:16px 20px;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+nav.toc ol{margin:0;padding-left:20px;columns:2;column-gap:32px;font-size:.92rem}
+nav.toc li{margin:4px 0;break-inside:avoid}
+code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);padding:1px 5px;border-radius:3px}
+pre{font-family:var(--mono);font-size:.84rem;line-height:1.5;background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:16px 18px;overflow-x:auto;margin:16px 0}
+pre code{background:none;padding:0;font-size:inherit}
+ul,ol{padding-left:22px}
+li{margin:6px 0}
+.decisions{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:20px}
+.decision{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px 18px}
+.decision .k{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.decision .v{font-weight:600;margin-bottom:6px}
+.decision .why{font-size:.9rem;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:.92rem;margin:16px 0}
+.tablewrap{overflow-x:auto}
+th{text-align:left;font-weight:600;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:2px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td code{white-space:nowrap}
+.num{font-variant-numeric:tabular-nums}
+.tree{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:0 24px;font-size:.9rem}
+.tree pre{margin:0;height:100%}
+.tree-notes{font-size:.92rem}
+.tree-notes dt{font-family:var(--mono);font-size:.84rem;color:var(--accent);margin-top:12px}
+.tree-notes dt.py{color:var(--py)}
+.tree-notes dd{margin:2px 0 0 0;color:var(--muted)}
+.diagram{margin:20px 0;overflow-x:auto}
+.diagram svg{display:block;width:100%;max-width:960px;height:auto;font-family:var(--sans)}
+.diagram .box{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.diagram .box.r{stroke:var(--accent)}
+.diagram .box.py{stroke:var(--py);fill:var(--py-soft)}
+.diagram .box.fs{stroke:var(--muted);stroke-dasharray:4 3}
+.diagram .lbl{fill:var(--ink);font-size:13px;font-weight:500}
+.diagram .sub{fill:var(--muted);font-size:11px}
+.diagram .band{fill:var(--accent);font-family:var(--mono);font-size:10px;letter-spacing:.1em}
+.diagram .band.py{fill:var(--py)}
+.diagram .arrow{stroke:var(--muted);stroke-width:1.4;fill:none;marker-end:url(#ah)}
+.diagram .arrow.py{stroke:var(--py)}
+.diagram .edge{fill:var(--muted);font-size:10.5px;font-family:var(--mono)}
+.phase{display:grid;grid-template-columns:56px 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.phase:last-child{border-bottom:0}
+.phase .n{font-family:var(--serif);font-size:1.6rem;font-weight:600;color:var(--accent);line-height:1}
+.phase .d{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.phase h3{margin-top:0}
+.phase ul{margin:8px 0 0}
+.phase .exit{font-size:.9rem;margin-top:8px}
+.phase .exit b{font-weight:600;color:var(--ok)}
+.tag{display:inline-block;font-family:var(--mono);font-size:.72rem;padding:1px 7px;border-radius:3px;border:1px solid var(--line);color:var(--muted);vertical-align:middle}
+.tag.py{color:var(--py);border-color:var(--py)}
+.tag.r{color:var(--accent);border-color:var(--accent)}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 6px 6px 0;margin:16px 0;font-size:.95rem}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+@media (max-width:720px){.tree{grid-template-columns:1fr}nav.toc ol{columns:1}h1{font-size:1.9rem}.page{padding:32px 18px 64px}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="page">
+  <div class="eyebrow">Design document · v0.2 · September 2026 · updated after the build</div>
+  <h1>dragon-farm: an R package for fine-tuning small language models</h1>
+  <p class="lede prose">A CRAN-shaped R package that fine-tunes 100M to 3B parameter causal language models with LoRA, driven either from R functions or from a Shiny app where the user drags a dataset in and drags its columns into prompt and response slots.</p>
+  <div class="meta">
+    <span>Repo <b>dragon-farm</b></span><span>R package <b>dragonfarm</b> (R forbids hyphens in package names)</span>
+    <span>Function prefix <b>dragon_</b></span>
+    <span>Backend <b>transformers + peft via reticulate</b></span>
+    <span>UI <b>Shiny + bslib + sortable</b></span>
+    <span>Target <b>working prototype in ~10 working days</b></span>
+  </div>
+
+  <nav class="toc">
+    <ol>
+      <li><a href="#decisions">Key decisions</a></li>
+      <li><a href="#scope">Scope and non-goals</a></li>
+      <li><a href="#arch">Architecture</a></li>
+      <li><a href="#layout">Package layout</a></li>
+      <li><a href="#api">Public R API</a></li>
+      <li><a href="#contract">R to Python contract</a></li>
+      <li><a href="#lifecycle">Run lifecycle</a></li>
+      <li><a href="#app">Shiny app</a></li>
+      <li><a href="#models">Model presets and hardware</a></li>
+      <li><a href="#testing">Testing and CI</a></li>
+      <li><a href="#plan">Delivery plan</a></li>
+      <li><a href="#risks">Risks</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="decisions">Key decisions</h2>
+  <p class="prose">Six choices shape everything else. Each one is reversible, but changing it later costs more than deciding now.</p>
+  <div class="decisions">
+    <div class="decision"><div class="k">Training engine</div><div class="v">Hugging Face transformers + peft</div><div class="why">The de facto standard. trl was dropped during the build: its trainer API churns between minor versions, so the package uses the plain transformers Trainer with its own prompt-masking collator. Verified on transformers 5.17 and peft 0.20.</div></div>
+    <div class="decision"><div class="k">Python dependency</div><div class="v">reticulate::py_require() in .onLoad()</div><div class="why">Users install nothing by hand. reticulate builds an ephemeral uv environment on first use. No conda, no manual venv.</div></div>
+    <div class="decision"><div class="k">Process model</div><div class="v">Trainer runs as a processx subprocess</div><div class="why">Uses the uv environment's Python directly. Survives the R session, streams logs, cancels cleanly with a signal, and never blocks Shiny.</div></div>
+    <div class="decision"><div class="k">R and Python boundary</div><div class="v">Files only: a run directory</div><div class="why">config.json in, progress.jsonl and status.json out. Either side is testable alone, and Shiny just polls a file.</div></div>
+    <div class="decision"><div class="k">Fine-tuning method</div><div class="v">LoRA supervised fine-tuning only, v1</div><div class="why">Covers the "teach it my format and my domain" use case. DPO, full fine-tuning, and RL are explicit later work.</div></div>
+    <div class="decision"><div class="k">UI scope</div><div class="v">Form plus drag-and-drop, not a node canvas</div><div class="why">A fine-tune is a fixed pipeline. Drag-and-drop earns its place at file upload and column mapping, nowhere else.</div></div>
+  </div>
+
+  <h2 id="scope">Scope and non-goals</h2>
+  <div class="two">
+    <div>
+      <h3>In scope for v1</h3>
+      <ul>
+        <li>Datasets from CSV, JSONL, Parquet, or an R data frame.</li>
+        <li>Column mapping to <code>prompt</code>, <code>response</code>, and optional <code>system</code>.</li>
+        <li>Chat-template formatting using the model's own tokenizer template.</li>
+        <li>LoRA training with the transformers <code>Trainer</code> and a collator that masks prompt tokens so only the reply contributes to the loss. Rank, alpha, dropout, and target modules exposed.</li>
+        <li>Background jobs with live progress, cancel, and resume-from-checkpoint.</li>
+        <li>Held-out loss and sample generations at the end of a run.</li>
+        <li>Saving adapters, merging into the base model, and generating from either.</li>
+        <li>A Shiny app that exposes all of the above.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Explicitly out of scope</h3>
+      <ul>
+        <li>Models above roughly 3B parameters. They work if hardware allows, but nothing is tuned for them.</li>
+        <li>Full-parameter fine-tuning.</li>
+        <li>DPO, ORPO, GRPO, or any preference or reinforcement method.</li>
+        <li>Multi-GPU or distributed training.</li>
+        <li>A node-graph pipeline builder.</li>
+        <li>Hosting the trained model as a service. Export to GGUF is a stretch goal, serving is not.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 id="arch">Architecture</h2>
+  <p class="prose">Three layers, one file-based seam. Blue is R. Amber is Python. The dashed box is the run directory on disk that both sides read and write. Nothing crosses the seam except files and one subprocess launch.</p>
+  <div class="diagram">
+    <svg viewBox="0 0 960 470" role="img" aria-label="dragonfarm architecture: Shiny app and R API on top, run directory in the middle, Python trainer subprocess at the bottom">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
+
+      <text x="20" y="24" class="band">R SESSION</text>
+      <rect x="20" y="36" width="280" height="120" rx="6" class="box r"/>
+      <text x="36" y="60" class="lbl">Shiny app · dragon_app()</text>
+      <text x="36" y="80" class="sub">mod_data · mod_mapping · mod_model</text>
+      <text x="36" y="96" class="sub">mod_train · mod_monitor · mod_tryit</text>
+      <text x="36" y="118" class="sub">bslib layout · sortable bucket list</text>
+      <text x="36" y="136" class="sub">reactiveFileReader polls progress.jsonl</text>
+
+      <rect x="340" y="36" width="300" height="120" rx="6" class="box r"/>
+      <text x="356" y="60" class="lbl">R API · R/</text>
+      <text x="356" y="80" class="sub">dragon_dataset() dragon_map() dragon_lora() dragon_train()</text>
+      <text x="356" y="96" class="sub">dragon_status() dragon_logs() dragon_cancel()</text>
+      <text x="356" y="118" class="sub">dragon_generate() dragon_merge() dragon_evaluate()</text>
+      <text x="356" y="136" class="sub">config validation · JSON writing · processx</text>
+
+      <rect x="680" y="36" width="260" height="120" rx="6" class="box r"/>
+      <text x="696" y="60" class="lbl">reticulate</text>
+      <text x="696" y="80" class="sub">py_require("torch", "transformers",</text>
+      <text x="696" y="96" class="sub">  "peft", "accelerate", "safetensors")</text>
+      <text x="696" y="118" class="sub">uv builds the environment once</text>
+      <text x="696" y="136" class="sub">py_exe() gives the interpreter path</text>
+
+      <path d="M300 96 L340 96" class="arrow"/>
+      <path d="M640 96 L680 96" class="arrow"/>
+
+      <rect x="230" y="210" width="500" height="96" rx="6" class="box fs"/>
+      <text x="246" y="234" class="lbl">Run directory · dragonfarm_runs/&lt;run_id&gt;/</text>
+      <text x="246" y="256" class="sub">config.json · data/train.jsonl · data/eval.jsonl</text>
+      <text x="246" y="272" class="sub">status.json · progress.jsonl · log.txt</text>
+      <text x="246" y="288" class="sub">checkpoints/ · adapter/ · merged/ · samples.json</text>
+
+      <path d="M420 156 L420 210" class="arrow"/>
+      <text x="428" y="186" class="edge">writes config + data</text>
+      <path d="M560 210 L560 156" class="arrow"/>
+      <text x="568" y="186" class="edge">reads status + progress</text>
+
+      <text x="20" y="352" class="band py">PYTHON SUBPROCESS · processx</text>
+      <rect x="20" y="364" width="920" height="90" rx="6" class="box py"/>
+      <text x="36" y="388" class="lbl">inst/python/dragonfarm/ · python -m dragonfarm.train --run-dir …</text>
+      <text x="36" y="408" class="sub">data.py loads jsonl, applies chat template, masks prompt labels  ·  train.py builds model + LoRA + Trainer  ·  callbacks.py appends progress.jsonl each log step</text>
+      <text x="36" y="426" class="sub">generate.py serves dragon_generate() and the Try-it tab  ·  merge.py folds adapter into base weights  ·  hardware.py picks cuda / mps / cpu and dtype</text>
+      <text x="36" y="444" class="sub">Writes status.json on start, on failure, and on completion. Handles SIGTERM by saving a checkpoint first.</text>
+
+      <path d="M330 306 L330 364" class="arrow py"/>
+      <text x="338" y="338" class="edge">reads config + data</text>
+      <path d="M630 364 L630 306" class="arrow py"/>
+      <text x="638" y="338" class="edge">writes status + progress + adapter</text>
+      <path d="M810 156 L810 364" class="arrow py"/>
+      <text x="818" y="262" class="edge">launched with py_exe()</text>
+    </svg>
+  </div>
+  <div class="callout">The R API never imports transformers into the R process. reticulate is used for one thing: building the environment and reporting its interpreter path. That keeps the Shiny process light and means a crashed trainer cannot take the app down with it.</div>
+
+  <h2 id="layout">Package layout</h2>
+  <div class="tree">
+<pre>dragonfarm/
+├── DESCRIPTION
+├── NAMESPACE
+├── R/
+│   ├── zzz.R
+│   ├── python.R
+│   ├── dataset.R
+│   ├── mapping.R
+│   ├── config.R
+│   ├── presets.R
+│   ├── hardware.R
+│   ├── run.R
+│   ├── train.R
+│   ├── job.R
+│   ├── generate.R
+│   ├── merge.R
+│   ├── evaluate.R
+│   ├── app.R
+│   └── mod_*.R          (6 modules)
+├── inst/
+│   ├── python/dragonfarm/
+│   │   ├── __init__.py
+│   │   ├── train.py
+│   │   ├── data.py
+│   │   ├── callbacks.py
+│   │   ├── generate.py
+│   │   ├── merge.py
+│   │   └── hardware.py
+│   ├── app/
+│   │   └── www/dragonfarm.css
+│   └── extdata/
+│       └── support_tickets.jsonl
+├── tests/testthat/
+│   ├── test-dataset.R
+│   ├── test-mapping.R
+│   ├── test-config.R
+│   ├── test-run.R
+│   ├── test-integration.R
+│   └── test-app.R
+├── vignettes/
+│   ├── quickstart.Rmd
+│   └── shiny-app.Rmd
+└── .github/workflows/
+    ├── R-CMD-check.yaml
+    └── integration.yaml</pre>
+    <dl class="tree-notes">
+      <dt>R/zzz.R</dt><dd>Calls <code>py_require()</code> with pinned lower bounds. Nothing else runs at load time.</dd>
+      <dt>R/python.R</dt><dd>One internal helper, <code>dragon_python()</code>, that initializes reticulate lazily and returns <code>py_exe()</code>. Also <code>dragon_python_ok()</code> for diagnostics.</dd>
+      <dt>R/dataset.R · mapping.R</dt><dd>Pure R. Read a file into a data frame, validate it, apply a column mapping, and write train and eval JSONL splits. No Python needed, so fully unit-testable.</dd>
+      <dt>R/config.R · presets.R</dt><dd>S3 constructors <code>dragon_lora()</code> and <code>dragon_train_args()</code> with validation, plus the model preset table.</dd>
+      <dt>R/run.R · train.R · job.R</dt><dd>Create the run directory, serialize config, launch processx, and expose status, logs, cancel, and wait.</dd>
+      <dt class="py">inst/python/dragonfarm/</dt><dd>A real Python package with an entry point. Runnable on its own for debugging: <code>python -m dragonfarm.train --run-dir path</code>.</dd>
+      <dt>inst/extdata/support_tickets.jsonl</dt><dd>A 200-row example dataset so the vignette and the app's demo button work offline.</dd>
+      <dt>R/mod_*.R</dt><dd>Shiny modules live in R/ as exported-free functions so they get roxygen docs, tests, and R CMD check coverage. <code>inst/app</code> holds only static assets.</dd>
+    </dl>
+  </div>
+
+  <h2 id="api">Public R API</h2>
+  <p class="prose">Every function is usable without the app. The app is a thin client over these. Objects are plain lists with S3 classes so they print well and serialize to JSON without surprises.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Function</th><th>Signature</th><th>Returns</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>dragon_dataset()</code></td><td><code>(x, ...)</code></td><td><code>dragon_dataset</code></td><td>Generic. Methods for character path (CSV, JSONL, Parquet by extension) and data.frame. Records source, row count, column names and types.</td></tr>
+      <tr><td><code>dragon_map()</code></td><td><code>(dataset, prompt, response, system = NULL)</code></td><td><code>dragon_dataset</code></td><td>Attaches the column mapping. Each argument is a column name or a glue template such as <code>"{title}\n\n{body}"</code> so several columns can be combined.</td></tr>
+      <tr><td><code>dragon_split()</code></td><td><code>(dataset, eval_frac = 0.05, seed = 42)</code></td><td><code>dragon_dataset</code></td><td>Optional. Default split is applied at train time if not called.</td></tr>
+      <tr><td><code>dragon_presets()</code></td><td><code>()</code></td><td>data.frame</td><td>Model id, parameter count, license, gated flag, recommended rank, minimum VRAM.</td></tr>
+      <tr><td><code>dragon_lora()</code></td><td><code>(r = 16, alpha = 32, dropout = 0.05, target_modules = "auto")</code></td><td><code>dragon_lora</code></td><td>"auto" resolves per model family in Python. Validated in R.</td></tr>
+      <tr><td><code>dragon_train_args()</code></td><td><code>(epochs = 3, learning_rate = 2e-4, batch_size = 4, grad_accum = 4, max_seq_len = 1024, ...)</code></td><td><code>dragon_train_args</code></td><td>Mirrors the subset of <code>SFTConfig</code> that matters for small models. Extra named args pass through untouched.</td></tr>
+      <tr><td><code>dragon_train()</code></td><td><code>(dataset, model, lora = dragon_lora(), args = dragon_train_args(), run_dir = NULL, wait = FALSE)</code></td><td><code>dragon_run</code></td><td>Writes the run directory and launches the subprocess. Returns immediately unless <code>wait = TRUE</code>.</td></tr>
+      <tr><td><code>dragon_status()</code></td><td><code>(run)</code></td><td>list</td><td>Reads <code>status.json</code>. State is one of queued, running, succeeded, failed, cancelled.</td></tr>
+      <tr><td><code>dragon_progress()</code></td><td><code>(run)</code></td><td>data.frame</td><td>Parses <code>progress.jsonl</code>. One row per logging step.</td></tr>
+      <tr><td><code>dragon_logs()</code></td><td><code>(run, n = 50)</code></td><td>character</td><td>Tail of <code>log.txt</code>.</td></tr>
+      <tr><td><code>dragon_cancel()</code></td><td><code>(run)</code></td><td><code>dragon_run</code></td><td>Sends SIGTERM. The trainer saves a checkpoint and marks status cancelled.</td></tr>
+      <tr><td><code>dragon_wait()</code></td><td><code>(run, timeout = Inf)</code></td><td><code>dragon_run</code></td><td>Blocks with a cli progress bar. Used by <code>wait = TRUE</code>.</td></tr>
+      <tr><td><code>dragon_resume()</code></td><td><code>(run)</code></td><td><code>dragon_run</code></td><td>Relaunches from the latest checkpoint in the same run directory.</td></tr>
+      <tr><td><code>dragon_evaluate()</code></td><td><code>(run, n_samples = 10)</code></td><td>list</td><td>Held-out loss and perplexity plus sample generations. Runs automatically at the end of training; callable again with different prompts.</td></tr>
+      <tr><td><code>dragon_generate()</code></td><td><code>(run_or_path, prompt, system = NULL, max_new_tokens = 256, ...)</code></td><td>character</td><td>Short-lived subprocess per call in v1. A persistent generation worker is a v2 optimization.</td></tr>
+      <tr><td><code>dragon_merge()</code></td><td><code>(run, out_dir = NULL)</code></td><td>path</td><td>Folds the adapter into base weights and saves a standalone model.</td></tr>
+      <tr><td><code>dragon_export_gguf()</code></td><td><code>(merged_path, quant = "q8_0")</code></td><td>path</td><td>Stretch goal. Calls llama.cpp's convert script if present.</td></tr>
+      <tr><td><code>dragon_app()</code></td><td><code>(runs_dir = "dragonfarm_runs", ...)</code></td><td>Shiny app</td><td>Launches the UI pointed at a runs directory so past runs are listed.</td></tr>
+      <tr><td><code>dragon_check()</code></td><td><code>()</code></td><td>invisible list</td><td>Diagnostics: Python path, torch version, device, VRAM, Hugging Face token presence. Prints a cli report.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>The shortest possible session</h3>
+<pre><code>library(dragonfarm)
+
+run <- dragon_dataset("tickets.csv") |>
+  dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
+  dragon_train(model = "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+
+dragon_generate(run, "Customer says the invoice total is wrong.")
+dragon_merge(run, "models/tickets-0.5b")</code></pre>
+
+  <h2 id="contract">R to Python contract</h2>
+  <p class="prose">This is the only interface that must stay stable. R owns <code>config.json</code> and the data files. Python owns everything else in the run directory. Both sides validate what they read and fail loudly.</p>
+  <div class="two">
+    <div>
+      <h3>config.json <span class="tag r">written by R</span></h3>
+<pre><code>{
+  "schema_version": 1,
+  "run_id": "2026-09-13-1432-tickets",
+  "model": {
+    "id": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": null,
+    "trust_remote_code": false
+  },
+  "data": {
+    "train": "data/train.jsonl",
+    "eval": "data/eval.jsonl",
+    "format": "messages"
+  },
+  "lora": {
+    "r": 16, "alpha": 32, "dropout": 0.05,
+    "target_modules": "auto"
+  },
+  "train": {
+    "epochs": 3, "learning_rate": 2e-4,
+    "per_device_batch_size": 4,
+    "gradient_accumulation": 4,
+    "max_seq_len": 1024,
+    "logging_steps": 5,
+    "save_steps": 100,
+    "seed": 42,
+    "extra": {}
+  },
+  "hardware": {
+    "device": "auto", "dtype": "auto",
+    "load_in_4bit": false
+  },
+  "eval": { "n_samples": 10 }
+}</code></pre>
+      <p class="prose">Each line of <code>train.jsonl</code> is already in chat form, so Python never sees the user's column names:</p>
+<pre><code>{"messages": [
+  {"role": "system", "content": "..."},
+  {"role": "user", "content": "..."},
+  {"role": "assistant", "content": "..."}
+]}</code></pre>
+    </div>
+    <div>
+      <h3>status.json <span class="tag py">written by Python</span></h3>
+<pre><code>{
+  "state": "running",
+  "pid": 41822,
+  "started_at": "2026-09-13T14:32:10Z",
+  "finished_at": null,
+  "device": "cuda:0",
+  "dtype": "bfloat16",
+  "trainable_params": 8798208,
+  "total_params": 502832640,
+  "total_steps": 234,
+  "latest_checkpoint": "checkpoints/step-100",
+  "error": null
+}</code></pre>
+      <h3>progress.jsonl <span class="tag py">appended each log step</span></h3>
+<pre><code>{"step":5,"epoch":0.06,"loss":2.413,
+ "lr":1.9e-4,"grad_norm":1.82,
+ "elapsed_s":41.2,"eta_s":1890}
+{"step":10,"epoch":0.13,"loss":2.101, ...}
+{"step":78,"epoch":1.0,"eval_loss":1.644, ...}</code></pre>
+      <p class="prose">Append-only so the Shiny reader can tail it without locking. <code>eval_loss</code> appears only on evaluation rows.</p>
+      <h3>samples.json <span class="tag py">written at the end</span></h3>
+<pre><code>[{"prompt": "...", "reference": "...",
+  "generated": "..."}, ...]</code></pre>
+      <p class="prose">Exit code 0 means <code>state</code> is succeeded. Any non-zero exit with no <code>error</code> field is treated by R as a crash and the last 40 log lines are surfaced.</p>
+    </div>
+  </div>
+
+  <h2 id="lifecycle">Run lifecycle</h2>
+  <ol>
+    <li><b>Validate in R.</b> <code>dragon_train()</code> checks the mapping, the preset or model id, and the LoRA and training args. Bad input fails here, before any Python starts.</li>
+    <li><b>Materialize the run.</b> Create <code>dragonfarm_runs/&lt;run_id&gt;/</code>, write the JSONL splits and <code>config.json</code>, and write <code>status.json</code> with state <code>queued</code>.</li>
+    <li><b>Ensure Python.</b> <code>dragon_python()</code> initializes reticulate, which resolves the uv environment on first call. First run downloads torch and friends, which is the slow step users need warning about.</li>
+    <li><b>Launch.</b> <code>processx::process$new(py_exe(), c("-m", "dragonfarm.train", "--run-dir", dir))</code> with stdout and stderr redirected to <code>log.txt</code>. The process handle is stored in the <code>dragon_run</code> object and its pid in <code>status.json</code>.</li>
+    <li><b>Train.</b> Python loads the model, applies LoRA, and trains. The callback appends to <code>progress.jsonl</code> and saves checkpoints. On SIGTERM it saves once more and writes <code>cancelled</code>.</li>
+    <li><b>Finish.</b> Python writes the adapter, runs evaluation, writes <code>samples.json</code>, and sets state to <code>succeeded</code>. R's <code>dragon_status()</code> reads it. Since status is on disk, a fresh R session can pick up any run by path.</li>
+  </ol>
+
+  <h2 id="app">Shiny app</h2>
+  <p class="prose">One page, six panels in a left-to-right flow using a <code>bslib::navset_underline</code>. Each panel is a module with its own server function and a small reactive contract to the next one. State that must survive a refresh lives in the run directory, not in the session.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Panel</th><th>Module</th><th>What the user does</th><th>Drag and drop?</th><th>Emits</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Data</td><td><code>mod_data</code></td><td>Drops a CSV, JSONL, or Parquet file onto the input, or clicks "Load example". Sees a preview table and column types.</td><td>Yes, native <code>fileInput</code> drop zone, restyled.</td><td><code>dragon_dataset</code></td></tr>
+      <tr><td>2 · Map</td><td><code>mod_mapping</code></td><td>Drags column chips from a source bucket into Prompt, Response, and System buckets. Multiple chips in one bucket join with a newline. A live preview renders three example rows as chat turns.</td><td>Yes, <code>sortable::bucket_list()</code>. This is the panel the whole UI is built around.</td><td>mapped <code>dragon_dataset</code></td></tr>
+      <tr><td>3 · Model</td><td><code>mod_model</code></td><td>Picks a preset card or types a Hugging Face id. Sees parameter count, license, and whether the current machine can run it. Gated models show a token warning.</td><td>No</td><td>model id</td></tr>
+      <tr><td>4 · Train</td><td><code>mod_train</code></td><td>Sets epochs, learning rate, rank, and sequence length. Advanced settings are collapsed. "Start training" is disabled until panels 1 to 3 are valid.</td><td>No</td><td><code>dragon_run</code></td></tr>
+      <tr><td>5 · Monitor</td><td><code>mod_monitor</code></td><td>Watches a live loss curve with eval loss overlaid, a step counter, ETA, and the log tail. Can cancel. Lists past runs from the runs directory.</td><td>No</td><td>selected run</td></tr>
+      <tr><td>6 · Try it</td><td><code>mod_tryit</code></td><td>Types a prompt, sees the fine-tuned reply next to the base model's reply. Buttons for "Merge and save" and "Copy R code to reproduce this run".</td><td>No</td><td>none</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h3>Mechanics worth deciding up front</h3>
+  <ul>
+    <li><b>Polling, not push.</b> <code>reactiveFileReader(1000, session, progress_path, read_progress)</code> drives the chart. Cheap, robust, and it works when the app is served remotely.</li>
+    <li><b>No training in the session.</b> The Train panel calls <code>dragon_train(wait = FALSE)</code>. Closing the browser does not stop a run.</li>
+    <li><b>Try-it latency.</b> A subprocess per generation is a few seconds of model load each time. Acceptable for v1. A persistent generation worker via <code>mirai</code> is the planned v2 fix.</li>
+    <li><b>The "Copy R code" button</b> is the bridge from the UI to the API. Every run in the UI is reproducible as a script, which is what makes this a package and not just an app.</li>
+    <li><b>Chart library.</b> <code>plotly</code> for the loss curve. It handles live updates without redrawing and is already familiar to R users.</li>
+  </ul>
+
+  <h2 id="models">Model presets and hardware</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Preset</th><th class="num">Params</th><th>License</th><th>Gated</th><th class="num">Min VRAM, LoRA bf16</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>HuggingFaceTB/SmolLM2-135M-Instruct</code></td><td class="num">135M</td><td>Apache 2.0</td><td>No</td><td class="num">~2 GB, CPU ok</td><td>Integration test model. Trains in minutes on CPU.</td></tr>
+      <tr><td><code>HuggingFaceTB/SmolLM2-360M-Instruct</code></td><td class="num">360M</td><td>Apache 2.0</td><td>No</td><td class="num">~3 GB</td><td>Good laptop default.</td></tr>
+      <tr><td><code>Qwen/Qwen2.5-0.5B-Instruct</code></td><td class="num">494M</td><td>Apache 2.0</td><td>No</td><td class="num">~3 GB</td><td>App default. Strong for its size, permissive license.</td></tr>
+      <tr><td><code>google/gemma-3-1b-it</code></td><td class="num">1.0B</td><td>Gemma</td><td>Yes</td><td class="num">~5 GB</td><td>Needs a Hugging Face token.</td></tr>
+      <tr><td><code>meta-llama/Llama-3.2-1B-Instruct</code></td><td class="num">1.2B</td><td>Llama 3.2</td><td>Yes</td><td class="num">~5 GB</td><td>Needs a Hugging Face token.</td></tr>
+      <tr><td><code>Qwen/Qwen2.5-1.5B-Instruct</code></td><td class="num">1.5B</td><td>Apache 2.0</td><td>No</td><td class="num">~7 GB</td><td>Top of the comfortable range on a 8 GB card.</td></tr>
+      <tr><td><code>HuggingFaceTB/SmolLM2-1.7B-Instruct</code></td><td class="num">1.7B</td><td>Apache 2.0</td><td>No</td><td class="num">~8 GB</td><td></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="prose">VRAM figures are estimates at sequence length 1024 and batch size 4 and will be measured in Phase 3. Hardware resolution happens in Python: CUDA gets bf16, Apple MPS gets fp16 with a fallback to fp32 on unsupported ops, CPU gets fp32 and a warning. Four-bit loading through bitsandbytes is offered only on Linux with CUDA and is an optional extra, not a default dependency.</p>
+
+  <h2 id="testing">Testing and CI</h2>
+  <div class="two">
+    <div>
+      <h3>Three tiers</h3>
+      <ul>
+        <li><b>Unit, no Python.</b> Dataset reading, mapping and glue templates, config validation, JSON serialization, run-directory creation, status parsing against fixture files. These run everywhere including CRAN.</li>
+        <li><b>Integration, gated.</b> Skipped unless <code>DRAGONFARM_INTEGRATION=true</code>. Trains SmolLM2-135M on 40 rows for 6 steps on CPU, then generates one reply. Around three minutes on a GitHub runner after the environment is cached.</li>
+        <li><b>App.</b> <code>shinytest2</code> against the modules with a fake job backend that replays a recorded <code>progress.jsonl</code>. Verifies the bucket-list mapping produces the right chat rows and the monitor renders a finished run.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Workflows</h3>
+      <ul>
+        <li><b>R-CMD-check.yaml.</b> The standard r-lib matrix: Ubuntu release and devel, macOS, Windows. Unit tests only.</li>
+        <li><b>integration.yaml.</b> Ubuntu only, on push to main and nightly. Caches the uv environment and the Hugging Face hub directory so the 2 GB torch download happens once.</li>
+        <li><b>Python side.</b> A small <code>pytest</code> suite under <code>inst/python/tests</code> for the chat-template and callback code, run in the same integration job.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 id="plan">Delivery plan</h2>
+  <p class="prose">Five phases in dependency order. Each phase ends with something a user can run, and the exit test is the definition of done. All five were built on 13 September 2026.</p>
+  <div class="phases">
+    <div class="phase"><div><div class="n">0</div><div class="d">day 1</div></div><div>
+      <h3>Scaffold</h3>
+      <ul>
+        <li><code>usethis::create_package()</code>, MIT license, roxygen, testthat, pkgdown, GitHub Actions from <code>usethis::use_github_action()</code>.</li>
+        <li><code>py_require()</code> in <code>.onLoad()</code>, <code>dragon_python()</code>, and <code>dragon_check()</code>.</li>
+        <li>An <code>inst/python/dragonfarm</code> package that prints its torch version and detected device.</li>
+      </ul>
+      <div class="exit"><b>Exit:</b> <code>dragon_check()</code> reports a working environment on a clean machine.</div>
+    </div></div>
+    <div class="phase"><div><div class="n">1</div><div class="d">days 2 to 4</div></div><div>
+      <h3>Core training path</h3>
+      <ul>
+        <li><code>dragon_dataset()</code>, <code>dragon_map()</code>, <code>dragon_split()</code>, JSONL writing, full unit coverage.</li>
+        <li><code>dragon_lora()</code>, <code>dragon_train_args()</code>, <code>config.json</code> writer and validator.</li>
+        <li><code>train.py</code> with the transformers <code>Trainer</code>, LoRA via peft, the progress callback, cooperative cancel through a <code>cancel.request</code> file, and checkpointing.</li>
+        <li><code>dragon_train()</code>, <code>dragon_status()</code>, <code>dragon_progress()</code>, <code>dragon_logs()</code>, <code>dragon_cancel()</code>, <code>dragon_wait()</code>.</li>
+      </ul>
+      <div class="exit"><b>Exit:</b> the six-line session above runs end to end on SmolLM2-135M, and the integration test passes.</div>
+    </div></div>
+    <div class="phase"><div><div class="n">2</div><div class="d">days 5 to 7</div></div><div>
+      <h3>Shiny app</h3>
+      <ul>
+        <li><code>mod_data</code> and <code>mod_mapping</code> first, since the bucket-list mapping is the riskiest UI piece.</li>
+        <li><code>mod_model</code>, <code>mod_train</code>, <code>mod_monitor</code> with the live plotly loss curve.</li>
+        <li><code>dragon_app()</code>, past-run listing, "Copy R code".</li>
+      </ul>
+      <div class="exit"><b>Exit:</b> a user with no R knowledge trains a model from the example dataset without touching the console.</div>
+    </div></div>
+    <div class="phase"><div><div class="n">3</div><div class="d">days 8 to 9</div></div><div>
+      <h3>After training</h3>
+      <ul>
+        <li><code>dragon_evaluate()</code>, <code>samples.json</code>, <code>dragon_generate()</code>, <code>dragon_merge()</code>, <code>mod_tryit</code> with base-versus-tuned comparison.</li>
+        <li><code>dragon_resume()</code>. Measure real VRAM for each preset and fill in the table.</li>
+        <li>Stretch: <code>dragon_export_gguf()</code>.</li>
+      </ul>
+      <div class="exit"><b>Exit:</b> a merged model directory loads in plain transformers with no dragonfarm installed.</div>
+    </div></div>
+    <div class="phase"><div><div class="n">4</div><div class="d">day 10</div></div><div>
+      <h3>Docs and release</h3>
+      <ul>
+        <li>Quickstart and Shiny vignettes, README with a screenshot of the Map panel, pkgdown site.</li>
+        <li>Windows and macOS smoke tests by hand, since CI covers only Linux for integration.</li>
+        <li>Tag v0.1.0 on GitHub. CRAN submission is deferred until the Python dependency story has been exercised by outside users.</li>
+      </ul>
+      <div class="exit"><b>Exit:</b> a second person installs from GitHub and completes the quickstart unaided.</div>
+    </div></div>
+  </div>
+
+  <h2 id="risks">Risks</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Risk</th><th>Likelihood</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>First-run environment build downloads around 2 GB and takes several minutes. Users assume the package is broken.</td><td>High</td><td><code>dragon_check()</code> in the README as step one, a cli spinner with a plain message, and the app shows a setup screen before anything else.</td></tr>
+      <tr><td>Windows CUDA wheels for torch and the uv resolver disagree, so the GPU is not used.</td><td>Confirmed during the build</td><td>PyPI ships a CPU-only torch on Windows, and uv picks the highest version across indexes, so an older CUDA index loses to PyPI. The package reads the NVIDIA driver version at load and sets <code>UV_EXTRA_INDEX_URL</code> to the newest CUDA index the driver supports (cu130 for driver 580 and newer). <code>dragon_check()</code> warns when a GPU is present but torch has no CUDA.</td></tr>
+      <tr><td>transformers renames <code>TrainingArguments</code> fields between major versions (v5 dropped <code>warmup_ratio</code> and <code>torch_dtype</code>).</td><td>Medium</td><td>trl was dropped entirely. The trainer introspects <code>TrainingArguments</code> at runtime and adapts; the nightly integration job catches further drift within a day.</td></tr>
+      <tr><td>Gated models fail with an opaque 401.</td><td>Medium</td><td>Presets carry a gated flag. R checks for <code>HF_TOKEN</code> before launch and gives a one-line fix.</td></tr>
+      <tr><td>bitsandbytes does not install on macOS or Windows.</td><td>Certain</td><td>Never in the default requirement set. Only offered when the platform supports it.</td></tr>
+      <tr><td>Out-of-memory mid-run on consumer GPUs.</td><td>Medium</td><td>Presets carry a minimum VRAM. The Model panel compares it with detected VRAM and warns. Batch size and sequence length are the first two knobs shown.</td></tr>
+      <tr><td>The <code>sortable</code> bucket list does not express "combine two columns with a separator".</td><td>Low</td><td>Buckets accept multiple chips and join with a newline. A text field under each bucket shows the resulting glue template for hand edits.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>

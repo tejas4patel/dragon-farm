@@ -1,0 +1,13 @@
+{
+  "source": "support_tickets.jsonl",
+  "name": "support_tickets.jsonl",
+  "mapping": {
+    "prompt": "{subject}\n\n{body}",
+    "response": "{`reply`}",
+    "system": null
+  },
+  "split": {
+    "eval_frac": 0.1,
+    "seed": 1
+  }
+}

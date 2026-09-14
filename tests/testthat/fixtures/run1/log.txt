@@ -1,0 +1,7 @@
+[dragonfarm] device=cpu dtype=float32 (CPU)
+[dragonfarm] loading HuggingFaceTB/SmolLM2-135M-Instruct
+[dragonfarm] trainable params 1,105,920 of 135,621,120
+[dragonfarm] training 36 examples, evaluating on 4
+[dragonfarm] adapter saved to checkpoints/../adapter
+[dragonfarm] evaluating
+[dragonfarm] succeeded

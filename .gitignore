@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+docs/
+dragonfarm_runs/
+__pycache__/
+*.pyc
+inst/doc
+/doc/
+/Meta/
+*.tar.gz
+.DS_Store

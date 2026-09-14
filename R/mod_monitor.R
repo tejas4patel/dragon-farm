@@ -1,0 +1,174 @@
+mod_monitor_ui <- function(id) {
+  ns <- shiny::NS(id)
+  shiny::tagList(
+    bslib::layout_columns(
+      col_widths = c(4, 8),
+      bslib::card(
+        bslib::card_header("Runs"),
+        shiny::selectInput(ns("run"), NULL, choices = character(), width = "100%"),
+        shiny::uiOutput(ns("facts")),
+        shiny::actionButton(ns("cancel"), "Cancel run", class = "btn-outline-danger"),
+        shiny::actionButton(ns("resume"), "Resume from checkpoint", class = "btn-outline-secondary")
+      ),
+      bslib::card(
+        bslib::card_header("Loss"),
+        plotly::plotlyOutput(ns("loss"), height = "320px")
+      )
+    ),
+    bslib::layout_columns(
+      col_widths = c(6, 6),
+      bslib::card(
+        bslib::card_header("Trainer log"),
+        shiny::verbatimTextOutput(ns("log"), placeholder = TRUE)
+      ),
+      bslib::card(
+        bslib::card_header("R code for this run"),
+        shiny::verbatimTextOutput(ns("code"), placeholder = TRUE)
+      )
+    )
+  )
+}
+
+mod_monitor_server <- function(id, state, runs_dir) {
+  shiny::moduleServer(id, function(input, output, session) {
+    runs <- shiny::reactivePoll(3000, session,
+      checkFunc = function() {
+        dirs <- list.dirs(runs_dir, recursive = FALSE)
+        paste(dirs, file.info(file.path(dirs, "status.json"))$mtime, collapse = "|")
+      },
+      valueFunc = function() dragon_runs(runs_dir)
+    )
+
+    shiny::observe({
+      df <- runs()
+      selected <- shiny::isolate(input$run)
+      if (!is.null(state$run) && state$run$id %in% df$id && !identical(selected, state$run$id)) {
+        selected <- state$run$id
+      }
+      labels <- if (nrow(df)) sprintf("%s  [%s]", df$id, df$state) else character()
+      shiny::updateSelectInput(session, "run", choices = stats::setNames(df$id, labels),
+                               selected = if (!is.null(selected) && selected %in% df$id) selected else df$id[1])
+    })
+    shiny::observeEvent(state$run, {
+      shiny::updateSelectInput(session, "run", selected = state$run$id)
+    })
+
+    # NULL when nothing is selected. Poll check functions must never throw
+    # (a req() inside one closes the session), so they use this rather than run().
+    current_run <- shiny::reactive({
+      id <- input$run
+      if (is.null(id) || !nzchar(id)) return(NULL)
+      dir <- file.path(runs_dir, id)
+      if (!file.exists(file.path(dir, "config.json"))) return(NULL)
+      # Reuse the live handle when this is the run we launched, so a crash is detected quickly.
+      if (!is.null(state$run) && identical(state$run$id, id)) state$run else dragon_run(dir)
+    })
+    run <- shiny::reactive({
+      r <- current_run()
+      shiny::req(r)
+      r
+    })
+
+    file_sig <- function(path) {
+      if (!file.exists(path)) return("")
+      info <- file.info(path)
+      paste(info$mtime, info$size)
+    }
+    run_file_sig <- function(name) {
+      r <- current_run()
+      if (is.null(r)) return("")
+      paste(r$id, file_sig(file.path(r$dir, name)))
+    }
+    progress <- shiny::reactivePoll(1000, session,
+      checkFunc = function() run_file_sig("progress.jsonl"),
+      valueFunc = function() { r <- current_run(); if (is.null(r)) dragon_progress_empty() else dragon_progress(r) }
+    )
+    status <- shiny::reactivePoll(1000, session,
+      checkFunc = function() paste(run_file_sig("status.json"), as.numeric(Sys.time()) %/% 5),
+      valueFunc = function() { r <- current_run(); if (is.null(r)) list(state = "none") else dragon_status(r) }
+    )
+    logs <- shiny::reactivePoll(1500, session,
+      checkFunc = function() run_file_sig("log.txt"),
+      valueFunc = function() { r <- current_run(); if (is.null(r)) character() else dragon_logs(r, 40) }
+    )
+
+    output$facts <- shiny::renderUI({
+      r <- run()
+      st <- status()
+      cfg <- run_config(r)
+      pr <- progress()
+      last_loss <- if (nrow(pr) && any(!is.na(pr$loss))) sprintf("%.3f", utils::tail(pr$loss[!is.na(pr$loss)], 1)) else "-"
+      step <- if (nrow(pr)) max(pr$step, na.rm = TRUE) else 0
+      eta <- if (nrow(pr) && any(!is.na(pr$eta_s))) {
+        s <- utils::tail(pr$eta_s[!is.na(pr$eta_s)], 1)
+        sprintf("%d min %02d s", s %/% 60, round(s %% 60))
+      } else "-"
+      shiny::tagList(
+        shiny::div(class = "kv", shiny::span("State"), state_pill(st$state)),
+        shiny::div(class = "kv", shiny::span("Model"), shiny::code(cfg$model$id)),
+        shiny::div(class = "kv", shiny::span("Device"), shiny::strong(st$device %||% "-")),
+        shiny::div(class = "kv", shiny::span("Step"), shiny::strong(sprintf("%d / %s", as.integer(step), st$total_steps %||% "?"))),
+        shiny::div(class = "kv", shiny::span("Loss"), shiny::strong(last_loss)),
+        shiny::div(class = "kv", shiny::span("ETA"), shiny::strong(eta)),
+        if (!is.null(st$eval_loss)) shiny::div(class = "kv", shiny::span("Eval loss"), shiny::strong(sprintf("%.3f (ppl %.2f)", st$eval_loss, st$perplexity))),
+        if (!is.null(st$error)) shiny::pre(class = "error-box", st$error)
+      )
+    })
+
+    output$loss <- plotly::renderPlotly({
+      pr <- progress()
+      train <- pr[!is.na(pr$loss), , drop = FALSE]
+      ev <- pr[!is.na(pr$eval_loss), , drop = FALSE]
+      p <- plotly::plot_ly()
+      if (!nrow(train) && !nrow(ev)) {
+        # An empty scatter trace keeps plotly quiet about a plot with no data.
+        p <- plotly::add_trace(p, x = numeric(), y = numeric(), type = "scatter", mode = "lines", showlegend = FALSE)
+      }
+      if (nrow(train)) {
+        p <- plotly::add_trace(p, x = train$step, y = train$loss, type = "scatter", mode = "lines",
+                               name = "train loss", line = list(color = "#2F6F8F", width = 2))
+      }
+      if (nrow(ev)) {
+        p <- plotly::add_trace(p, x = ev$step, y = ev$eval_loss, type = "scatter", mode = "markers+lines",
+                               name = "eval loss", marker = list(color = "#B8702A", size = 9),
+                               line = list(color = "#B8702A", dash = "dot"))
+      }
+      if (!nrow(train) && !nrow(ev)) {
+        p <- plotly::layout(p, annotations = list(text = "Waiting for the first logged step", showarrow = FALSE, x = 0.5, y = 0.5, xref = "paper", yref = "paper"))
+      }
+      plotly::config(plotly::layout(p,
+        xaxis = list(title = "step", zeroline = FALSE),
+        yaxis = list(title = "loss", zeroline = FALSE, rangemode = "tozero"),
+        margin = list(l = 50, r = 20, t = 10, b = 40),
+        legend = list(orientation = "h", x = 0, y = 1.1),
+        paper_bgcolor = "rgba(0,0,0,0)", plot_bgcolor = "rgba(0,0,0,0)"
+      ), displayModeBar = FALSE)
+    })
+
+    output$log <- shiny::renderText(paste(logs(), collapse = "\n"))
+    output$code <- shiny::renderText({
+      r <- run()
+      tryCatch(dragon_code(r), error = function(e) conditionMessage(e))
+    })
+
+    shiny::observeEvent(input$cancel, {
+      r <- run()
+      st <- status()
+      if (!st$state %in% c("queued", "running")) {
+        shiny::showNotification("This run is not running.", type = "warning")
+        return()
+      }
+      writeLines(now_iso(), file.path(r$dir, "cancel.request"))
+      shiny::showNotification("Cancel requested. The trainer saves a checkpoint and stops after the current step.", type = "message")
+    })
+
+    shiny::observeEvent(input$resume, {
+      r <- run()
+      res <- tryCatch(dragon_resume(r), error = function(e) { notify_error(e); NULL })
+      if (!is.null(res)) {
+        state$run <- res
+        shiny::showNotification(sprintf("Resumed %s.", res$id), type = "message")
+      }
+    })
+  })
+}

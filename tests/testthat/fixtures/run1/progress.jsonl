@@ -1,0 +1,5 @@
+{"step": 1, "epoch": 0.0556, "elapsed_s": 6.1, "loss": 2.413, "lr": 0.0002, "grad_norm": 1.82, "eta_s": 67.1}
+{"step": 5, "epoch": 0.2778, "elapsed_s": 28.4, "loss": 2.101, "lr": 0.00018, "grad_norm": 1.41, "eta_s": 39.8}
+{"step": 10, "epoch": 0.5556, "elapsed_s": 55.9, "loss": 1.902, "lr": 0.00006, "grad_norm": 1.13, "eta_s": 11.2}
+{"step": 12, "epoch": 0.6667, "elapsed_s": 66.0, "loss": 1.851, "lr": 0.0, "grad_norm": 1.05, "eta_s": 0.0}
+{"step": 12, "epoch": 0.6667, "elapsed_s": 70.2, "eval_loss": 1.644}

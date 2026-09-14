@@ -1,0 +1,17 @@
+{
+  "state": "succeeded",
+  "created_at": "2026-09-13T10:15:00Z",
+  "pid": 41822,
+  "started_at": "2026-09-13T10:15:02Z",
+  "finished_at": "2026-09-13T10:17:40Z",
+  "device": "cpu",
+  "dtype": "float32",
+  "device_name": "CPU",
+  "trainable_params": 1105920,
+  "total_params": 135621120,
+  "total_steps": 12,
+  "latest_checkpoint": "checkpoints/checkpoint-12",
+  "eval_loss": 1.644,
+  "perplexity": 5.175,
+  "error": null
+}

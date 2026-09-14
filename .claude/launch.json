@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dragon-farm-app",
+      "runtimeExecutable": "C:/Program Files/R/R-4.6.1/bin/Rscript.exe",
+      "runtimeArgs": [
+        "-e",
+        ".libPaths(c('C:/Users/Tejas/AppData/Local/R/win-library/4.6', .libPaths())); devtools::load_all('.', quiet = TRUE); print(dragon_app(runs_dir = 'dragonfarm_runs', port = 3939, host = '127.0.0.1', launch.browser = FALSE))"
+      ],
+      "port": 3939
+    }
+  ]
+}

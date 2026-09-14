@@ -1,0 +1,12 @@
+[
+  {
+    "prompt": "Ember thermostat keeps dropping off Wi-Fi\n\nMy Ember thermostat connects fine for a few hours and then drops off the network.",
+    "reference": "Thanks for the details. Wi-Fi drops on the Ember thermostat are almost always a 2.4 GHz band-steering issue.",
+    "generated": "Thanks for reaching out. Please try moving the thermostat to a 2.4 GHz network and resetting it."
+  },
+  {
+    "prompt": "How do I return my Nook speaker?",
+    "reference": "Yes, the Nook speaker can be returned within 30 days of delivery.",
+    "generated": "You can return the Nook speaker within 30 days from your Orders page."
+  }
+]

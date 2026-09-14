@@ -1,0 +1,15 @@
+^architecture$
+^data-raw$
+^\.github$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$
+^dragonfarm_runs$
+^LICENSE\.md$
+^\.gitignore$
+^inst/python/.*/__pycache__$
+^inst/python/tests$
+^\.claude$

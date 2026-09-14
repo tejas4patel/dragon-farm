@@ -1,0 +1,75 @@
+:root {
+  --df-ink: #1B2230;
+  --df-muted: #5C6675;
+  --df-line: #D8DDDA;
+  --df-accent: #2F6F8F;
+  --df-accent-soft: #E2EDF3;
+  --df-amber: #B8702A;
+  --df-amber-soft: #F6E9DA;
+  --df-ok: #3D7A4E;
+  --df-bad: #A83A3A;
+}
+
+.brand-mark { color: #E09A4E; margin-right: 6px; font-size: 0.9em; }
+
+.hint { color: var(--df-muted); font-size: 0.9rem; }
+
+.kv { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--df-line); font-size: 0.92rem; }
+.kv > span:first-child { color: var(--df-muted); }
+.kv code { font-size: 0.82rem; word-break: break-all; text-align: right; }
+
+.col-list { list-style: none; padding: 0; margin: 8px 0 14px; font-size: 0.88rem; }
+.col-list li { display: flex; justify-content: space-between; padding: 3px 0; }
+.col-list .type { color: var(--df-muted); font-family: var(--bs-font-monospace); font-size: 0.78rem; }
+
+.table-wrap { overflow-x: auto; }
+.table-wrap table { font-size: 0.82rem; }
+
+.dropzone .form-group { margin-bottom: 4px; }
+.dropzone .input-group { border: 2px dashed var(--df-line); border-radius: 8px; padding: 18px 12px; background: #FAFBFA; transition: border-color .15s; }
+.dropzone .input-group:hover { border-color: var(--df-accent); }
+
+/* Sortable buckets.
+   DOM: .bucket-list-container > .bucket-list > (.rank-list-container + .sortable widget shell + script) x 4.
+   Selectors are kept more specific than sortable's own (.default-sortable ...) rules, which load later. */
+.bucket-list-container.dragon-buckets { display: block; padding: 0; margin: 0; }
+.bucket-list-container .default-sortable.dragon-buckets.bucket-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.bucket-list-container .dragon-buckets.bucket-list > .sortable, .bucket-list-container .dragon-buckets.bucket-list > script { display: none; }
+.bucket-list .dragon-buckets.rank-list-container { border: 1px solid var(--df-line); border-radius: 8px; padding: 8px; margin: 0; min-height: 140px; background: #FAFBFA; }
+.bucket-list .dragon-buckets.rank-list-container.column_2 { border-color: var(--df-amber); background: var(--df-amber-soft); }
+.bucket-list .dragon-buckets.rank-list-container.column_3,
+.bucket-list .dragon-buckets.rank-list-container.column_4 { border-color: var(--df-accent); background: var(--df-accent-soft); }
+.bucket-list .dragon-buckets .rank-list-title { font-weight: 600; font-size: 0.78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--df-muted); margin: 0 0 6px; }
+.bucket-list .dragon-buckets .rank-list { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 4px; min-height: 90px; margin: 0; padding: 4px; background: rgba(255,255,255,.5); }
+.bucket-list .dragon-buckets .rank-list .rank-list-item { display: inline-block; flex: 0 0 auto; font-family: var(--bs-font-monospace); font-size: 0.82rem; background: #fff; border: 1px solid var(--df-line); border-radius: 999px; padding: 3px 10px; margin: 0; cursor: grab; box-shadow: 0 1px 1px rgba(0,0,0,.04); }
+.bucket-list .dragon-buckets .rank-list .rank-list-item:active { cursor: grabbing; }
+@media (max-width: 900px) { .bucket-list-container .default-sortable.dragon-buckets.bucket-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Chat preview */
+.chat-row { padding: 8px 0 12px; border-bottom: 1px solid var(--df-line); }
+.chat-row:last-child { border-bottom: 0; }
+.chat-row-label { font-size: 0.72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--df-muted); margin-bottom: 6px; }
+.bubble { border-radius: 10px; padding: 8px 12px; margin: 4px 0; font-size: 0.88rem; white-space: pre-wrap; }
+.bubble .role { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--df-muted); margin-bottom: 2px; }
+.bubble.system { background: var(--df-amber-soft); }
+.bubble.user { background: #EEF1EF; }
+.bubble.assistant { background: var(--df-accent-soft); }
+
+/* Pills */
+.pill { display: inline-block; padding: 1px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.pill.running, .pill.queued { background: var(--df-accent-soft); color: var(--df-accent); }
+.pill.succeeded { background: #E3F0E6; color: var(--df-ok); }
+.pill.failed { background: #F6E0E0; color: var(--df-bad); }
+.pill.cancelled { background: #EEE; color: var(--df-muted); }
+
+.hw-badge { font-size: 0.78rem; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.12); color: #fff; }
+.hw-badge.muted { opacity: .7; }
+.hw-badge.cuda { background: rgba(125,187,142,.25); }
+
+.checklist { padding-left: 18px; font-size: 0.9rem; }
+.checklist.bad li { color: var(--df-bad); }
+.checklist.ok li { color: var(--df-ok); }
+
+.error-box { background: #F6E0E0; color: var(--df-bad); padding: 8px; border-radius: 6px; font-size: 0.78rem; white-space: pre-wrap; max-height: 200px; overflow: auto; }
+
+pre.shiny-text-output { font-size: 0.78rem; max-height: 320px; overflow: auto; }

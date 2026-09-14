@@ -1,0 +1,55 @@
+url: https://algocrat.github.io/dragon-farm/
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#2F6F8F"
+
+reference:
+- title: Setup
+  contents:
+  - dragon_check
+  - dragon_python_requirements
+  - dragon_presets
+- title: Data
+  contents:
+  - dragon_dataset
+  - dragon_map
+  - dragon_preview
+  - dragon_split
+  - dragon_example_data
+- title: Settings
+  contents:
+  - dragon_lora
+  - dragon_train_args
+  - dragon_hardware
+- title: Training
+  contents:
+  - dragon_train
+  - dragon_resume
+  - dragon_wait
+  - dragon_cancel
+- title: Runs
+  contents:
+  - dragon_run
+  - dragon_runs
+  - dragon_runs_dir
+  - dragon_status
+  - dragon_progress
+  - dragon_logs
+  - dragon_code
+- title: After training
+  contents:
+  - dragon_evaluate
+  - dragon_generate
+  - dragon_merge
+  - dragon_export_gguf
+- title: App
+  contents:
+  - dragon_app
+
+articles:
+- title: Guides
+  navbar: ~
+  contents:
+  - quickstart
+  - shiny-app
