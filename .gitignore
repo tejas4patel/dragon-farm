@@ -11,3 +11,6 @@ inst/doc
 /Meta/
 *.tar.gz
 .DS_Store
+
+# CRAN submission tarball
+*.tar.gz
