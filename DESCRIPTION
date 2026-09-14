@@ -2,7 +2,7 @@ Package: dragonfarm
 Title: Fine-Tune Small Language Models with LoRA from R
 Version: 0.1.0
 Authors@R:
-    person("Tejas", role = c("aut", "cre"), email = "algocrat@gmail.com")
+    person("Tejas", "Patel", role = c("aut", "cre"), email = "algocrat@gmail.com")
 Description: Fine-tune small (100M to 3B parameter) causal language models
     with LoRA (Low-Rank Adaptation) from R. Datasets are mapped to
     chat-format prompts and responses, training runs in a background Python
