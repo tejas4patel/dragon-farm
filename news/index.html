@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">dragonfarm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,12 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="dragonfarm-development-version">dragonfarm (development version)<a class="anchor" aria-label="anchor" href="#dragonfarm-development-version"></a></h2>
+<ul><li>
+<code><a href="../reference/dragon_check.html">dragon_check()</a></code> now explains a CPU-only result on a machine with an NVIDIA GPU: no driver, a driver too old for the installed torch, or a CPU-only torch build, each with the one-line fix.</li>
+<li>README gains a Requirements section covering the driver requirement, disk space, and that the CUDA Toolkit is not needed.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="dragonfarm-010">dragonfarm 0.1.0<a class="anchor" aria-label="anchor" href="#dragonfarm-010"></a></h2>
 <p>First release.</p>
 <ul><li>
@@ -52,7 +58,8 @@
 <code><a href="../reference/dragon_app.html">dragon_app()</a></code> launches a Shiny app with drag-and-drop dataset upload, drag-and-drop column mapping, a live loss curve, and a before-and-after comparison panel. <code><a href="../reference/dragon_code.html">dragon_code()</a></code> returns the R script for any run.</li>
 <li>Python dependencies are declared with <code><a href="https://rstudio.github.io/reticulate/reference/py_require.html" class="external-link">reticulate::py_require()</a></code> and built automatically. On Windows with an NVIDIA GPU the CUDA build of torch is selected on first use.</li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

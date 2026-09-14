@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">dragonfarm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,7 +68,24 @@
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tejas4patel/dragon-farm" class="external-link">dragonfarm</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/dragon_check.html">dragon_check</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>You need Python 3.10 or newer somewhere on the machine, or nothing at all: <code>reticulate</code> downloads one if none is found. On Windows with an NVIDIA GPU the package points the installer at the CUDA build of torch automatically.</p>
+</div>
+<div class="section level2">
+<h2 id="requirements">Requirements<a class="anchor" aria-label="anchor" href="#requirements"></a>
+</h2>
+<ul>
+<li><strong>R 4.1 or newer.</strong></li>
+<li>
+<strong>Disk:</strong> about 3 GB for the Python environment, plus 0.3 to 4 GB per model in the Hugging Face cache.</li>
+<li>
+<strong>Python:</strong> nothing to install. <code>reticulate</code> uses a Python 3.10 to 3.13 it finds on the machine, or downloads one. torch, transformers, and peft are installed automatically on first use.</li>
+<li>
+<strong>GPU training on NVIDIA:</strong> the only thing you install yourself is the NVIDIA driver, from <a href="https://www.nvidia.com/drivers" class="external-link">nvidia.com/drivers</a>. Driver 580 or newer gets the CUDA 13 build of torch, 570 or newer gets CUDA 12.8, and older drivers get CUDA 12.6. The CUDA Toolkit and cuDNN are not needed; torch wheels bundle their own CUDA libraries. Check your driver with <code>nvidia-smi</code>.</li>
+<li>
+<strong>Apple Silicon:</strong> trains on the GPU through Metal with no setup.</li>
+<li>
+<strong>No GPU:</strong> training runs on the CPU. Fine for the 135M and 360M models, slow beyond that.</li>
+</ul>
+<p>Run <code><a href="reference/dragon_check.html">dragon_check()</a></code> after installing. It reports the device it will train on, and if that is the CPU on a machine with an NVIDIA GPU it says why (no driver, a driver too old for the installed torch, or a CPU-only torch build) and prints the one-line fix.</p>
 </div>
 <div class="section level2">
 <h2 id="the-five-line-version">The five-line version<a class="anchor" aria-label="anchor" href="#the-five-line-version"></a>
@@ -241,9 +258,9 @@
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a>
 </h2>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">test</span><span class="op">(</span><span class="op">)</span>                                  <span class="co"># unit tests, no Python needed</span></span>
+<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span><span class="op">)</span>                                  <span class="co"># unit tests, no Python needed</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>DRAGONFARM_INTEGRATION <span class="op">=</span> <span class="st">"true"</span><span class="op">)</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">test</span><span class="op">(</span>filter <span class="op">=</span> <span class="st">"integration"</span><span class="op">)</span>            <span class="co"># trains SmolLM2-135M for 6 steps</span></span></code></pre></div>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span>filter <span class="op">=</span> <span class="st">"integration"</span><span class="op">)</span>            <span class="co"># trains SmolLM2-135M for 6 steps</span></span></code></pre></div>
 <p>The Python side has its own tests: <code>PYTHONPATH=inst/python python inst/python/tests/run.py</code> (or <code>python -m pytest inst/python/tests</code> if pytest is installed).</p>
 </div>
 <div class="section level2">
