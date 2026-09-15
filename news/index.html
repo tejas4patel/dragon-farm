@@ -42,6 +42,7 @@
 <ul><li>
 <code><a href="../reference/dragon_check.html">dragon_check()</a></code> now explains a CPU-only result on a machine with an NVIDIA GPU: no driver, a driver too old for the installed torch, or a CPU-only torch build, each with the one-line fix.</li>
 <li>README gains a Requirements section covering the driver requirement, disk space, and that the CUDA Toolkit is not needed.</li>
+<li>New <code><a href="../reference/dragon_bundle.html">dragon_bundle()</a></code>, <code><a href="../reference/dragon_remote.html">dragon_remote()</a></code>, and <code><a href="../reference/dragon_import.html">dragon_import()</a></code> take a run to a cloud GPU (Google Colab, Kaggle, Lightning AI, or RunPod) and bring the trained adapter back, for machines without a GPU. <code><a href="../reference/dragon_remote_providers.html">dragon_remote_providers()</a></code> lists the providers. The app gains the same path in its Train and Monitor panels, and <code><a href="../reference/dragon_check.html">dragon_check()</a></code> points to it when it finds no GPU.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="dragonfarm-010">dragonfarm 0.1.0<a class="anchor" aria-label="anchor" href="#dragonfarm-010"></a></h2>

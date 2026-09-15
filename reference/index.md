@@ -68,6 +68,17 @@
 - [`dragon_export_gguf()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_export_gguf.md)
   : Export a merged model to GGUF
 
+## Cloud GPUs
+
+- [`dragon_bundle()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_bundle.md)
+  : Package a run for a cloud GPU
+- [`dragon_remote()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_remote.md)
+  : Open a cloud GPU provider for a bundled run
+- [`dragon_import()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_import.md)
+  : Import results trained on another machine
+- [`dragon_remote_providers()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_remote_providers.md)
+  : Cloud GPU providers
+
 ## App
 
 - [`dragon_app()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_app.md)
