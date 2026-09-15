@@ -1,4 +1,4 @@
-# dragonfarm (development version)
+# dragonfarm 0.1.1
 
 * `dragon_check()` now explains a CPU-only result on a machine with an NVIDIA
   GPU: no driver, a driver too old for the installed torch, or a CPU-only

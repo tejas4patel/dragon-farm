@@ -3,7 +3,9 @@
 0 errors | 0 warnings | 1 note
 
 The note is "New submission". win-builder (R-devel and R-release) reports
-the same single note.
+the same single note. Version 0.1.1 rather than 0.1.0 because 0.1.0 was
+tagged on GitHub before the cloud-GPU functions were added; no earlier
+version was published on CRAN.
 
 ## Test environments
 
