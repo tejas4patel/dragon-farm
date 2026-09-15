@@ -37,7 +37,18 @@ mod_train_ui <- function(id) {
       bslib::card_header("Ready?"),
       shiny::uiOutput(ns("checklist")),
       shiny::actionButton(ns("start"), "Start training", class = "btn-primary btn-lg", width = "100%"),
-      shiny::uiOutput(ns("launched"))
+      shiny::uiOutput(ns("launched")),
+      shiny::hr(),
+      bslib::accordion(
+        id = ns("cloud_acc"), open = FALSE,
+        bslib::accordion_panel(
+          "No GPU here? Train on a cloud GPU", value = "cloud",
+          shiny::p(class = "hint", "Same run, different machine: package it as a zip, open a free or rented GPU notebook, upload the zip, run all cells, then import the results in Monitor."),
+          shiny::selectInput(ns("provider"), "Provider", choices = cloud_provider_choices(), width = "100%"),
+          shiny::actionButton(ns("bundle"), "Prepare cloud bundle", class = "btn-outline-primary"),
+          shiny::uiOutput(ns("cloud_ready"))
+        )
+      )
     )
   )
 }
@@ -71,29 +82,39 @@ mod_train_server <- function(id, state, nav_to) {
       )
     })
 
+    # Everything the launcher needs, built from the form. Shared by local
+    # training and the cloud bundle so both produce the same run.
+    settings <- function() {
+      max_steps <- if (is.na(input$max_steps %||% NA)) NULL else as.integer(input$max_steps)
+      list(
+        dataset = dragon_split(state$mapped, eval_frac = input$eval_frac %||% 0.05, seed = input$seed %||% 42),
+        model = state$model$id,
+        lora = dragon_lora(r = input$rank, alpha = input$alpha, dropout = input$dropout),
+        args = dragon_train_args(
+          epochs = input$epochs, learning_rate = input$learning_rate,
+          batch_size = input$batch_size, grad_accum = input$grad_accum,
+          max_seq_len = input$max_seq_len, max_steps = max_steps,
+          save_steps = input$save_steps, gradient_checkpointing = isTRUE(input$grad_ckpt),
+          seed = input$seed, logging_steps = 1
+        ),
+        name = if (nzchar(trimws(input$name %||% ""))) input$name,
+        trust_remote_code = isTRUE(state$model$trust_remote_code)
+      )
+    }
+
     shiny::observeEvent(input$start, {
       p <- problems()
       if (length(p)) {
         shiny::showNotification(paste(p, collapse = " "), type = "warning")
         return()
       }
-      ds <- dragon_split(state$mapped, eval_frac = input$eval_frac %||% 0.05, seed = input$seed %||% 42)
-      max_steps <- if (is.na(input$max_steps %||% NA)) NULL else as.integer(input$max_steps)
       run <- tryCatch({
+        s <- settings()
         shiny::withProgress(message = "Launching trainer", detail = "Preparing Python on first use", {
           dragon_train(
-            ds, state$model$id,
-            lora = dragon_lora(r = input$rank, alpha = input$alpha, dropout = input$dropout),
-            args = dragon_train_args(
-              epochs = input$epochs, learning_rate = input$learning_rate,
-              batch_size = input$batch_size, grad_accum = input$grad_accum,
-              max_seq_len = input$max_seq_len, max_steps = max_steps,
-              save_steps = input$save_steps, gradient_checkpointing = isTRUE(input$grad_ckpt),
-              seed = input$seed, logging_steps = 1
-            ),
+            s$dataset, s$model, lora = s$lora, args = s$args,
             hardware = dragon_hardware(device = input$device, dtype = input$dtype),
-            name = if (nzchar(trimws(input$name %||% ""))) input$name,
-            trust_remote_code = isTRUE(state$model$trust_remote_code)
+            name = s$name, trust_remote_code = s$trust_remote_code
           )
         })
       }, error = function(e) { notify_error(e); NULL })
@@ -102,6 +123,57 @@ mod_train_server <- function(id, state, nav_to) {
         shiny::showNotification(sprintf("Run %s launched.", run$id), type = "message")
         nav_to("monitor")
       }
+    })
+
+    # Cloud GPU path: the same settings, but the run is zipped instead of launched.
+    shiny::observe({
+      hw <- state$hardware
+      if (!is.null(hw) && identical(hw$device, "cpu")) {
+        bslib::accordion_panel_open("cloud_acc", "cloud", session = session)
+      }
+    })
+
+    shiny::observeEvent(input$bundle, {
+      p <- problems()
+      if (length(p)) {
+        shiny::showNotification(paste(p, collapse = " "), type = "warning")
+        return()
+      }
+      provider <- input$provider %||% "colab"
+      res <- tryCatch({
+        s <- settings()
+        run <- dragon_bundle(s$dataset, s$model, lora = s$lora, args = s$args, name = s$name,
+                             trust_remote_code = s$trust_remote_code)
+        info <- dragon_remote(run, provider, open = FALSE)
+        list(run = run, info = info)
+      }, error = function(e) { notify_error(e); NULL })
+      if (!is.null(res)) {
+        state$run <- res$run
+        state$cloud <- list(run_id = res$run$id, provider = provider, url = res$info$url,
+                            bundle = res$info$bundle, steps = res$info$steps)
+        shiny::showNotification(sprintf("Bundle ready for %s.", provider_name(provider)), type = "message")
+      }
+    })
+
+    output$bundle_zip <- shiny::downloadHandler(
+      filename = function() basename(state$cloud$bundle),
+      content = function(file) file.copy(state$cloud$bundle, file),
+      contentType = "application/zip"
+    )
+
+    output$cloud_ready <- shiny::renderUI({
+      cl <- state$cloud
+      if (is.null(cl)) return(NULL)
+      shiny::div(class = "cloud-ready",
+        shiny::p(class = "small", "Run ", shiny::code(cl$run_id), " is bundled (", file_size_label(cl$bundle), ")."),
+        shiny::div(class = "cloud-actions",
+          shiny::downloadButton(ns("bundle_zip"), "Download bundle", class = "btn-primary"),
+          shiny::tags$a(href = cl$url, target = "_blank", rel = "noopener", class = "btn btn-outline-primary",
+                        paste("Open", provider_name(cl$provider)))
+        ),
+        shiny::tags$ol(class = "cloud-steps", lapply(cl$steps, shiny::tags$li)),
+        shiny::p(class = "hint", "When the notebook finishes, import the results zip in the Monitor panel.")
+      )
     })
 
     output$launched <- shiny::renderUI({

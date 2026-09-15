@@ -80,6 +80,12 @@ dragon_logs <- function(run, n = 50) {
 #' @export
 dragon_wait <- function(run, timeout = Inf, poll = 2) {
   check_run(run)
+  if (identical(dragon_status(run)$state, "bundled")) {
+    cli::cli_abort(c(
+      "Run {.strong {run$id}} was bundled for a cloud GPU and has not been trained here.",
+      "i" = "Train it with {.fn dragon_remote}, then bring the outputs back with {.fn dragon_import}."
+    ))
+  }
   started <- Sys.time()
   bar <- NULL
   total_known <- FALSE

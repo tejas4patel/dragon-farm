@@ -43,6 +43,12 @@ reference:
   - dragon_generate
   - dragon_merge
   - dragon_export_gguf
+- title: Cloud GPUs
+  contents:
+  - dragon_bundle
+  - dragon_remote
+  - dragon_import
+  - dragon_remote_providers
 - title: App
   contents:
   - dragon_app

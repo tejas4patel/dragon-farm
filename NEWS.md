@@ -5,6 +5,11 @@
   torch build, each with the one-line fix.
 * README gains a Requirements section covering the driver requirement, disk
   space, and that the CUDA Toolkit is not needed.
+* New `dragon_bundle()`, `dragon_remote()`, and `dragon_import()` take a run to
+  a cloud GPU (Google Colab, Kaggle, Lightning AI, or RunPod) and bring the
+  trained adapter back, for machines without a GPU. `dragon_remote_providers()`
+  lists the providers. The app gains the same path in its Train and Monitor
+  panels, and `dragon_check()` points to it when it finds no GPU.
 
 # dragonfarm 0.1.0
 

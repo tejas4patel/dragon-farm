@@ -61,6 +61,11 @@
 .pill.succeeded { background: #E3F0E6; color: var(--df-ok); }
 .pill.failed { background: #F6E0E0; color: var(--df-bad); }
 .pill.cancelled { background: #EEE; color: var(--df-muted); }
+.pill.bundled { background: #F1E7D8; color: #8A5A1E; }
+
+.cloud-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 12px; }
+.cloud-steps { padding-left: 20px; font-size: 0.9rem; }
+.cloud-steps li { margin: 4px 0; overflow-wrap: anywhere; }
 
 .hw-badge { font-size: 0.78rem; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.12); color: #fff; }
 .hw-badge.muted { opacity: .7; }

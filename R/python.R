@@ -134,6 +134,9 @@ dragon_check <- function() {
     diagnosis <- cpu_diagnosis(info$torch_cuda_build, nvidia_driver_version())
     result$cpu_reason <- diagnosis$reason
     cli::cli_bullets(diagnosis$lines)
+    cli::cli_bullets(c(
+      "i" = "No GPU here? Train on a cloud one instead: {.code run <- dragon_bundle(...)} then {.code dragon_remote(run, \"colab\")}. Google Colab and Kaggle are free; Lightning AI and RunPod also work. See {.help dragonfarm::dragon_remote}."
+    ))
   }
   if (hf_token_present()) {
     cli::cli_alert_success("Hugging Face token found (needed for gated models such as Gemma and Llama).")

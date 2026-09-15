@@ -16,6 +16,8 @@
 #' }
 dragon_app <- function(runs_dir = dragon_runs_dir(), ...) {
   options(dragonfarm.runs_dir = runs_dir)
+  # Imported results zips carry a LoRA adapter, typically tens of megabytes.
+  options(shiny.maxRequestSize = 1024 * 1024^2)
   dir.create(runs_dir, recursive = TRUE, showWarnings = FALSE)
   shiny::addResourcePath("dragonfarm", system.file("app", "www", package = "dragonfarm"))
 
@@ -45,7 +47,7 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), ...) {
   )
 
   server <- function(input, output, session) {
-    state <- shiny::reactiveValues(dataset = NULL, mapped = NULL, model = NULL, run = NULL, hardware = NULL)
+    state <- shiny::reactiveValues(dataset = NULL, mapped = NULL, model = NULL, run = NULL, hardware = NULL, cloud = NULL)
     nav_to <- function(panel) bslib::nav_select("nav", panel, session = session)
 
     mod_data_server("data", state, nav_to)

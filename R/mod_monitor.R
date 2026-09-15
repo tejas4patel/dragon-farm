@@ -8,7 +8,10 @@ mod_monitor_ui <- function(id) {
         shiny::selectInput(ns("run"), NULL, choices = character(), width = "100%"),
         shiny::uiOutput(ns("facts")),
         shiny::actionButton(ns("cancel"), "Cancel run", class = "btn-outline-danger"),
-        shiny::actionButton(ns("resume"), "Resume from checkpoint", class = "btn-outline-secondary")
+        shiny::actionButton(ns("resume"), "Resume from checkpoint", class = "btn-outline-secondary"),
+        shiny::hr(),
+        shiny::fileInput(ns("import"), "Import cloud results (dragonfarm-results-*.zip)", accept = ".zip", width = "100%"),
+        shiny::uiOutput(ns("import_hint"))
       ),
       bslib::card(
         bslib::card_header("Loss"),
@@ -168,6 +171,23 @@ mod_monitor_server <- function(id, state, runs_dir) {
       if (!is.null(res)) {
         state$run <- res
         shiny::showNotification(sprintf("Resumed %s.", res$id), type = "message")
+      }
+    })
+
+    output$import_hint <- shiny::renderUI({
+      st <- status()
+      if (!identical(st$state, "bundled")) return(NULL)
+      shiny::p(class = "hint", "This run was bundled for a cloud GPU. Train it there, then drop the results zip above.")
+    })
+
+    shiny::observeEvent(input$import, {
+      r <- run()
+      f <- input$import
+      shiny::req(f)
+      res <- tryCatch(dragon_import(r, f$datapath), error = function(e) { notify_error(e); NULL })
+      if (!is.null(res)) {
+        st <- dragon_status(res)
+        shiny::showNotification(sprintf("Imported results for %s (%s).", res$id, st$state), type = "message")
       }
     })
   })

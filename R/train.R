@@ -33,6 +33,21 @@ dragon_train <- function(dataset, model, lora = dragon_lora(), args = dragon_tra
                          hardware = dragon_hardware(), name = NULL, run_dir = NULL,
                          runs_dir = dragon_runs_dir(), n_samples = 10,
                          revision = NULL, trust_remote_code = FALSE, wait = FALSE) {
+  prep <- prepare_run(dataset, model, lora, args, hardware, name, run_dir, runs_dir, n_samples,
+                      revision = revision, trust_remote_code = trust_remote_code)
+  files <- prep$files
+  cpu_hint(hardware)
+  run <- launch_trainer(prep$run_dir)
+  cli::cli_alert_success("Launched run {.strong {run$id}} ({files$n_train} training rows, {files$n_eval} held out).")
+  cli::cli_text("Check on it with {.code dragon_status(run)}, {.code dragon_progress(run)}, or {.code dragon_wait(run)}.")
+  if (wait) dragon_wait(run) else run
+}
+
+# Validate the inputs and write a run directory without launching anything.
+# Shared by dragon_train() and dragon_bundle(). Returns list(run_dir, files).
+prepare_run <- function(dataset, model, lora, args, hardware, name, run_dir, runs_dir, n_samples,
+                        revision = NULL, trust_remote_code = FALSE, state = "queued",
+                        check_token = TRUE) {
   check_dataset(dataset, mapped = TRUE)
   check_string(model, "model")
   if (!inherits(lora, "dragon_lora")) cli::cli_abort("{.arg lora} must come from {.fn dragon_lora}.")
@@ -42,11 +57,15 @@ dragon_train <- function(dataset, model, lora = dragon_lora(), args = dragon_tra
 
   preset <- preset_for(model)
   if (!is.null(preset) && preset$gated && !hf_token_present() && !isTRUE(getOption("dragonfarm.skip_token_check"))) {
-    cli::cli_abort(c(
-      "{.val {model}} is a gated model and no Hugging Face token was found.",
-      "i" = "Accept the license on huggingface.co, then set {.envvar HF_TOKEN} before training.",
-      "i" = "Set {.code options(dragonfarm.skip_token_check = TRUE)} if the token is configured another way."
-    ))
+    if (check_token) {
+      cli::cli_abort(c(
+        "{.val {model}} is a gated model and no Hugging Face token was found.",
+        "i" = "Accept the license on huggingface.co, then set {.envvar HF_TOKEN} before training.",
+        "i" = "Set {.code options(dragonfarm.skip_token_check = TRUE)} if the token is configured another way."
+      ))
+    } else {
+      cli::cli_alert_warning("{.val {model}} is gated. The cloud notebook needs a Hugging Face token stored as a secret named {.envvar HF_TOKEN}.")
+    }
   }
 
   if (is.null(run_dir)) {
@@ -67,13 +86,18 @@ dragon_train <- function(dataset, model, lora = dragon_lora(), args = dragon_tra
          split = list(eval_frac = dataset$split$eval_frac, seed = dataset$split$seed)),
     file.path(run_dir, "dataset.json")
   )
-  write_json(list(state = "queued", created_at = now_iso(), pid = NULL), file.path(run_dir, "status.json"))
+  write_json(list(state = state, created_at = now_iso(), pid = NULL), file.path(run_dir, "status.json"))
   writeLines(character(), file.path(run_dir, "log.txt"))
+  list(run_dir = run_dir, files = files)
+}
 
-  run <- launch_trainer(run_dir)
-  cli::cli_alert_success("Launched run {.strong {run$id}} ({files$n_train} training rows, {files$n_eval} held out).")
-  cli::cli_text("Check on it with {.code dragon_status(run)}, {.code dragon_progress(run)}, or {.code dragon_wait(run)}.")
-  if (wait) dragon_wait(run) else run
+# One line pointing at cloud GPUs when this machine is already known to be
+# CPU-only (from an earlier dragon_check() or the app's hardware probe).
+cpu_hint <- function(hardware) {
+  hw <- the$hardware
+  if (is.null(hw) || !identical(hw$device, "cpu") || !identical(hardware$device, "auto")) return(invisible(FALSE))
+  cli::cli_alert_info("No GPU on this machine, so training runs on the CPU. For a cloud GPU, use {.fn dragon_bundle} and {.fn dragon_remote} instead.")
+  invisible(TRUE)
 }
 
 launch_trainer <- function(run_dir, resume = FALSE) {
