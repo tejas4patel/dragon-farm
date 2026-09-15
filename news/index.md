@@ -1,6 +1,6 @@
 # Changelog
 
-## dragonfarm (development version)
+## dragonfarm 0.1.1
 
 - [`dragon_check()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_check.md)
   now explains a CPU-only result on a machine with an NVIDIA GPU: no
