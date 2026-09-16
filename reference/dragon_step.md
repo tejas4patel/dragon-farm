@@ -4,7 +4,8 @@ Each step becomes one stage of
 [`dragon_pipeline()`](https://dragonfarm.dev/reference/dragon_pipeline.md).
 Stages chain: a training step's run is the starting point of the next
 training step, a synthesis step's pairs feed the next preference step,
-and judge and evaluate steps measure the most recent run.
+judge and evaluate steps measure the most recent run, and a merge step
+writes it out as a standalone model.
 
 ## Usage
 
@@ -46,6 +47,8 @@ dragon_step_reinforce(
 dragon_step_judge(against = "base", judge = NULL, n = 20, rubric = NULL)
 
 dragon_step_evaluate(metrics = TRUE)
+
+dragon_step_merge(out = NULL)
 ```
 
 ## Arguments
@@ -100,6 +103,12 @@ dragon_step_evaluate(metrics = TRUE)
 
   As in
   [`dragon_evaluate()`](https://dragonfarm.dev/reference/dragon_evaluate.md).
+
+- out:
+
+  As `out_dir` in
+  [`dragon_merge()`](https://dragonfarm.dev/reference/dragon_merge.md):
+  where the merged model goes; `NULL` means `merged/` inside the run.
 
 ## Value
 

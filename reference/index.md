@@ -128,9 +128,12 @@
   [`dragon_step_reinforce()`](https://dragonfarm.dev/reference/dragon_step.md)
   [`dragon_step_judge()`](https://dragonfarm.dev/reference/dragon_step.md)
   [`dragon_step_evaluate()`](https://dragonfarm.dev/reference/dragon_step.md)
+  [`dragon_step_merge()`](https://dragonfarm.dev/reference/dragon_step.md)
   : Steps of a post-training pipeline
 - [`dragon_pipeline_status()`](https://dragonfarm.dev/reference/dragon_pipeline_status.md)
   : Progress of a pipeline
+- [`dragon_pipeline_cancel()`](https://dragonfarm.dev/reference/dragon_pipeline_cancel.md)
+  : Cancel a pipeline
 
 ## Cloud GPUs
 

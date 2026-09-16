@@ -2,6 +2,20 @@
 
 ## dragonfarm (development version)
 
+- The app no longer freezes on long actions. Evaluate, Run judge, Build
+  preference pairs, and Merge run as one-step background pipelines; the
+  panel shows progress, the result appears when it lands, and the
+  Pipeline panel lists them.
+
+- [`dragon_pipeline_cancel()`](https://dragonfarm.dev/reference/dragon_pipeline_cancel.md)
+  and a Cancel button on running pipelines. A training step in flight
+  stops after saving a checkpoint; other steps finish first. Records now
+  carry the runner’s pid, so a pipeline whose process died reads as
+  failed instead of running forever.
+
+- [`dragon_step_merge()`](https://dragonfarm.dev/reference/dragon_step.md):
+  a pipeline step that writes the latest run as a standalone model.
+
 - Human feedback becomes data. In
   [`dragon_chat()`](https://dragonfarm.dev/reference/dragon_chat.md) and
   the app’s Chat panel, replies can be rated up or down, edited, or
