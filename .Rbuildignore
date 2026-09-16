@@ -15,3 +15,4 @@
 ^\.claude$
 ^cran-comments\.md$
 ^CRAN-SUBMISSION$
+^BACKLOG\.md$
