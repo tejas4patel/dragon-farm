@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">dragonfarm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -79,7 +79,7 @@
 <li>
 <strong>Python:</strong> nothing to install. <code>reticulate</code> uses a Python 3.10 to 3.13 it finds on the machine, or downloads one. torch, transformers, and peft are installed automatically on first use.</li>
 <li>
-<strong>GPU training on NVIDIA:</strong> the only thing you install yourself is the NVIDIA driver, from <a href="https://www.nvidia.com/drivers" class="external-link">nvidia.com/drivers</a>. Driver 580 or newer gets the CUDA 13 build of torch, 570 or newer gets CUDA 12.8, and older drivers get CUDA 12.6. The CUDA Toolkit and cuDNN are not needed; torch wheels bundle their own CUDA libraries. Check your driver with <code>nvidia-smi</code>.</li>
+<strong>GPU training on NVIDIA:</strong> the only thing you install yourself is the NVIDIA driver, from <a href="https://www.nvidia.com/en-us/drivers/" class="external-link">nvidia.com/en-us/drivers</a>. Driver 580 or newer gets the CUDA 13 build of torch, 570 or newer gets CUDA 12.8, and older drivers get CUDA 12.6. The CUDA Toolkit and cuDNN are not needed; torch wheels bundle their own CUDA libraries. Check your driver with <code>nvidia-smi</code>.</li>
 <li>
 <strong>Apple Silicon:</strong> trains on the GPU through Metal with no setup.</li>
 <li>

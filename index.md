@@ -37,11 +37,11 @@ dragon_check()
   and peft are installed automatically on first use.
 - **GPU training on NVIDIA:** the only thing you install yourself is the
   NVIDIA driver, from
-  [nvidia.com/drivers](https://www.nvidia.com/drivers). Driver 580 or
-  newer gets the CUDA 13 build of torch, 570 or newer gets CUDA 12.8,
-  and older drivers get CUDA 12.6. The CUDA Toolkit and cuDNN are not
-  needed; torch wheels bundle their own CUDA libraries. Check your
-  driver with `nvidia-smi`.
+  [nvidia.com/en-us/drivers](https://www.nvidia.com/en-us/drivers/).
+  Driver 580 or newer gets the CUDA 13 build of torch, 570 or newer gets
+  CUDA 12.8, and older drivers get CUDA 12.6. The CUDA Toolkit and cuDNN
+  are not needed; torch wheels bundle their own CUDA libraries. Check
+  your driver with `nvidia-smi`.
 - **Apple Silicon:** trains on the GPU through Metal with no setup.
 - **No GPU:** training runs on the CPU. Fine for the 135M and 360M
   models, slow beyond that.

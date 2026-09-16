@@ -1,5 +1,10 @@
 # Changelog
 
+## dragonfarm (development version)
+
+- Driver download link updated to NVIDIA’s canonical URL, which CRAN’s
+  URL check had flagged as a redirect.
+
 ## dragonfarm 0.1.1
 
 - [`dragon_check()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_check.md)
