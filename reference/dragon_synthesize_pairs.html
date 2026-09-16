@@ -76,7 +76,8 @@ ways:</p>
 <dl><dt id="arg-prompts">prompts<a class="anchor" aria-label="anchor" href="#arg-prompts"></a></dt>
 <dd><p>A character vector of prompts, or a mapped <code>dragon_dataset</code>
 whose prompt template is rendered for every row. See <code><a href="dragon_prompts.html">dragon_prompts()</a></code>
-for prompts from an existing run.</p></dd>
+for prompts from an existing run, which is how distillation from "the
+model's own prompts" is done: pass <code>dragon_prompts(run, "train")</code>.</p></dd>
 
 
 <dt id="arg-student">student<a class="anchor" aria-label="anchor" href="#arg-student"></a></dt>

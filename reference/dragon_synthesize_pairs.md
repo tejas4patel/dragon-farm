@@ -31,7 +31,8 @@ dragon_synthesize_pairs(
   A character vector of prompts, or a mapped `dragon_dataset` whose
   prompt template is rendered for every row. See
   [`dragon_prompts()`](https://dragonfarm.dev/reference/dragon_prompts.md)
-  for prompts from an existing run.
+  for prompts from an existing run, which is how distillation from "the
+  model's own prompts" is done: pass `dragon_prompts(run, "train")`.
 
 - student:
 

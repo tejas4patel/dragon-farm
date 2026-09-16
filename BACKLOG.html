@@ -206,12 +206,12 @@
 <code><a href="reference/dragon_conversations.html">dragon_conversations()</a></code>.</td>
 </tr><tr><td>E2</td>
 <td>Data quality pass in <code><a href="reference/dragon_synthesize.html">dragon_synthesize()</a></code>: dedupe, drop near-duplicates, length and language filters</td>
-<td>planned</td>
+<td>done</td>
 <td></td>
 </tr><tr><td>E3</td>
 <td>Teacher-distilled SFT from the model’s own prompts plus a judge filter (keep only replies the judge scores above a threshold)</td>
-<td>planned</td>
-<td>Combines synthesize and judge.</td>
+<td>done</td>
+<td>Folded into <code>dragon_synthesize(judge=, min_score=)</code> rather than a separate function.</td>
 </tr><tr><td>E4</td>
 <td>
 <code><a href="reference/dragon_reinforce.html">dragon_reinforce()</a></code>: tests as rewards (run a command or Python test against the completion)</td>

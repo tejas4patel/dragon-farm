@@ -2,6 +2,15 @@
 
 ## dragonfarm (development version)
 
+- [`dragon_synthesize()`](https://dragonfarm.dev/reference/dragon_synthesize.md)
+  gets a quality pass and a judge filter. It now drops replies that are
+  too short or too long, look garbled or wrong-script, repeat an earlier
+  prompt, or repeat (or nearly repeat) an earlier response, before
+  writing the dataset. Passing a `judge` scores every surviving reply
+  and keeps only the ones at or above `min_score`, for teacher
+  distillation with a quality gate – pass a run’s own prompts
+  (`dragon_prompts(run, "train")`) to distill and filter in one call.
+
 - The app no longer freezes on long actions. Evaluate, Run judge, Build
   preference pairs, and Merge run as one-step background pipelines; the
   panel shows progress, the result appears when it lands, and the
