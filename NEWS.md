@@ -1,5 +1,16 @@
 # dragonfarm (development version)
 
+* Evaluation that can drive decisions. `dragon_evaluate()` gains `metrics`:
+  deterministic task checks (exact match, token F1, JSON validity, numeric
+  answers, length, custom functions) over every held-out row.
+  `dragon_judge()` scores a run's replies with a language model or compares
+  them pairwise with the model it started from, with position swapping so a
+  biased judge produces ties rather than wins; `dragon_judge_anthropic()`
+  talks to the Claude API directly and `dragon_judge_ellmer()` wraps any
+  ellmer chat, and any local model can judge too. `dragon_compare()` puts
+  every run's measurements side by side. The app gains task metrics and a
+  comparison table in Monitor and a Judge card in Try it.
+
 * Post-training stages. `dragon_map_pairs()` maps prompt, chosen, and
   rejected columns, and `dragon_prefer()` runs preference optimization on
   them with DPO or ORPO. Any function that takes a `model` also accepts a

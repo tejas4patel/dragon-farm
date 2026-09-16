@@ -39,9 +39,15 @@ reference:
   - dragon_progress
   - dragon_logs
   - dragon_code
-- title: After training
+- title: Evaluation
   contents:
   - dragon_evaluate
+  - dragon_metrics
+  - dragon_judge
+  - dragon_judge_anthropic
+  - dragon_compare
+- title: After training
+  contents:
   - dragon_generate
   - dragon_merge
   - dragon_export_gguf

@@ -25,6 +25,21 @@ mod_tryit_ui <- function(id) {
       )
     ),
     bslib::card(
+      bslib::card_header("Judge"),
+      shiny::p(class = "hint", "Ask a stronger model to compare this run's replies with another model's on the held-out prompts. Each pair is judged twice with the order swapped, so a judge that favours the first answer cannot tip the result."),
+      bslib::layout_columns(
+        col_widths = c(4, 4, 2, 2),
+        shiny::selectInput(ns("judge_kind"), "Judge", choices = c("Claude API (ANTHROPIC_API_KEY)" = "anthropic", "Local model" = "local")),
+        shiny::uiOutput(ns("judge_model_ui")),
+        shiny::selectInput(ns("against"), "Compare with", choices = c("What it started from" = "base", "Nothing: score 1-10" = "none")),
+        shiny::numericInput(ns("judge_n"), "Prompts", value = 10, min = 1, max = 200, step = 1)
+      ),
+      shiny::textInput(ns("rubric"), "Rubric (optional)", width = "100%",
+                       placeholder = "Reward replies that give concrete next steps and stay under 120 words."),
+      shiny::actionButton(ns("judge"), "Run judge", class = "btn-outline-primary"),
+      shiny::uiOutput(ns("judge_out"))
+    ),
+    bslib::card(
       bslib::card_header("Export"),
       bslib::layout_columns(
         col_widths = c(8, 4),
@@ -97,6 +112,73 @@ mod_tryit_server <- function(id, state, runs_dir) {
     output$base <- shiny::renderUI({
       if (!isTRUE(input$compare)) return(shiny::p(class = "hint", "Comparison is off."))
       reply_ui(replies$base)
+    })
+
+    output$judge_model_ui <- shiny::renderUI({
+      if (identical(input$judge_kind, "local")) {
+        shiny::textInput(session$ns("judge_model"), "Model id or directory", value = "Qwen/Qwen2.5-1.5B-Instruct")
+      } else {
+        shiny::selectInput(session$ns("judge_model"), "Model",
+                           choices = c("claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"))
+      }
+    })
+
+    judgement <- shiny::reactiveVal(NULL)
+    shiny::observeEvent(input$judge, {
+      r <- run()
+      judge <- if (identical(input$judge_kind, "local")) {
+        trimws(input$judge_model %||% "")
+      } else {
+        if (!nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) {
+          shiny::showNotification("Set ANTHROPIC_API_KEY in the R session before using the Claude API as judge, or pick a local model.", type = "warning", duration = 10)
+          return()
+        }
+        dragon_judge_anthropic(model = input$judge_model %||% "claude-opus-5")
+      }
+      if (is.character(judge) && !nzchar(judge)) {
+        shiny::showNotification("Name a local model to judge with.", type = "warning")
+        return()
+      }
+      rubric <- if (nzchar(trimws(input$rubric %||% ""))) input$rubric
+      against <- if (identical(input$against, "none")) NULL else "base"
+      shiny::withProgress(message = "Generating replies and judging", detail = "Two model loads plus the judge calls; this takes a few minutes", {
+        res <- tryCatch(
+          suppressMessages(dragon_judge(r, against = against, n = input$judge_n %||% 10, judge = judge, rubric = rubric)),
+          error = function(e) { notify_error(e); NULL }
+        )
+        judgement(res)
+      })
+    })
+
+    output$judge_out <- shiny::renderUI({
+      j <- judgement()
+      if (is.null(j)) return(NULL)
+      s <- j$summary
+      headline <- if (identical(j$mode, "pairwise")) {
+        sprintf("Wins %.0f%% \u00b7 ties %.0f%% \u00b7 losses %.0f%% over %d prompts (position-consistent %.0f%%)",
+                100 * s$win_rate, 100 * s$tie_rate, 100 * s$loss_rate, s$n, 100 * s$position_consistency)
+      } else {
+        sprintf("Mean score %.2f / 10 over %d prompts", s$mean_score, s$n)
+      }
+      d <- j$details
+      rows <- lapply(seq_len(min(nrow(d), 5)), function(i) {
+        if (identical(j$mode, "pairwise")) {
+          shiny::div(class = "judge-row",
+            shiny::div(class = "judge-prompt", d$prompt[i]),
+            shiny::div(class = paste("judge-verdict", d$verdict[i]),
+                       switch(d$verdict[i], a = "this run", b = j$against, tie = "tie", "unparsed")))
+        } else {
+          shiny::div(class = "judge-row",
+            shiny::div(class = "judge-prompt", d$prompt[i]),
+            shiny::div(class = "judge-verdict", sprintf("%s / 10", d$score[i])))
+        }
+      })
+      shiny::tagList(
+        shiny::p(class = "text-success small", headline),
+        if (isTRUE(s$unparsed > 0)) shiny::p(class = "text-warning small", sprintf("%d judge replies could not be parsed.", s$unparsed)),
+        rows,
+        shiny::p(class = "hint", "Saved to judge.json in the run; the Monitor panel's comparison table shows it.")
+      )
     })
 
     merged <- shiny::reactiveVal(NULL)

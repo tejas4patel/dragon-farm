@@ -28,6 +28,23 @@ mod_monitor_ui <- function(id) {
         bslib::card_header("R code for this run"),
         shiny::verbatimTextOutput(ns("code"), placeholder = TRUE)
       )
+    ),
+    bslib::layout_columns(
+      col_widths = c(4, 8),
+      bslib::card(
+        bslib::card_header("Task metrics"),
+        shiny::p(class = "hint", "Generates a reply for every held-out row and scores it with deterministic checks: exact match, token overlap, JSON validity, numeric answers, and length."),
+        shiny::checkboxGroupInput(ns("metric_names"), NULL,
+                                  choices = c("exact", "contains", "token_f1", "json_valid", "numeric", "length_ratio"),
+                                  selected = c("exact", "token_f1", "length_ratio"), inline = TRUE),
+        shiny::actionButton(ns("run_metrics"), "Evaluate held-out rows", class = "btn-outline-primary"),
+        shiny::uiOutput(ns("metrics_out"))
+      ),
+      bslib::card(
+        bslib::card_header("Compare runs"),
+        shiny::p(class = "hint", "Every run in this directory with whatever has been measured for it: loss, preference accuracy, task metrics, and the latest judge result from the Try it panel."),
+        shiny::div(class = "table-wrap", shiny::tableOutput(ns("compare")))
+      )
     )
   )
 }
@@ -177,6 +194,44 @@ mod_monitor_server <- function(id, state, runs_dir) {
         shiny::showNotification(sprintf("Resumed %s.", res$id), type = "message")
       }
     })
+
+    shiny::observeEvent(input$run_metrics, {
+      r <- run()
+      chosen <- input$metric_names
+      if (!length(chosen)) {
+        shiny::showNotification("Pick at least one metric.", type = "warning")
+        return()
+      }
+      shiny::withProgress(message = "Generating replies for the held-out rows", detail = "This loads the model once and can take a minute", {
+        res <- tryCatch(dragon_evaluate(r, metrics = chosen), error = function(e) { notify_error(e); NULL })
+        if (!is.null(res)) shiny::showNotification("Metrics saved to the run.", type = "message")
+      })
+    })
+
+    output$metrics_out <- shiny::renderUI({
+      st <- status()
+      m <- st$metrics
+      if (is.null(m) || !length(m)) return(NULL)
+      shiny::tagList(lapply(names(m), function(nm) {
+        shiny::div(class = "kv", shiny::span(nm), shiny::strong(formatC(as.numeric(m[[nm]]), digits = 3, format = "fg")))
+      }))
+    })
+
+    output$compare <- shiny::renderTable({
+      runs()
+      status()
+      cmp <- tryCatch(dragon_compare(runs_dir = runs_dir), error = function(e) NULL)
+      if (is.null(cmp) || !nrow(cmp)) return(data.frame(note = "No runs yet."))
+      df <- as.data.frame(cmp)
+      df$model <- basename(df$model)
+      df$from <- ifelse(is.na(df$from), "", df$from)
+      df$method <- ifelse(is.na(df$method), "", df$method)
+      df$run <- df$id
+      df$id <- NULL
+      keep <- vapply(df, function(col) is.character(col) || any(!is.na(col)), logical(1))
+      df <- df[, c("run", setdiff(names(df)[keep], "run")), drop = FALSE]
+      df
+    }, spacing = "xs", width = "100%", na = "", digits = 3)
 
     output$import_hint <- shiny::renderUI({
       st <- status()

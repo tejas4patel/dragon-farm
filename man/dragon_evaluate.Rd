@@ -4,14 +4,22 @@
 \alias{dragon_evaluate}
 \title{Evaluate a finished run}
 \usage{
-dragon_evaluate(run, n_samples = 10, recompute = FALSE)
+dragon_evaluate(run, n_samples = 10, recompute = FALSE, metrics = NULL)
 }
 \arguments{
 \item{run}{A \code{dragon_run} or run directory.}
 
-\item{n_samples}{Number of held-out prompts to generate replies for.}
+\item{n_samples}{Number of held-out prompts to generate replies for. \code{Inf}
+generates for every held-out row.}
 
 \item{recompute}{Reload the model and evaluate again.}
+
+\item{metrics}{Task metrics to compute on the generated replies: \code{TRUE} for
+every built-in metric, a character vector of names from
+\code{\link[=dragon_metrics]{dragon_metrics()}}, or a named list of functions. Metrics need a reply
+for every held-out row, so replies are generated for all of them when
+fewer are on disk. Results are saved to \code{metrics.json} in the run and
+show up in \code{\link[=dragon_compare]{dragon_compare()}}.}
 }
 \value{
 A list with \code{eval_loss}, \code{perplexity}, \code{eval_tokens}, and a

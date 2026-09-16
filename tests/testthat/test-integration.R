@@ -128,3 +128,43 @@ test_that("a preference stage chains from a fine-tuned run, evaluates, generates
     }
   }
 })
+
+
+test_that("metrics and a judge run over a finished run", {
+  skip_if_not(identical(Sys.getenv("DRAGONFARM_INTEGRATION"), "true"), "set DRAGONFARM_INTEGRATION=true")
+  skip_on_cran()
+
+  ds <- dragon_dataset(dragon_example_data())
+  ds$data <- ds$data[1:40, ]
+  run <- dragon_train(
+    dragon_map(ds, prompt = "subject", response = "reply") |> dragon_split(0.1, seed = 1),
+    "HuggingFaceTB/SmolLM2-135M-Instruct",
+    lora = dragon_lora(r = 4, alpha = 8),
+    args = dragon_train_args(max_steps = 2, batch_size = 2, grad_accum = 1, max_seq_len = 256,
+                             logging_steps = 1, save_steps = 2),
+    runs_dir = tempfile("runs-"), n_samples = 1, wait = TRUE
+  )
+  ev <- dragon_evaluate(run, metrics = c("exact", "token_f1", "length_ratio"))
+  expect_equal(nrow(ev$samples), 4)            # every held-out row, not just the 1 sample saved by training
+  expect_named(ev$metrics, c("exact", "token_f1", "length_ratio"))
+  expect_true(all(ev$metrics >= 0))
+
+  # A deterministic judge that always prefers the shorter reply exercises the full
+  # generate-both-sides path without an API key.
+  shorter <- function(prompts) {
+    vapply(prompts, function(p) {
+      a <- sub(".*Reply A:\n(.*?)\n\nReply B:.*", "\\1", p)
+      b <- sub(".*Reply B:\n(.*?)\n\nRespond with JSON.*", "\\1", p)
+      w <- if (nchar(a) < nchar(b)) "A" else if (nchar(b) < nchar(a)) "B" else "tie"
+      sprintf('{"winner": "%s", "reason": "shorter"}', w)
+    }, character(1), USE.NAMES = FALSE)
+  }
+  j <- suppressMessages(dragon_judge(run, against = "base", n = 3, judge = shorter, max_new_tokens = 24))
+  expect_equal(j$mode, "pairwise")
+  expect_equal(j$summary$n, 3)
+  expect_equal(j$summary$position_consistency, 1)
+  expect_equal(dragon_status(run)$judge$n, 3)
+  cmp <- dragon_compare(run)
+  expect_equal(cmp$judge_n, 3L)
+  expect_true("token_f1" %in% names(cmp))
+})
