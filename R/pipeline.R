@@ -100,6 +100,14 @@ dragon_step_merge <- function(out = NULL) {
   new_step("merge", out = out)
 }
 
+#' @rdname dragon_step
+#' @param repo,what,private,commit_message As in [dragon_publish()].
+#' @export
+dragon_step_publish <- function(repo, what = c("merged", "adapter"), private = FALSE, commit_message = NULL) {
+  check_string(repo, "repo")
+  new_step("publish", repo = repo, what = match.arg(what), private = private, commit_message = commit_message)
+}
+
 #' @export
 print.dragon_step <- function(x, ...) {
   cli::cli_text("{.cls dragon_step} {.strong {x$type}}")
@@ -346,6 +354,11 @@ run_step <- function(step, state, runs_dir) {
       dir <- dragon_merge(run, step$out)
       list(state = state, run = NULL, summary = list(run = run$id, merged = dir))
     },
+    publish = {
+      run <- need_run()
+      url <- dragon_publish(run, step$repo, what = step$what, private = step$private, commit_message = step$commit_message)
+      list(state = state, run = NULL, summary = list(run = run$id, url = url))
+    },
     cli::cli_abort("Unknown step type {.val {step$type}}.")
   )
 }
@@ -472,6 +485,7 @@ print.dragon_pipeline_status <- function(x, ...) {
     extra <- if (!is.null(s$run)) paste0(" \u2192 ", s$run)
              else if (!is.null(s$summary$pairs)) paste0(" \u2192 ", s$summary$pairs, " pairs")
              else if (!is.null(s$summary$merged)) paste0(" \u2192 ", s$summary$merged)
+             else if (!is.null(s$summary$url)) paste0(" \u2192 ", s$summary$url)
              else ""
     cli::cli_text("  {i}. {s$type}: {s$state}{extra}")
     if (!is.null(s$error)) cli::cli_text("     {.emph {s$error}}")

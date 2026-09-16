@@ -10,6 +10,9 @@
   process died reads as failed instead of running forever.
 * `dragon_step_merge()`: a pipeline step that writes the latest run as a
   standalone model.
+* `dragon_publish()`: push a run's merged model or adapter to a repo on the
+  Hugging Face Hub, creating it if needed. `dragon_step_publish()` for
+  pipelines, and a Publish card in the app's Try it panel.
 
 * Human feedback becomes data. In `dragon_chat()` and the app's Chat panel,
   replies can be rated up or down, edited, or regenerated; every verdict is

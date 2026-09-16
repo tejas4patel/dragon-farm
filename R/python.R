@@ -17,7 +17,8 @@ dragon_python_requirements <- function() {
       "safetensors>=0.4",
       "numpy",
       "sentencepiece",
-      "protobuf"
+      "protobuf",
+      "huggingface_hub>=0.25"
     ),
     python_version = ">=3.10,<3.14"
   )

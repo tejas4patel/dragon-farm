@@ -1,10 +1,3 @@
-fixture_with_samples <- function(dir = copy_fixture_run()) {
-  cfg <- dragonfarm:::read_json(file.path(dir, "config.json"))
-  cfg$data$n_eval <- 2L
-  dragonfarm:::write_json(cfg, file.path(dir, "config.json"))
-  dragon_run(dir)
-}
-
 test_that("step constructors validate their inputs", {
   ds <- dragon_map(dragon_dataset(toy_df()), "subject", "reply")
   pairs <- dragon_map_pairs(dragon_dataset(data.frame(q = "a", g = "b", b = "c")), "q", "g", "b")
@@ -213,6 +206,33 @@ test_that("app task helpers summarise records and read judgements back", {
   expect_equal(nrow(j$details), 2)
   expect_equal(j$details$verdict, c("a", "unparsed"))
   expect_equal(j$summary$win_rate, 0.5)
+})
+
+test_that("a publish step validates its repo and dispatches to dragon_publish", {
+  expect_s3_class(dragon_step_publish("user/name"), "dragon_step")
+  expect_equal(dragon_step_publish("user/name")$what, "merged")
+  expect_equal(dragon_step_publish("user/name", what = "adapter")$what, "adapter")
+  expect_error(dragon_step_publish(42), "repo")
+
+  run <- fixture_with_samples()
+  runs_dir <- tempfile("runs-")
+  dir.create(runs_dir)
+  seen <- list()
+  testthat::local_mocked_bindings(
+    dragon_publish = function(run, repo, what = "merged", private = FALSE, commit_message = NULL) {
+      seen[["repo"]] <<- repo
+      seen[["what"]] <<- what
+      seen[["private"]] <<- private
+      "https://huggingface.co/user/name"
+    }
+  )
+  step <- dragon_step_publish("user/name", private = TRUE)
+  p <- suppressMessages(dragon_pipeline(run, list(step), runs_dir = runs_dir, name = "publish only"))
+  expect_equal(p$status, "succeeded")
+  expect_equal(p$results[[1]]$url, "https://huggingface.co/user/name")
+  expect_equal(seen$repo, "user/name")
+  expect_true(seen$private)
+  expect_true(any(grepl("huggingface.co", testthat::capture_messages(print(dragon_pipeline_status(p))))))
 })
 
 test_that("synthesized pairs reload from their file", {

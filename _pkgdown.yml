@@ -65,6 +65,7 @@ reference:
   - dragon_generate
   - dragon_merge
   - dragon_export_gguf
+  - dragon_publish
 - title: Pipelines
   contents:
   - dragon_pipeline

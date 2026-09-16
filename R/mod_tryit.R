@@ -60,6 +60,18 @@ mod_tryit_ui <- function(id) {
         shiny::actionButton(ns("merge"), "Merge and save", class = "btn-outline-primary", style = "margin-top: 32px")
       ),
       shiny::uiOutput(ns("merge_result"))
+    ),
+    bslib::card(
+      bslib::card_header("Publish to the Hugging Face Hub"),
+      shiny::p(class = "hint", "Push this run's model to a repo on the Hub, ready for a hosted Inference Endpoint or any tool that loads a model by repo id. Creates the repo if it does not exist. Needs an HF_TOKEN with write access in this R session."),
+      bslib::layout_columns(
+        col_widths = c(6, 3, 3),
+        shiny::textInput(ns("publish_repo"), "Repo", placeholder = "yourname/support-agent-0.5b", width = "100%"),
+        shiny::selectInput(ns("publish_what"), "Format", choices = c("Merged model (plain transformers)" = "merged", "Adapter only (small, needs peft)" = "adapter")),
+        shiny::checkboxInput(ns("publish_private"), "Private repo", value = FALSE)
+      ),
+      shiny::actionButton(ns("publish"), "Publish", class = "btn-outline-primary"),
+      shiny::uiOutput(ns("publish_result"))
     )
   )
 }
@@ -271,6 +283,35 @@ mod_tryit_server <- function(id, state, runs_dir) {
       if (is.null(m)) return(task_status_ui(merge_task(), "The merge"))
       shiny::p(class = "text-success small", "Merged model saved to ", shiny::code(m),
                ". It loads with plain transformers and needs nothing from dragonfarm.")
+    })
+
+    published <- shiny::reactiveVal(NULL)
+    publish_task <- shiny::reactiveVal(NULL)
+    shiny::observeEvent(input$publish, {
+      repo <- trimws(input$publish_repo %||% "")
+      if (!nzchar(repo)) {
+        shiny::showNotification("Name a repo, e.g. yourname/support-agent-0.5b.", type = "warning")
+        return()
+      }
+      if (!hf_token_present()) {
+        shiny::showNotification("Set HF_TOKEN (a token with write access) in the R session before publishing.", type = "warning", duration = 10)
+        return()
+      }
+      r <- run()
+      step <- dragon_step_publish(repo, what = input$publish_what %||% "merged", private = isTRUE(input$publish_private))
+      h <- tryCatch(app_task_start(r, step, runs_dir, "publish"), error = function(e) { notify_error(e); NULL })
+      if (is.null(h)) return()
+      published(NULL)
+      publish_task(list(id = h$id, state = "running"))
+      app_task_watch(h, function(rec) {
+        publish_task(list(id = h$id, state = rec$status, error = task_error(rec)))
+        if (identical(rec$status, "succeeded")) published(rec$steps[[1]]$summary$url)
+      })
+    })
+    output$publish_result <- shiny::renderUI({
+      u <- published()
+      if (is.null(u)) return(task_status_ui(publish_task(), "The publish"))
+      shiny::p(class = "text-success small", "Published to ", shiny::tags$a(href = u, target = "_blank", u), ".")
     })
   })
 }

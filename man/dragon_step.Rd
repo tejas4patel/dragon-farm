@@ -9,6 +9,7 @@
 \alias{dragon_step_judge}
 \alias{dragon_step_evaluate}
 \alias{dragon_step_merge}
+\alias{dragon_step_publish}
 \title{Steps of a post-training pipeline}
 \usage{
 dragon_step_train(dataset, lora = dragon_lora(), args = NULL, n_samples = 10)
@@ -50,6 +51,13 @@ dragon_step_judge(against = "base", judge = NULL, n = 20, rubric = NULL)
 dragon_step_evaluate(metrics = TRUE)
 
 dragon_step_merge(out = NULL)
+
+dragon_step_publish(
+  repo,
+  what = c("merged", "adapter"),
+  private = FALSE,
+  commit_message = NULL
+)
 }
 \arguments{
 \item{dataset}{A mapped dataset for the stage. \code{dragon_step_prefer()}
@@ -79,6 +87,8 @@ data, or a character vector or mapped dataset.}
 
 \item{out}{As \code{out_dir} in \code{\link[=dragon_merge]{dragon_merge()}}: where the merged model goes;
 \code{NULL} means \verb{merged/} inside the run.}
+
+\item{repo, what, private, commit_message}{As in \code{\link[=dragon_publish]{dragon_publish()}}.}
 }
 \value{
 A \code{dragon_step} object.

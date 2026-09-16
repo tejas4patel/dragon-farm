@@ -8,6 +8,15 @@ copy_fixture_run <- function() {
   dst
 }
 
+# Same as copy_fixture_run(), opened as a dragon_run, with eval samples so
+# eval-only steps (evaluate, judge) have something to score.
+fixture_with_samples <- function(dir = copy_fixture_run()) {
+  cfg <- dragonfarm:::read_json(file.path(dir, "config.json"))
+  cfg$data$n_eval <- 2L
+  dragonfarm:::write_json(cfg, file.path(dir, "config.json"))
+  dragon_run(dir)
+}
+
 toy_df <- function(n = 30) {
   data.frame(
     subject = paste("Subject", seq_len(n)),
