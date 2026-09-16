@@ -71,3 +71,60 @@ test_that("cancel stops a run and leaves a checkpoint", {
   expect_equal(st$state, "cancelled")
   expect_true(file.exists(file.path(run$dir, "adapter", "adapter_config.json")))
 })
+
+
+test_that("a preference stage chains from a fine-tuned run, evaluates, generates, and merges", {
+  skip_if_not(identical(Sys.getenv("DRAGONFARM_INTEGRATION"), "true"), "set DRAGONFARM_INTEGRATION=true")
+  skip_on_cran()
+
+  runs_dir <- tempfile("runs-")
+  base_ds <- dragon_dataset(dragon_example_data())
+  base_ds$data <- base_ds$data[1:40, ]
+  sft <- dragon_train(
+    dragon_map(base_ds, prompt = "subject", response = "reply") |> dragon_split(0.1, seed = 1),
+    "HuggingFaceTB/SmolLM2-135M-Instruct",
+    lora = dragon_lora(r = 4, alpha = 8),
+    args = dragon_train_args(max_steps = 3, batch_size = 2, grad_accum = 1, max_seq_len = 256,
+                             logging_steps = 1, save_steps = 3),
+    runs_dir = runs_dir, n_samples = 0, wait = TRUE
+  )
+  expect_equal(dragon_status(sft)$state, "succeeded")
+
+  # Pairs: the real reply is chosen, another ticket's reply is rejected.
+  pairs <- base_ds$data
+  pairs$other <- pairs$reply[c(2:nrow(pairs), 1)]
+  pairs_ds <- dragon_map_pairs(dragon_dataset(pairs), prompt = "subject", chosen = "reply", rejected = "other") |>
+    dragon_split(0.1, seed = 1)
+
+  for (method in c("dpo", "orpo")) {
+    run <- dragon_prefer(
+      pairs_ds, sft, method = method, beta = 0.1,
+      lora = dragon_lora(r = 4, alpha = 8),
+      args = dragon_train_args(max_steps = 3, batch_size = 2, grad_accum = 1, max_seq_len = 256,
+                               logging_steps = 1, save_steps = 3, learning_rate = 5e-5),
+      runs_dir = runs_dir, n_samples = 1, wait = TRUE
+    )
+    st <- dragon_status(run)
+    expect_equal(st$state, "succeeded")
+    expect_equal(st$stage, "prefer")
+    expect_true(is.numeric(st$pref_accuracy))
+    expect_true(file.exists(file.path(run$dir, "base_adapters", "1", "adapter_config.json")))
+    pr <- dragon_progress(run)
+    expect_true(any(!is.na(pr$pref_acc)))
+    ev <- dragon_evaluate(run)
+    expect_equal(ev$method, method)
+    expect_true(ev$pref_accuracy >= 0 && ev$pref_accuracy <= 1)
+    expect_true("rejected" %in% names(ev$samples))
+    expect_match(dragon_code(run), "dragon_prefer(", fixed = TRUE)
+    if (method == "dpo") {
+      out <- dragon_generate(run, "My Ember thermostat keeps dropping off Wi-Fi.", max_new_tokens = 12, temperature = 0)
+      expect_length(out, 1)
+      before <- dragon_generate(run, "Hello", max_new_tokens = 5, temperature = 0, base = TRUE)
+      expect_length(before, 1)
+      merged <- dragon_merge(run)
+      info <- dragonfarm:::read_json(file.path(merged, "dragonfarm.json"))
+      expect_length(info$base_adapters, 1)
+      expect_length(dragon_generate(merged, "Hi", max_new_tokens = 5, temperature = 0), 1)
+    }
+  }
+})

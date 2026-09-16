@@ -109,11 +109,15 @@ mod_monitor_server <- function(id, state, runs_dir) {
       shiny::tagList(
         shiny::div(class = "kv", shiny::span("State"), state_pill(st$state)),
         shiny::div(class = "kv", shiny::span("Model"), shiny::code(cfg$model$id)),
+        shiny::div(class = "kv", shiny::span("Stage"), shiny::strong(
+          if (identical(cfg$stage, "prefer")) sprintf("%s, beta %s", toupper(cfg$prefer$method), cfg$prefer$beta) else "fine-tune")),
+        if (!is.null(cfg$model$base_run)) shiny::div(class = "kv", shiny::span("Continues"), shiny::code(cfg$model$base_run)),
         shiny::div(class = "kv", shiny::span("Device"), shiny::strong(st$device %||% "-")),
         shiny::div(class = "kv", shiny::span("Step"), shiny::strong(sprintf("%d / %s", as.integer(step), st$total_steps %||% "?"))),
         shiny::div(class = "kv", shiny::span("Loss"), shiny::strong(last_loss)),
         shiny::div(class = "kv", shiny::span("ETA"), shiny::strong(eta)),
-        if (!is.null(st$eval_loss)) shiny::div(class = "kv", shiny::span("Eval loss"), shiny::strong(sprintf("%.3f (ppl %.2f)", st$eval_loss, st$perplexity))),
+        if (!is.null(st$pref_accuracy)) shiny::div(class = "kv", shiny::span("Pref. accuracy"), shiny::strong(sprintf("%.0f%% (margin %.3f)", 100 * st$pref_accuracy, st$reward_margin))),
+        if (!is.null(st$eval_loss) && is.null(st$pref_accuracy)) shiny::div(class = "kv", shiny::span("Eval loss"), shiny::strong(sprintf("%.3f (ppl %.2f)", st$eval_loss, st$perplexity))),
         if (!is.null(st$error)) shiny::pre(class = "error-box", st$error)
       )
     })

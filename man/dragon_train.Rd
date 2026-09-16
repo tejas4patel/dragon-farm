@@ -23,8 +23,11 @@ dragon_train(
 \item{dataset}{A mapped \code{dragon_dataset} (see \code{\link[=dragon_map]{dragon_map()}}).}
 
 \item{model}{A Hugging Face model id such as
-\code{"HuggingFaceTB/SmolLM2-135M-Instruct"}, or a local model directory.
-See \code{\link[=dragon_presets]{dragon_presets()}}.}
+\code{"HuggingFaceTB/SmolLM2-135M-Instruct"}, a local model directory, or a
+finished \code{dragon_run} to continue from. In the last case the earlier
+run's adapters are folded into the weights before this run adds its own,
+so stages chain: fine-tune, then \code{\link[=dragon_prefer]{dragon_prefer()}}, and so on. See
+\code{\link[=dragon_presets]{dragon_presets()}} for model ids.}
 
 \item{lora}{LoRA settings from \code{\link[=dragon_lora]{dragon_lora()}}.}
 

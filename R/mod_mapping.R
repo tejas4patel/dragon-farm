@@ -3,9 +3,12 @@ mod_mapping_ui <- function(id) {
   shiny::tagList(
     bslib::card(
       bslib::card_header("Drag columns into the slots"),
-      shiny::p(class = "text-muted small",
-        "Drop one or more columns into Prompt and Response. Several columns in one slot are joined with a blank line. ",
-        "System is optional. Edit the templates below for anything fancier."),
+      shiny::radioButtons(
+        ns("mode"), NULL, inline = TRUE,
+        choices = c("Fine-tune: prompt and response" = "messages",
+                    "Preference pairs: prompt, chosen, rejected" = "pairs")
+      ),
+      shiny::uiOutput(ns("mode_help")),
       shiny::uiOutput(ns("buckets"))
     ),
     bslib::layout_columns(
@@ -16,7 +19,15 @@ mod_mapping_ui <- function(id) {
         shiny::textInput(ns("system_tpl"), "System (optional)", value = "", width = "100%",
                          placeholder = "You are a support agent for a smart-home company."),
         shiny::textInput(ns("prompt_tpl"), "Prompt", value = "", width = "100%"),
-        shiny::textInput(ns("response_tpl"), "Response", value = "", width = "100%"),
+        shiny::conditionalPanel(
+          condition = sprintf("input['%s'] != 'pairs'", ns("mode")),
+          shiny::textInput(ns("response_tpl"), "Response", value = "", width = "100%")
+        ),
+        shiny::conditionalPanel(
+          condition = sprintf("input['%s'] == 'pairs'", ns("mode")),
+          shiny::textInput(ns("chosen_tpl"), "Chosen (the better reply)", value = "", width = "100%"),
+          shiny::textInput(ns("rejected_tpl"), "Rejected (the worse reply)", value = "", width = "100%")
+        ),
         shiny::uiOutput(ns("status"))
       ),
       bslib::card(
@@ -36,6 +47,19 @@ chips_to_template <- function(chips) {
 mod_mapping_server <- function(id, state, nav_to) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
+    mode <- shiny::reactive(input$mode %||% "messages")
+
+    output$mode_help <- shiny::renderUI({
+      if (identical(mode(), "pairs")) {
+        shiny::p(class = "text-muted small",
+          "Each row needs one prompt and two replies to it: the one you prefer and the one you do not. ",
+          "This feeds preference optimization (DPO or ORPO), usually on top of a fine-tuned run.")
+      } else {
+        shiny::p(class = "text-muted small",
+          "Drop one or more columns into Prompt and Response. Several columns in one slot are joined with a blank line. ",
+          "System is optional. Edit the templates below for anything fancier.")
+      }
+    })
 
     output$buckets <- shiny::renderUI({
       ds <- state$dataset
@@ -45,44 +69,64 @@ mod_mapping_server <- function(id, state, nav_to) {
       # screens and with automated browsers. Set per list; bucket_list() does
       # not pass options down.
       drag_opts <- sortable::sortable_options(forceFallback = TRUE, fallbackTolerance = 3, animation = 120)
-      sortable::bucket_list(
-        header = NULL,
-        group_name = ns("buckets"),
-        orientation = "horizontal",
-        class = "default-sortable dragon-buckets",
+      slots <- list(
         sortable::add_rank_list("Columns", labels = cols, input_id = ns("cols"), options = drag_opts),
         sortable::add_rank_list("System", labels = NULL, input_id = ns("system"), options = drag_opts),
-        sortable::add_rank_list("Prompt", labels = NULL, input_id = ns("prompt"), options = drag_opts),
-        sortable::add_rank_list("Response", labels = NULL, input_id = ns("response"), options = drag_opts)
+        sortable::add_rank_list("Prompt", labels = NULL, input_id = ns("prompt"), options = drag_opts)
       )
+      slots <- if (identical(mode(), "pairs")) c(slots, list(
+        sortable::add_rank_list("Chosen", labels = NULL, input_id = ns("chosen"), options = drag_opts),
+        sortable::add_rank_list("Rejected", labels = NULL, input_id = ns("rejected"), options = drag_opts)
+      )) else c(slots, list(
+        sortable::add_rank_list("Response", labels = NULL, input_id = ns("response"), options = drag_opts)
+      ))
+      do.call(sortable::bucket_list, c(
+        list(header = NULL, group_name = ns("buckets"), orientation = "horizontal",
+             class = "default-sortable dragon-buckets"),
+        slots
+      ))
     })
 
     # Chips dropped into a slot rewrite that slot's template.
-    shiny::observeEvent(input$prompt, {
-      shiny::updateTextInput(session, "prompt_tpl", value = chips_to_template(input$prompt))
-    }, ignoreNULL = FALSE, ignoreInit = TRUE)
-    shiny::observeEvent(input$response, {
-      shiny::updateTextInput(session, "response_tpl", value = chips_to_template(input$response))
-    }, ignoreNULL = FALSE, ignoreInit = TRUE)
+    bind_slot <- function(slot, field) {
+      shiny::observeEvent(input[[slot]], {
+        shiny::updateTextInput(session, field, value = chips_to_template(input[[slot]]))
+      }, ignoreNULL = FALSE, ignoreInit = TRUE)
+    }
+    bind_slot("prompt", "prompt_tpl")
+    bind_slot("response", "response_tpl")
+    bind_slot("chosen", "chosen_tpl")
+    bind_slot("rejected", "rejected_tpl")
     shiny::observeEvent(input$system, {
       if (length(input$system)) shiny::updateTextInput(session, "system_tpl", value = chips_to_template(input$system))
     }, ignoreNULL = FALSE, ignoreInit = TRUE)
 
     shiny::observeEvent(state$dataset, {
-      shiny::updateTextInput(session, "prompt_tpl", value = "")
-      shiny::updateTextInput(session, "response_tpl", value = "")
-      shiny::updateTextInput(session, "system_tpl", value = "")
+      for (f in c("prompt_tpl", "response_tpl", "chosen_tpl", "rejected_tpl", "system_tpl")) {
+        shiny::updateTextInput(session, f, value = "")
+      }
     })
 
     mapped <- shiny::reactive({
       ds <- state$dataset
       if (is.null(ds)) return(NULL)
       p <- unescape_newlines(input$prompt_tpl %||% "")
-      r <- unescape_newlines(input$response_tpl %||% "")
       s <- unescape_newlines(input$system_tpl %||% "")
-      if (!nzchar(trimws(p)) || !nzchar(trimws(r))) return(NULL)
+      sys <- if (nzchar(trimws(s))) s
+      if (!nzchar(trimws(p))) return(NULL)
+      if (identical(mode(), "pairs")) {
+        ch <- unescape_newlines(input$chosen_tpl %||% "")
+        rj <- unescape_newlines(input$rejected_tpl %||% "")
+        if (!nzchar(trimws(ch)) || !nzchar(trimws(rj))) return(NULL)
+        return(tryCatch(
+          dragon_map_pairs(ds, prompt = p, chosen = ch, rejected = rj, system = sys),
+          error = function(e) structure(list(message = conditionMessage(e)), class = "mapping_error")
+        ))
+      }
+      r <- unescape_newlines(input$response_tpl %||% "")
+      if (!nzchar(trimws(r))) return(NULL)
       tryCatch(
-        dragon_map(ds, prompt = p, response = r, system = if (nzchar(trimws(s))) s),
+        dragon_map(ds, prompt = p, response = r, system = sys),
         error = function(e) structure(list(message = conditionMessage(e)), class = "mapping_error")
       )
     })
@@ -94,10 +138,12 @@ mod_mapping_server <- function(id, state, nav_to) {
 
     output$status <- shiny::renderUI({
       m <- mapped()
-      if (is.null(m)) return(shiny::p(class = "hint", "Fill Prompt and Response to continue."))
+      need <- if (identical(mode(), "pairs")) "Fill Prompt, Chosen, and Rejected to continue." else "Fill Prompt and Response to continue."
+      if (is.null(m)) return(shiny::p(class = "hint", need))
       if (inherits(m, "mapping_error")) return(shiny::p(class = "text-danger small", m$message))
       shiny::tagList(
-        shiny::p(class = "text-success small", "Mapping is valid."),
+        shiny::p(class = "text-success small",
+                 if (identical(mode(), "pairs")) "Preference mapping is valid." else "Mapping is valid."),
         shiny::actionButton(ns("next"), "Next: choose a model", class = "btn-primary")
       )
     })
@@ -106,8 +152,7 @@ mod_mapping_server <- function(id, state, nav_to) {
     output$preview <- shiny::renderUI({
       m <- mapped()
       if (!inherits(m, "dragon_dataset")) return(shiny::p(class = "hint", "The first three rows appear here as chat turns."))
-      rows <- dataset_messages(m, seq_len(min(3, nrow(m$data))))
-      chat_preview_ui(rows)
+      chat_preview_ui(preview_rows(m, seq_len(min(3, nrow(m$data)))))
     })
   })
 }

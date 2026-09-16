@@ -16,6 +16,9 @@ dragon_evaluate(run, n_samples = 10, recompute = FALSE)
 \value{
 A list with \code{eval_loss}, \code{perplexity}, \code{eval_tokens}, and a
 \code{samples} data frame with columns \code{prompt}, \code{reference}, \code{generated}.
+Preference runs report \code{pref_accuracy} (how often the model scores the
+chosen reply above the rejected one), \code{reward_margin}, and \code{eval_pairs}
+instead of perplexity, and their samples also carry \code{rejected}.
 }
 \description{
 Training already evaluates on the held-out rows and writes the result into

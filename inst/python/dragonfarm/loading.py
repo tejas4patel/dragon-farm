@@ -56,9 +56,23 @@ def load_base_model(model_id, hw, revision=None, trust_remote_code=False, load_i
     return model
 
 
-def load_for_inference(model_id, hw, adapter=None, revision=None, trust_remote_code=False):
-    """Base model plus optional adapter, in eval mode."""
+def apply_base_adapters(model, adapter_dirs):
+    """Fold earlier-stage adapters into the weights, in order.
+
+    Each adapter is applied to the result of the previous merge, which is how
+    a run that continued from another run reconstructs its starting point.
+    """
+    from peft import PeftModel
+
+    for d in adapter_dirs or []:
+        model = PeftModel.from_pretrained(model, str(d)).merge_and_unload()
+    return model
+
+
+def load_for_inference(model_id, hw, adapter=None, revision=None, trust_remote_code=False, base_adapters=None):
+    """Base model, earlier-stage adapters folded in, plus optional adapter, in eval mode."""
     model = load_base_model(model_id, hw, revision=revision, trust_remote_code=trust_remote_code)
+    model = apply_base_adapters(model, base_adapters)
     if adapter:
         from peft import PeftModel
 

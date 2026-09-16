@@ -14,6 +14,7 @@ reference:
   contents:
   - dragon_dataset
   - dragon_map
+  - dragon_map_pairs
   - dragon_preview
   - dragon_split
   - dragon_example_data
@@ -22,9 +23,10 @@ reference:
   - dragon_lora
   - dragon_train_args
   - dragon_hardware
-- title: Training
+- title: Training stages
   contents:
   - dragon_train
+  - dragon_prefer
   - dragon_resume
   - dragon_wait
   - dragon_cancel

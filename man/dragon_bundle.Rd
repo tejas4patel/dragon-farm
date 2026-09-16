@@ -14,15 +14,20 @@ dragon_bundle(
   runs_dir = dragon_runs_dir(),
   n_samples = 10,
   revision = NULL,
-  trust_remote_code = FALSE
+  trust_remote_code = FALSE,
+  method = NULL,
+  beta = 0.1
 )
 }
 \arguments{
 \item{dataset}{A mapped \code{dragon_dataset} (see \code{\link[=dragon_map]{dragon_map()}}).}
 
 \item{model}{A Hugging Face model id such as
-\code{"HuggingFaceTB/SmolLM2-135M-Instruct"}, or a local model directory.
-See \code{\link[=dragon_presets]{dragon_presets()}}.}
+\code{"HuggingFaceTB/SmolLM2-135M-Instruct"}, a local model directory, or a
+finished \code{dragon_run} to continue from. In the last case the earlier
+run's adapters are folded into the weights before this run adds its own,
+so stages chain: fine-tune, then \code{\link[=dragon_prefer]{dragon_prefer()}}, and so on. See
+\code{\link[=dragon_presets]{dragon_presets()}} for model ids.}
 
 \item{lora}{LoRA settings from \code{\link[=dragon_lora]{dragon_lora()}}.}
 
@@ -41,6 +46,12 @@ at the end of training.}
 \item{revision}{Model revision (branch, tag, or commit) on the Hub.}
 
 \item{trust_remote_code}{Allow the model repository to run custom code.}
+
+\item{method}{For a dataset mapped with \code{\link[=dragon_map_pairs]{dragon_map_pairs()}}, the
+preference method, \code{"dpo"} or \code{"orpo"}. Defaults to \code{"dpo"}. Ignored for
+prompt and response data.}
+
+\item{beta}{Preference strength for \code{method}. See \code{\link[=dragon_prefer]{dragon_prefer()}}.}
 }
 \value{
 A \code{dragon_run} whose state is \code{"bundled"}.

@@ -9,6 +9,9 @@
 #' @param recompute Reload the model and evaluate again.
 #' @return A list with `eval_loss`, `perplexity`, `eval_tokens`, and a
 #'   `samples` data frame with columns `prompt`, `reference`, `generated`.
+#'   Preference runs report `pref_accuracy` (how often the model scores the
+#'   chosen reply above the rejected one), `reward_margin`, and `eval_pairs`
+#'   instead of perplexity, and their samples also carry `rejected`.
 #' @export
 dragon_evaluate <- function(run, n_samples = 10, recompute = FALSE) {
   run <- dragon_run(run)
@@ -28,7 +31,10 @@ dragon_evaluate <- function(run, n_samples = 10, recompute = FALSE) {
   structure(
     list(
       eval_loss = metrics$eval_loss, perplexity = metrics$perplexity,
-      eval_tokens = metrics$eval_tokens, samples = samples_df
+      eval_tokens = metrics$eval_tokens,
+      pref_accuracy = metrics$pref_accuracy, reward_margin = metrics$reward_margin,
+      eval_pairs = metrics$eval_pairs, method = metrics$method,
+      samples = samples_df
     ),
     class = "dragon_eval"
   )
@@ -36,7 +42,9 @@ dragon_evaluate <- function(run, n_samples = 10, recompute = FALSE) {
 
 #' @export
 print.dragon_eval <- function(x, ...) {
-  if (is.null(x$eval_loss)) {
+  if (!is.null(x$pref_accuracy)) {
+    cli::cli_text("{toupper(x$method %||% 'preference')} on {x$eval_pairs} held-out pair{?s}: accuracy {.strong {round(100 * x$pref_accuracy)}%} \u00b7 reward margin {.strong {round(x$reward_margin, 3)}} \u00b7 loss {round(x$eval_loss, 4)}")
+  } else if (is.null(x$eval_loss)) {
     cli::cli_text("No held-out rows were evaluated for this run.")
   } else {
     cli::cli_text("Eval loss {.strong {round(x$eval_loss, 4)}} \u00b7 perplexity {.strong {round(x$perplexity, 2)}} over {x$eval_tokens} tokens")

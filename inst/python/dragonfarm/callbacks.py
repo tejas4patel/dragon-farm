@@ -69,6 +69,9 @@ class ProgressCallback(TrainerCallback):
                 row["grad_norm"] = float(logs["grad_norm"])
             except (TypeError, ValueError):
                 pass
+        for key in ("pref_acc", "reward_margin", "eval_pref_acc", "eval_reward_margin"):
+            if key in logs:
+                row[key] = float(logs[key])
         if state.max_steps and step > 0:
             row["eta_s"] = round(elapsed / step * (state.max_steps - step), 1)
         self._append(row)

@@ -38,7 +38,8 @@ process_alive <- function(run, st) {
   tryCatch(ps::ps_is_running(ps::ps_handle(as.integer(pid))), error = function(e) FALSE)
 }
 
-progress_cols <- c("step", "epoch", "loss", "eval_loss", "lr", "grad_norm", "elapsed_s", "eta_s")
+progress_cols <- c("step", "epoch", "loss", "eval_loss", "lr", "grad_norm", "elapsed_s", "eta_s",
+                   "pref_acc", "reward_margin", "eval_pref_acc", "eval_reward_margin")
 
 dragon_progress_empty <- function() {
   as.data.frame(stats::setNames(replicate(length(progress_cols), numeric(), simplify = FALSE), progress_cols))
@@ -46,7 +47,9 @@ dragon_progress_empty <- function() {
 
 #' @rdname dragon_status
 #' @return `dragon_progress()`: a data frame with columns `step`, `epoch`,
-#'   `loss`, `eval_loss`, `lr`, `grad_norm`, `elapsed_s`, `eta_s`.
+#'   `loss`, `eval_loss`, `lr`, `grad_norm`, `elapsed_s`, `eta_s`, and for
+#'   preference runs `pref_acc`, `reward_margin`, `eval_pref_acc`,
+#'   `eval_reward_margin`.
 #' @export
 dragon_progress <- function(run) {
   check_run(run)

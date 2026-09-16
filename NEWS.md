@@ -1,5 +1,14 @@
 # dragonfarm (development version)
 
+* Post-training stages. `dragon_map_pairs()` maps prompt, chosen, and
+  rejected columns, and `dragon_prefer()` runs preference optimization on
+  them with DPO or ORPO. Any function that takes a `model` also accepts a
+  finished run: its adapters are folded into the weights before the new
+  stage adds its own, so fine-tune then prefer chains naturally, locally or
+  through the cloud bundle. Runs record their `stage`, `dragon_evaluate()`
+  reports preference accuracy and reward margin, and the app's Map and Train
+  panels gain a preference-pairs mode and a "Start from" run picker.
+
 * Driver download link updated to NVIDIA's canonical URL, which CRAN's URL
   check had flagged as a redirect.
 

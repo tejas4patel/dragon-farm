@@ -84,6 +84,31 @@ compare the tuned model against the base model. Every run started in the app
 is a normal run directory, and the Monitor panel shows the R code that
 reproduces it.
 
+## Beyond fine-tuning: preference optimization
+
+Fine-tuning teaches the model what a good reply looks like. The next stage
+teaches it which of two replies is better, from a table with a prompt, a
+chosen reply, and a rejected one. It runs on top of a fine-tuned run:
+
+```r
+sft <- dragon_dataset("tickets.csv") |>
+  dragon_map(prompt = "question", response = "answer") |>
+  dragon_train("Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+
+dpo <- dragon_dataset("preferences.csv") |>
+  dragon_map_pairs(prompt = "question", chosen = "better", rejected = "worse") |>
+  dragon_prefer(sft, method = "dpo", beta = 0.1, wait = TRUE)
+
+dragon_evaluate(dpo)      # preference accuracy and reward margin on held-out pairs
+dragon_generate(dpo, "My thermostat keeps dropping off Wi-Fi.")
+```
+
+Passing a run as the model chains the stages: the earlier adapters are
+folded into the weights before the new stage adds its own. `method = "orpo"`
+needs no reference model and can start from a base model directly. The app
+has the same path: choose "Preference pairs" in the Map panel and a run to
+start from in the Train panel.
+
 ## No GPU? Train in the cloud
 
 The run directory is the whole contract between R and the trainer, so a run

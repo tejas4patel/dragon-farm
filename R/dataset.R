@@ -66,7 +66,12 @@ print.dragon_dataset <- function(x, ...) {
   } else {
     m <- x$mapping
     cli::cli_text("Prompt: {.val {escape_newlines(m$prompt)}}")
-    cli::cli_text("Response: {.val {escape_newlines(m$response)}}")
+    if (identical(m$kind, "pairs")) {
+      cli::cli_text("Chosen: {.val {escape_newlines(m$chosen)}}")
+      cli::cli_text("Rejected: {.val {escape_newlines(m$rejected)}}")
+    } else {
+      cli::cli_text("Response: {.val {escape_newlines(m$response)}}")
+    }
     if (!is.null(m$system)) cli::cli_text("System: {.val {escape_newlines(m$system)}}")
   }
   if (!is.null(x$split)) {
