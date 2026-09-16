@@ -109,6 +109,29 @@ needs no reference model and can start from a base model directly. The app
 has the same path: choose "Preference pairs" in the Map panel and a run to
 start from in the Train panel.
 
+## Make the data: teachers and self-improvement
+
+Small models are only as good as their training data, and most teams do not
+have a few hundred hand-written ideal replies. Two shortcuts:
+
+```r
+# A stronger model answers your prompts; its replies become the training set.
+teacher <- dragon_llm_anthropic(system = "You are a concise, warm support agent.")
+synth <- dragon_synthesize(dragon_prompts(sft, "train"), teacher, system = "You are a concise, warm support agent.")
+sft2 <- dragon_train(synth, "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+
+# The run answers each prompt four times, a judge scores every sample, and the
+# best and worst become preference pairs. Then DPO on top of the same run.
+pairs <- dragon_synthesize_pairs(dragon_prompts(sft2, "train", n = 200), student = sft2,
+                                 judge = dragon_judge_anthropic(model = "claude-sonnet-5"))
+dpo <- dragon_prefer(pairs, sft2, wait = TRUE)
+dragon_judge(dpo, against = "base", judge = dragon_judge_anthropic())
+```
+
+That last sequence, sample, judge, train, judge again, is the loop that
+turns a fine-tune into a development cycle. The app's Try it panel has the
+same Improve step.
+
 ## Did it help? Metrics, judges, and comparisons
 
 Held-out loss says a stage trained. It does not say the replies got better.

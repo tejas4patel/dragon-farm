@@ -40,6 +40,19 @@ mod_tryit_ui <- function(id) {
       shiny::uiOutput(ns("judge_out"))
     ),
     bslib::card(
+      bslib::card_header("Improve: preference pairs from this run's own replies"),
+      shiny::p(class = "hint", "Closes the loop. The run answers each prompt several times, the judge above scores every sample, and the best and worst become chosen and rejected pairs. The pairs load into the Map step, ready for a DPO or ORPO stage that starts from this run."),
+      bslib::layout_columns(
+        col_widths = c(3, 3, 3, 3),
+        shiny::selectInput(ns("synth_split"), "Prompts from", choices = c("Training rows" = "train", "Held-out rows" = "eval")),
+        shiny::numericInput(ns("synth_n"), "Prompts", value = 50, min = 2, max = 2000, step = 10),
+        shiny::numericInput(ns("synth_samples"), "Samples per prompt", value = 4, min = 2, max = 8, step = 1),
+        shiny::numericInput(ns("synth_gap"), "Min score gap", value = 2, min = 0, max = 9, step = 0.5)
+      ),
+      shiny::actionButton(ns("synth"), "Build preference pairs", class = "btn-outline-primary"),
+      shiny::uiOutput(ns("synth_out"))
+    ),
+    bslib::card(
       bslib::card_header("Export"),
       bslib::layout_columns(
         col_widths = c(8, 4),
@@ -178,6 +191,56 @@ mod_tryit_server <- function(id, state, runs_dir) {
         if (isTRUE(s$unparsed > 0)) shiny::p(class = "text-warning small", sprintf("%d judge replies could not be parsed.", s$unparsed)),
         rows,
         shiny::p(class = "hint", "Saved to judge.json in the run; the Monitor panel's comparison table shows it.")
+      )
+    })
+
+    synth_result <- shiny::reactiveVal(NULL)
+    shiny::observeEvent(input$synth, {
+      r <- run()
+      judge <- if (identical(input$judge_kind, "local")) {
+        trimws(input$judge_model %||% "")
+      } else {
+        if (!nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) {
+          shiny::showNotification("Set ANTHROPIC_API_KEY in the R session before using the Claude API as judge, or pick a local model in the Judge card.", type = "warning", duration = 10)
+          return()
+        }
+        dragon_judge_anthropic(model = input$judge_model %||% "claude-opus-5")
+      }
+      if (is.character(judge) && !nzchar(judge)) {
+        shiny::showNotification("Name a local judge model in the Judge card.", type = "warning")
+        return()
+      }
+      prompts <- dragon_prompts(r, input$synth_split %||% "train", n = input$synth_n %||% 50)
+      if (length(prompts) < 2) {
+        shiny::showNotification("This run has too few prompts in that split.", type = "warning")
+        return()
+      }
+      rubric <- if (nzchar(trimws(input$rubric %||% ""))) input$rubric
+      shiny::withProgress(message = "Sampling replies and scoring them", detail = "One model load, then the judge calls", {
+        ds <- tryCatch(
+          suppressMessages(dragon_synthesize_pairs(prompts, student = r, judge = judge,
+                                                   n_samples = input$synth_samples %||% 4, min_gap = input$synth_gap %||% 2,
+                                                   rubric = rubric, runs_dir = runs_dir)),
+          error = function(e) { notify_error(e); NULL }
+        )
+        if (!is.null(ds)) {
+          state$dataset <- ds
+          state$mapped <- ds
+          synth_result(list(n = nrow(ds$data), file = ds$source, run = r$id,
+                            chosen = mean(ds$data$chosen_score), rejected = mean(ds$data$rejected_score)))
+          shiny::showNotification(sprintf("%d pairs loaded. Go to Train, pick %s under Start from, and run DPO.", nrow(ds$data), r$id),
+                                  type = "message", duration = 12)
+        }
+      })
+    })
+
+    output$synth_out <- shiny::renderUI({
+      s <- synth_result()
+      if (is.null(s)) return(NULL)
+      shiny::tagList(
+        shiny::p(class = "text-success small",
+                 sprintf("%d pairs built from %s (mean judge score: chosen %.1f, rejected %.1f).", s$n, s$run, s$chosen, s$rejected)),
+        shiny::p(class = "hint", "Saved to ", shiny::code(s$file), " and loaded as the current dataset. In Train, choose this run under Start from; the stage switches to preference optimization automatically.")
       )
     })
 

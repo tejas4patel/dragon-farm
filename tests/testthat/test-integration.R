@@ -167,4 +167,29 @@ test_that("metrics and a judge run over a finished run", {
   cmp <- dragon_compare(run)
   expect_equal(cmp$judge_n, 3L)
   expect_true("token_f1" %in% names(cmp))
+
+  # Close the loop: sample from the run, score with a length-based judge, train DPO on the pairs.
+  by_length <- function(prompts) {
+    vapply(prompts, function(p) {
+      reply <- sub(".*Reply to rate:\n(.*?)\n\nRespond with JSON.*", "\\1", p)
+      sprintf('{"score": %d, "reason": "shorter is better"}', max(1, 10 - nchar(reply) %/% 12))
+    }, character(1), USE.NAMES = FALSE)
+  }
+  prompts <- dragon_prompts(run, "train", n = 6)
+  expect_length(prompts, 6)
+  pairs <- suppressMessages(dragon_synthesize_pairs(prompts, student = run, judge = by_length, n_samples = 3,
+                                                    min_gap = 0.5, temperature = 1.0, max_new_tokens = 24,
+                                                    runs_dir = dirname(run$dir)))
+  expect_equal(dragonfarm:::mapping_kind(pairs), "pairs")
+  expect_gte(nrow(pairs$data), 1)
+  expect_true(all(pairs$data$chosen_score > pairs$data$rejected_score))
+  dpo <- dragon_prefer(
+    pairs, run, method = "dpo",
+    lora = dragon_lora(r = 4, alpha = 8),
+    args = dragon_train_args(max_steps = 2, batch_size = 1, grad_accum = 1, max_seq_len = 256, logging_steps = 1, save_steps = 2),
+    runs_dir = dirname(run$dir), n_samples = 0, wait = TRUE
+  )
+  expect_equal(dragon_status(dpo)$state, "succeeded")
+  expect_equal(dragonfarm:::run_config(dpo)$model$base_run, run$id)
+  expect_match(dragon_code(dpo), "synth/", fixed = TRUE)
 })

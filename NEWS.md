@@ -1,5 +1,15 @@
 # dragonfarm (development version)
 
+* Synthetic data closes the loop. `dragon_synthesize()` has a teacher model
+  answer your prompts to make fine-tuning data; `dragon_synthesize_pairs()`
+  samples a run's own replies, has a judge score them, and keeps the best
+  and worst as preference pairs (or pairs a teacher's reply against the
+  student's). `dragon_prompts()` pulls prompts from a run's data files.
+  `dragon_llm_anthropic()` and `dragon_llm_ellmer()` turn the Claude API or
+  any ellmer chat into a teacher; the judge variants are now wrappers over
+  them. The app's Try it panel gains an Improve card that builds pairs from
+  the selected run and loads them for the next stage.
+
 * Evaluation that can drive decisions. `dragon_evaluate()` gains `metrics`:
   deterministic task checks (exact match, token F1, JSON validity, numeric
   answers, length, custom functions) over every held-out row.

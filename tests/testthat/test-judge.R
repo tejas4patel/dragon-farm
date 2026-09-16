@@ -98,8 +98,8 @@ test_that("as_judge accepts functions and model ids and rejects the rest", {
 
 test_that("the Claude API request is shaped correctly", {
   skip_if_not_installed("httr2")
-  req <- dragonfarm:::anthropic_judge_request("hello", model = "claude-opus-5", api_key = "sk-test", max_tokens = 300,
-                                             schema = dragonfarm:::score_schema())
+  req <- dragonfarm:::anthropic_request("hello", model = "claude-opus-5", api_key = "sk-test", max_tokens = 300,
+                                       schema = dragonfarm:::score_schema(), system = dragonfarm:::judge_system_prompt())
   expect_equal(req$url, "https://api.anthropic.com/v1/messages")
   h <- req$headers
   expect_equal(h[["anthropic-version"]], "2023-06-01")
@@ -111,8 +111,13 @@ test_that("the Claude API request is shaped correctly", {
   expect_equal(body$messages[[1]]$content, "hello")
   expect_equal(body$output_config$format$type, "json_schema")
   expect_equal(body$output_config$format$schema$required, list("score", "reason"))
-  plain <- dragonfarm:::anthropic_judge_request("hello", model = "claude-opus-5", api_key = "k")
+  expect_match(body$system, "JSON")
+  plain <- dragonfarm:::anthropic_request("hello", model = "claude-opus-5", api_key = "k", temperature = 0.7)
   expect_null(plain$body$data$output_config)
+  expect_null(plain$body$data$system)
+  expect_equal(plain$body$data$temperature, 0.7)
+  teacher <- dragon_llm_anthropic(system = "Be brief.", api_key = "")
+  expect_equal(attr(teacher, "label"), "anthropic:claude-opus-5")
   judge <- dragon_judge_anthropic(model = "claude-sonnet-5", api_key = "")
   expect_equal(attr(judge, "label"), "anthropic:claude-sonnet-5")
   expect_error(judge("x"), "No Anthropic API key")

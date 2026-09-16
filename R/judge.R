@@ -145,43 +145,42 @@ default_rubric <- function() {
 
 # Turn whatever the user passed as `judge` into function(prompts) -> replies.
 as_judge <- function(judge) {
-  if (is.null(judge)) {
-    cli::cli_abort(c(
-      "No judge given.",
-      "i" = "Pass {.code judge = dragon_judge_anthropic()} to use the Claude API (needs {.envvar ANTHROPIC_API_KEY}),",
-      "i" = "a model id such as {.val Qwen/Qwen2.5-1.5B-Instruct} to judge with a local model,",
-      "i" = "an {.pkg ellmer} chat object, or any function from prompts to replies."
-    ))
-  }
-  if (is.function(judge)) return(judge)
-  if (inherits(judge, "Chat")) return(dragon_judge_ellmer(judge))
-  if (is.character(judge) && length(judge) == 1) {
-    model <- judge
-    fn <- function(prompts) dragon_generate(model, prompts, max_new_tokens = 400, temperature = 0)
-    attr(fn, "label") <- paste0("local:", model)
-    return(fn)
-  }
-  cli::cli_abort("{.arg judge} must be a function, an ellmer chat, or a model id.")
+  as_llm(judge, role = "judge", temperature = 0, max_new_tokens = 400, system = judge_system_prompt())
 }
 
-#' Judges backed by an API or by ellmer
+#' Language models as functions: the Claude API and ellmer
 #'
-#' `dragon_judge_anthropic()` calls the Claude API directly over HTTP, with
-#' JSON-only replies and refusal fallbacks enabled. It reads the key from
-#' `ANTHROPIC_API_KEY`. `dragon_judge_ellmer()` wraps any `ellmer` chat, so
-#' every provider ellmer supports can judge; each prompt gets a fresh copy of
-#' the chat so no history leaks between questions.
+#' Judges, teachers, and students in dragonfarm are plain functions from a
+#' character vector of prompts to a character vector of replies. These
+#' helpers build such functions.
+#'
+#' `dragon_llm_anthropic()` calls the Claude API directly over HTTP with
+#' refusal fallbacks enabled, reading the key from `ANTHROPIC_API_KEY`.
+#' `dragon_llm_ellmer()` wraps any `ellmer` chat, so every provider ellmer
+#' supports works; each prompt gets a fresh copy of the chat so no history
+#' leaks between questions. The `dragon_judge_*()` variants are the same
+#' with a system prompt that asks for JSON-only answers, which
+#' [dragon_judge()] and [dragon_synthesize_pairs()] need.
 #'
 #' @param model Claude model id. The default is the most capable general
 #'   model; `"claude-sonnet-5"` or `"claude-haiku-4-5"` are cheaper choices
 #'   for large prompt sets.
+#' @param system Optional system prompt.
 #' @param api_key Anthropic API key.
-#' @param max_tokens Reply length cap for the judge.
+#' @param max_tokens Reply length cap.
 #' @param max_active How many requests to run at once.
-#' @return A judge function suitable for [dragon_judge()].
+#' @param temperature Sampling temperature, or `NULL` for the API default.
+#' @return A function suitable for the `judge`, `teacher`, or `student`
+#'   arguments of [dragon_judge()], [dragon_synthesize()], and
+#'   [dragon_synthesize_pairs()].
 #' @export
-dragon_judge_anthropic <- function(model = "claude-opus-5", api_key = Sys.getenv("ANTHROPIC_API_KEY"),
-                                   max_tokens = 1024, max_active = 4) {
+#' @examples
+#' \dontrun{
+#' teacher <- dragon_llm_anthropic(system = "You are a concise support agent.")
+#' teacher(c("My thermostat drops off Wi-Fi.", "Invoice total looks wrong."))
+#' }
+dragon_llm_anthropic <- function(model = "claude-opus-5", system = NULL, api_key = Sys.getenv("ANTHROPIC_API_KEY"),
+                                 max_tokens = 1024, max_active = 4, temperature = NULL) {
   check_string(model, "model")
   rlang::check_installed("httr2", reason = "to call the Claude API.")
   fn <- function(prompts, schema = NULL) {
@@ -189,13 +188,22 @@ dragon_judge_anthropic <- function(model = "claude-opus-5", api_key = Sys.getenv
       cli::cli_abort(c("No Anthropic API key.", "i" = "Set {.envvar ANTHROPIC_API_KEY} or pass {.arg api_key}."))
     }
     reqs <- lapply(prompts, function(p) {
-      anthropic_judge_request(p, model = model, api_key = api_key, max_tokens = max_tokens, schema = schema)
+      anthropic_request(p, model = model, api_key = api_key, max_tokens = max_tokens, schema = schema,
+                        system = system, temperature = temperature)
     })
     resps <- httr2::req_perform_parallel(reqs, max_active = max_active, on_error = "continue")
     vapply(resps, anthropic_reply_text, character(1))
   }
   attr(fn, "label") <- paste0("anthropic:", model)
   fn
+}
+
+#' @rdname dragon_llm_anthropic
+#' @export
+dragon_judge_anthropic <- function(model = "claude-opus-5", api_key = Sys.getenv("ANTHROPIC_API_KEY"),
+                                   max_tokens = 1024, max_active = 4) {
+  dragon_llm_anthropic(model = model, system = judge_system_prompt(), api_key = api_key,
+                       max_tokens = max_tokens, max_active = max_active)
 }
 
 judge_system_prompt <- function() {
@@ -235,14 +243,15 @@ call_judge <- function(judge_fn, prompts, schema) {
   if (length(formals(judge_fn)) >= 2) judge_fn(prompts, schema) else judge_fn(prompts)
 }
 
-anthropic_judge_request <- function(prompt, model, api_key, max_tokens = 1024, schema = NULL) {
+anthropic_request <- function(prompt, model, api_key, max_tokens = 1024, schema = NULL, system = NULL, temperature = NULL) {
   body <- list(
     model = model,
     max_tokens = as.integer(max_tokens),
     fallbacks = "default",
-    system = judge_system_prompt(),
     messages = list(list(role = "user", content = prompt))
   )
+  if (!is.null(system)) body$system <- system
+  if (!is.null(temperature)) body$temperature <- temperature
   if (!is.null(schema)) body$output_config <- list(format = list(type = "json_schema", schema = schema))
   httr2::request("https://api.anthropic.com/v1/messages") |>
     httr2::req_headers(
@@ -271,20 +280,26 @@ anthropic_reply_text <- function(resp) {
   paste(texts[nzchar(texts)], collapse = "\n")
 }
 
-#' @rdname dragon_judge_anthropic
+#' @rdname dragon_llm_anthropic
 #' @param chat An `ellmer` chat object, for example `ellmer::chat_anthropic()`.
 #' @export
-dragon_judge_ellmer <- function(chat) {
+dragon_llm_ellmer <- function(chat, system = NULL) {
   if (!inherits(chat, "Chat")) cli::cli_abort("{.arg chat} must be an ellmer chat object.")
   fn <- function(prompts) {
     vapply(prompts, function(p) {
       fresh <- chat$clone()
-      fresh$set_system_prompt(judge_system_prompt())
+      if (!is.null(system)) fresh$set_system_prompt(system)
       as.character(fresh$chat(p, echo = "none"))
     }, character(1), USE.NAMES = FALSE)
   }
   attr(fn, "label") <- paste0("ellmer:", tryCatch(chat$get_model(), error = function(e) "chat"))
   fn
+}
+
+#' @rdname dragon_llm_anthropic
+#' @export
+dragon_judge_ellmer <- function(chat) {
+  dragon_llm_ellmer(chat, system = judge_system_prompt())
 }
 
 # First JSON object in a reply, or NULL.
