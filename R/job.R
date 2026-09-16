@@ -122,7 +122,10 @@ dragon_wait <- function(run, timeout = Inf, poll = 2) {
   }
   cli::cli_progress_done(id = bar)
   if (st$state == "failed") {
-    cli::cli_abort(c("Run {.strong {run$id}} failed.", "x" = st$error %||% "unknown error"))
+    # The error text comes from the trainer log and may contain braces; pass it
+    # as a value so cli does not try to interpolate it.
+    err <- st$error %||% "unknown error"
+    cli::cli_abort(c("Run {.strong {run$id}} failed.", "x" = "{err}"))
   }
   if (st$state == "cancelled") {
     cli::cli_alert_warning("Run {.strong {run$id}} was cancelled. The adapter holds the last checkpoint.")
