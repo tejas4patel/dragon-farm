@@ -96,7 +96,14 @@ out as a standalone model.</p>
 <span></span>
 <span><span class="fu">dragon_step_evaluate</span><span class="op">(</span>metrics <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">dragon_step_merge</span><span class="op">(</span>out <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">dragon_step_merge</span><span class="op">(</span>out <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">dragon_step_publish</span><span class="op">(</span></span>
+<span>  <span class="va">repo</span>,</span>
+<span>  what <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"merged"</span>, <span class="st">"adapter"</span><span class="op">)</span>,</span>
+<span>  private <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -151,6 +158,10 @@ data, or a character vector or mapped dataset.</p></dd>
 <dt id="arg-out">out<a class="anchor" aria-label="anchor" href="#arg-out"></a></dt>
 <dd><p>As <code>out_dir</code> in <code><a href="dragon_merge.html">dragon_merge()</a></code>: where the merged model goes;
 <code>NULL</code> means <code>merged/</code> inside the run.</p></dd>
+
+
+<dt id="arg-repo-what-private-commit-message">repo, what, private, commit_message<a class="anchor" aria-label="anchor" href="#arg-repo-what-private-commit-message"></a></dt>
+<dd><p>As in <code><a href="dragon_publish.html">dragon_publish()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

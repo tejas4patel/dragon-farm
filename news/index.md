@@ -16,6 +16,12 @@
 - [`dragon_step_merge()`](https://dragonfarm.dev/reference/dragon_step.md):
   a pipeline step that writes the latest run as a standalone model.
 
+- [`dragon_publish()`](https://dragonfarm.dev/reference/dragon_publish.md):
+  push a run’s merged model or adapter to a repo on the Hugging Face
+  Hub, creating it if needed.
+  [`dragon_step_publish()`](https://dragonfarm.dev/reference/dragon_step.md)
+  for pipelines, and a Publish card in the app’s Try it panel.
+
 - Human feedback becomes data. In
   [`dragon_chat()`](https://dragonfarm.dev/reference/dragon_chat.md) and
   the app’s Chat panel, replies can be rated up or down, edited, or

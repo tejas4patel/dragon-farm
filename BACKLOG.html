@@ -127,7 +127,7 @@
 </tr><tr><td>C4</td>
 <td>
 <code>dragon_publish(run, repo)</code>: push merged model or adapter to the Hugging Face Hub</td>
-<td>planned</td>
+<td>done</td>
 <td>Hand-off to any hosted inference. Needs <code>HF_TOKEN</code>.</td>
 </tr><tr><td>C5</td>
 <td>
@@ -136,9 +136,10 @@
 <td>done</td>
 <td>Local stays the default.</td>
 </tr><tr><td>C6</td>
-<td>Try it panel: “Serve with” selector (this machine, Ollama, URL) plus Serve and Publish buttons</td>
-<td>planned</td>
-<td>Buttons before selector, since a remote host must have the model first.</td>
+<td>Try it panel: Publish card (repo, format, private) that pushes via <code><a href="reference/dragon_publish.html">dragon_publish()</a></code>
+</td>
+<td>done</td>
+<td>Serve-with selector (this machine, Ollama, URL) already exists as the Chat tab’s backend picker; a from-URL Try-it selector is folded into C7.</td>
 </tr><tr><td>C7</td>
 <td>
 <code>dragon_deploy()</code> helpers for RunPod and Modal vLLM endpoints</td>

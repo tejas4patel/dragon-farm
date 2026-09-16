@@ -117,6 +117,8 @@
   Merge the adapter into the base model
 - [`dragon_export_gguf()`](https://dragonfarm.dev/reference/dragon_export_gguf.md)
   : Export a merged model to GGUF
+- [`dragon_publish()`](https://dragonfarm.dev/reference/dragon_publish.md)
+  : Push a run's model to the Hugging Face Hub
 
 ## Pipelines
 
@@ -129,6 +131,7 @@
   [`dragon_step_judge()`](https://dragonfarm.dev/reference/dragon_step.md)
   [`dragon_step_evaluate()`](https://dragonfarm.dev/reference/dragon_step.md)
   [`dragon_step_merge()`](https://dragonfarm.dev/reference/dragon_step.md)
+  [`dragon_step_publish()`](https://dragonfarm.dev/reference/dragon_step.md)
   : Steps of a post-training pipeline
 - [`dragon_pipeline_status()`](https://dragonfarm.dev/reference/dragon_pipeline_status.md)
   : Progress of a pipeline

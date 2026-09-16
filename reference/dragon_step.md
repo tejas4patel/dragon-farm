@@ -49,6 +49,13 @@ dragon_step_judge(against = "base", judge = NULL, n = 20, rubric = NULL)
 dragon_step_evaluate(metrics = TRUE)
 
 dragon_step_merge(out = NULL)
+
+dragon_step_publish(
+  repo,
+  what = c("merged", "adapter"),
+  private = FALSE,
+  commit_message = NULL
+)
 ```
 
 ## Arguments
@@ -109,6 +116,11 @@ dragon_step_merge(out = NULL)
   As `out_dir` in
   [`dragon_merge()`](https://dragonfarm.dev/reference/dragon_merge.md):
   where the merged model goes; `NULL` means `merged/` inside the run.
+
+- repo, what, private, commit_message:
+
+  As in
+  [`dragon_publish()`](https://dragonfarm.dev/reference/dragon_publish.md).
 
 ## Value
 

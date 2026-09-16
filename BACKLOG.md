@@ -37,9 +37,9 @@ section decouples where a model runs from where it trained.
 | C1 | [`dragon_backend_local()`](https://dragonfarm.dev/reference/dragon_backend.md) with a persistent worker that keeps the model loaded across calls | done | Removes the per-call model load in judge, synthesize, and Try it. |
 | C2 | `dragon_backend_server(url, model)`: client for any OpenAI-compatible chat endpoint | done | Covers vLLM, llama.cpp server, Ollama, LM Studio, HF Inference Endpoints, RunPod and Modal vLLM templates. Streaming support for the chat UI (C8). |
 | C3 | `dragon_serve_ollama(run)`: merge, register with Ollama by importing safetensors, return a backend | doing | Written; untested against a real Ollama (not installed here). |
-| C4 | `dragon_publish(run, repo)`: push merged model or adapter to the Hugging Face Hub | planned | Hand-off to any hosted inference. Needs `HF_TOKEN`. |
+| C4 | `dragon_publish(run, repo)`: push merged model or adapter to the Hugging Face Hub | done | Hand-off to any hosted inference. Needs `HF_TOKEN`. |
 | C5 | `backend` argument on [`dragon_generate()`](https://dragonfarm.dev/reference/dragon_generate.md), judge and teacher wrappers, [`dragon_synthesize_pairs()`](https://dragonfarm.dev/reference/dragon_synthesize_pairs.md), [`dragon_judge()`](https://dragonfarm.dev/reference/dragon_judge.md); session default via `options(dragonfarm.backend)` | done | Local stays the default. |
-| C6 | Try it panel: “Serve with” selector (this machine, Ollama, URL) plus Serve and Publish buttons | planned | Buttons before selector, since a remote host must have the model first. |
+| C6 | Try it panel: Publish card (repo, format, private) that pushes via [`dragon_publish()`](https://dragonfarm.dev/reference/dragon_publish.md) | done | Serve-with selector (this machine, Ollama, URL) already exists as the Chat tab’s backend picker; a from-URL Try-it selector is folded into C7. |
 | C7 | `dragon_deploy()` helpers for RunPod and Modal vLLM endpoints | idea | Both have configs on this machine; wraps publish (C4) plus a template launch and returns a backend. |
 | C8 | Chat panel: multi-turn conversation with any backend, with context | planned | See section D. |
 
