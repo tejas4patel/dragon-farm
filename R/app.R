@@ -108,3 +108,40 @@ notify_error <- function(e, session = shiny::getDefaultReactiveDomain()) {
   msg <- conditionMessage(e)
   shiny::showNotification(msg, type = "error", duration = 12, session = session)
 }
+
+# Long actions in the app (evaluate, judge, build pairs, merge) run as
+# one-step background pipelines so the session stays responsive. A watcher
+# polls the record and hands the finished record back to the module.
+app_task_start <- function(run, step, runs_dir, name) {
+  suppressMessages(dragon_pipeline(run, list(step), runs_dir = runs_dir, name = name, background = TRUE))
+}
+
+app_task_watch <- function(handle, on_done, interval = 2000, session = shiny::getDefaultReactiveDomain()) {
+  obs <- shiny::observe({
+    rec <- tryCatch(dragon_pipeline_status(handle), error = function(e) NULL)
+    if (is.null(rec) || rec$status %in% c("queued", "running")) {
+      shiny::invalidateLater(interval, session)
+      return()
+    }
+    obs$destroy()
+    tryCatch(on_done(rec), error = function(e) notify_error(e, session))
+  }, domain = session)
+  invisible(obs)
+}
+
+task_error <- function(rec) {
+  errs <- Filter(Negate(is.null), c(list(rec$error), lapply(rec$steps, function(s) s$error)))
+  if (length(errs)) errs[[1]] else "no details were recorded"
+}
+
+task_status_ui <- function(t, what) {
+  if (is.null(t)) return(NULL)
+  if (t$state %in% c("queued", "running")) {
+    return(shiny::p(class = "hint task-running",
+      sprintf("%s is running in the background as %s. Keep using the app; the result appears here, and the Pipeline panel lists it.", what, t$id)))
+  }
+  if (!identical(t$state, "succeeded")) {
+    return(shiny::p(class = "text-danger small", sprintf("%s %s: %s", what, t$state, t$error %||% "")))
+  }
+  NULL
+}

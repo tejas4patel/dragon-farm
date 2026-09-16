@@ -212,17 +212,23 @@ mod_monitor_server <- function(id, state, runs_dir) {
         shiny::showNotification("Pick at least one metric.", type = "warning")
         return()
       }
-      shiny::withProgress(message = "Generating replies for the held-out rows", detail = "This loads the model once and can take a minute", {
-        res <- tryCatch(dragon_evaluate(r, metrics = chosen), error = function(e) { notify_error(e); NULL })
-        if (!is.null(res)) shiny::showNotification("Metrics saved to the run.", type = "message")
+      h <- tryCatch(app_task_start(r, dragon_step_evaluate(metrics = chosen), runs_dir, "evaluate"),
+                    error = function(e) { notify_error(e); NULL })
+      if (is.null(h)) return()
+      eval_task(list(id = h$id, state = "running"))
+      app_task_watch(h, function(rec) {
+        eval_task(list(id = h$id, state = rec$status, error = task_error(rec)))
+        if (identical(rec$status, "succeeded")) shiny::showNotification("Metrics saved to the run.", type = "message")
       })
     })
 
+    eval_task <- shiny::reactiveVal(NULL)
     output$metrics_out <- shiny::renderUI({
       st <- status()
       m <- st$metrics
-      if (is.null(m) || !length(m)) return(NULL)
-      shiny::tagList(lapply(names(m), function(nm) {
+      note <- task_status_ui(eval_task(), "Evaluation")
+      if (is.null(m) || !length(m)) return(note)
+      shiny::tagList(note, lapply(names(m), function(nm) {
         shiny::div(class = "kv", shiny::span(nm), shiny::strong(formatC(as.numeric(m[[nm]]), digits = 3, format = "fg")))
       }))
     })

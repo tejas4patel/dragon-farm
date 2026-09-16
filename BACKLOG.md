@@ -73,8 +73,8 @@ function, so a trained model can be used the way it will be used.
 
 | Id | Item | Status | Notes |
 |---|---|---|---|
-| F1 | Run long app actions (evaluate, judge, synthesize) off the Shiny thread | planned | They block the session today. Same pattern as pipelines: a background R process plus polling. |
-| F2 | Cancel button for background pipelines | planned | Record the pid; write a cancel request the runner checks between steps. |
+| F1 | Run long app actions (evaluate, judge, synthesize) off the Shiny thread | done | They block the session today. Same pattern as pipelines: a background R process plus polling. |
+| F2 | Cancel button for background pipelines | done | Record the pid; write a cancel request the runner checks between steps. |
 | F3 | Delete and archive runs from the Monitor panel | idea | |
 | F4 | Verify the Kaggle one-click notebook link | planned | Steps include the manual import fallback. |
 | F5 | Live test of `dragon_llm_anthropic()` and `dragon_judge_anthropic()` with a real key | next | Only request shapes and fakes tested so far. |

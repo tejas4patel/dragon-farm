@@ -7,8 +7,9 @@ new_step <- function(type, ...) structure(list(type = type, ...), class = "drago
 #'
 #' Each step becomes one stage of [dragon_pipeline()]. Stages chain: a
 #' training step's run is the starting point of the next training step, a
-#' synthesis step's pairs feed the next preference step, and judge and
-#' evaluate steps measure the most recent run.
+#' synthesis step's pairs feed the next preference step, judge and
+#' evaluate steps measure the most recent run, and a merge step writes it
+#' out as a standalone model.
 #'
 #' @param dataset A mapped dataset for the stage. `dragon_step_prefer()`
 #'   may leave it `NULL` to use the pairs made by the preceding
@@ -25,6 +26,8 @@ new_step <- function(type, ...) structure(list(type = type, ...), class = "drago
 #' @param rewards,group_size As in [dragon_reinforce()].
 #' @param against As in [dragon_judge()].
 #' @param metrics As in [dragon_evaluate()].
+#' @param out As `out_dir` in [dragon_merge()]: where the merged model goes;
+#'   `NULL` means `merged/` inside the run.
 #' @return A `dragon_step` object.
 #' @name dragon_step
 #' @examples
@@ -88,6 +91,13 @@ dragon_step_judge <- function(against = "base", judge = NULL, n = 20, rubric = N
 dragon_step_evaluate <- function(metrics = TRUE) {
   resolve_metrics(metrics)
   new_step("evaluate", metrics = metrics)
+}
+
+#' @rdname dragon_step
+#' @export
+dragon_step_merge <- function(out = NULL) {
+  if (!is.null(out)) check_string(out, "out")
+  new_step("merge", out = out)
 }
 
 #' @export
@@ -188,16 +198,42 @@ dragon_pipeline <- function(model, steps, runs_dir = dragon_runs_dir(), name = "
 pipeline_script <- function(spec_path) {
   loader <- "suppressPackageStartupMessages(library(dragonfarm))"
   if (requireNamespace("pkgload", quietly = TRUE) && isTRUE(pkgload::is_dev_package("dragonfarm"))) {
-    root <- tryCatch(pkgload::pkg_path("dragonfarm"), error = function(e) NULL)
-    if (!is.null(root)) loader <- sprintf("pkgload::load_all('%s', quiet = TRUE)", normalizePath(root, winslash = "/"))
+    # pkgload::pkg_path() takes a directory, not a package name; the
+    # dev-package root is the parent of the shimmed inst/ from system.file().
+    root <- tryCatch(dirname(system.file(package = "dragonfarm")), error = function(e) NULL)
+    if (!is.null(root) && nzchar(root)) loader <- sprintf("pkgload::load_all('%s', quiet = TRUE)", normalizePath(root, winslash = "/", mustWork = FALSE))
   }
-  sprintf("%s; dragonfarm:::run_pipeline_file('%s')", loader, normalizePath(spec_path, winslash = "/"))
+  sprintf("%s; dragonfarm:::run_pipeline_file('%s')", loader, normalizePath(spec_path, winslash = "/", mustWork = FALSE))
 }
 
 run_pipeline_file <- function(spec_path) {
   spec <- readRDS(spec_path)
   record <- read_json(spec$record_path)
+  record$pid <- Sys.getpid()
   invisible(run_pipeline(spec$model, spec$steps, spec$runs_dir, record, spec$record_path))
+}
+
+# A cancel request is a file next to the record; the runner looks for it
+# between steps and after a step that ended in a cancelled run.
+cancel_path <- function(record_path) sub("\\.json$", ".cancel", record_path)
+cancel_requested <- function(record_path) file.exists(cancel_path(record_path))
+
+finish_cancelled <- function(record, record_path, i, runs, results, error = NULL) {
+  for (j in seq_along(record$steps)) {
+    if (j == i && !is.null(error)) {
+      record$steps[[j]]$state <- "cancelled"
+      record$steps[[j]]$error <- error
+      record$steps[[j]]$finished_at <- now_iso()
+    } else if (j >= i && !identical(record$steps[[j]]$state, "succeeded")) {
+      record$steps[[j]]$state <- "skipped"
+    }
+  }
+  record$status <- "cancelled"
+  record$finished_at <- now_iso()
+  write_json(record, record_path)
+  done <- sum(vapply(record$steps, function(s) identical(s$state, "succeeded"), logical(1)))
+  cli::cli_alert_warning("Pipeline {.strong {record$id}} cancelled after {done} of {length(record$steps)} step{?s}.")
+  structure(c(record, list(path = record_path, runs = runs, results = results)), class = "dragon_pipeline")
 }
 
 run_pipeline <- function(model, steps, runs_dir, record, record_path) {
@@ -210,12 +246,14 @@ run_pipeline <- function(model, steps, runs_dir, record, record_path) {
 
   for (i in seq_along(steps)) {
     step <- steps[[i]]
+    if (cancel_requested(record_path)) return(finish_cancelled(record, record_path, i, runs, results))
     record$steps[[i]]$state <- "running"
     record$steps[[i]]$started_at <- now_iso()
     write_json(record, record_path)
     cli::cli_h2("Step {i} of {length(steps)}: {step$type}")
     out <- tryCatch(run_step(step, state, runs_dir), error = function(e) e)
     if (inherits(out, "error")) {
+      if (cancel_requested(record_path)) return(finish_cancelled(record, record_path, i, runs, results, error = conditionMessage(out)))
       record$steps[[i]]$state <- "failed"
       record$steps[[i]]$error <- conditionMessage(out)
       record$steps[[i]]$finished_at <- now_iso()
@@ -223,6 +261,11 @@ run_pipeline <- function(model, steps, runs_dir, record, record_path) {
       record$finished_at <- now_iso()
       write_json(record, record_path)
       cli::cli_abort(c("Pipeline {.strong {record$id}} failed at step {i} ({step$type}).", "x" = "{conditionMessage(out)}"))
+    }
+    if (!is.null(out$run) && identical(tryCatch(dragon_status(out$run)$state, error = function(e) NULL), "cancelled")) {
+      record$steps[[i]]$run <- out$run$id
+      return(finish_cancelled(record, record_path, i, c(runs, list(out$run)), results,
+                              error = sprintf("Run %s was cancelled.", out$run$id)))
     }
     state <- out$state
     record$steps[[i]]$state <- "succeeded"
@@ -298,6 +341,11 @@ run_step <- function(step, state, runs_dir) {
       ev <- dragon_evaluate(run, metrics = step$metrics)
       list(state = state, run = NULL, summary = list(run = run$id, eval_loss = ev$eval_loss, metrics = as.list(ev$metrics)))
     },
+    merge = {
+      run <- need_run()
+      dir <- dragon_merge(run, step$out)
+      list(state = state, run = NULL, summary = list(run = run$id, merged = dir))
+    },
     cli::cli_abort("Unknown step type {.val {step$type}}.")
   )
 }
@@ -310,14 +358,110 @@ run_step <- function(step, state, runs_dir) {
 #'   state and, when finished, a summary), and timestamps.
 #' @export
 dragon_pipeline_status <- function(x, runs_dir = dragon_runs_dir()) {
-  path <- if (inherits(x, "dragon_pipeline")) x$path else file.path(pipelines_dir(runs_dir), paste0(x, ".json"))
-  if (!file.exists(path)) cli::cli_abort("No pipeline record at {.path {path}}.")
+  path <- pipeline_record_path(x, runs_dir)
   rec <- read_json_retry(path)
   if (inherits(x, "dragon_pipeline") && !is.null(x$process) && rec$status %in% c("queued", "running") && !x$process$is_alive()) {
     rec$status <- "failed"
     rec$error <- paste("The pipeline process exited. Last log lines:", paste(tail_lines(x$log, 20), collapse = "\n"), sep = "\n")
+  } else if (rec$status %in% c("queued", "running") && isFALSE(pid_alive(rec$pid))) {
+    rec$status <- "failed"
+    rec$error <- "The pipeline process is gone."
   }
   structure(rec, class = "dragon_pipeline_status")
+}
+
+pipeline_record_path <- function(x, runs_dir) {
+  path <- if (inherits(x, "dragon_pipeline")) x$path else file.path(pipelines_dir(runs_dir), paste0(x, ".json"))
+  if (!file.exists(path)) cli::cli_abort("No pipeline record at {.path {path}}.")
+  path
+}
+
+#' Cancel a pipeline
+#'
+#' Writes a cancel request next to the pipeline record. The runner checks it
+#' between steps and stops there. A training step that is under way is asked
+#' to stop as well, the way [dragon_cancel()] does, so it saves a checkpoint
+#' first; a judging, synthesis, or merge step finishes before the pipeline
+#' stops. With `wait = TRUE` the call returns once the pipeline has stopped,
+#' killing the pipeline process if it is still going after `timeout` seconds.
+#'
+#' @param x A `dragon_pipeline` handle or a pipeline id.
+#' @param runs_dir Where the pipeline record lives, when `x` is an id.
+#' @param wait Wait for the pipeline to stop.
+#' @param timeout Seconds to wait before killing the pipeline process.
+#' @return The pipeline status, invisibly.
+#' @export
+dragon_pipeline_cancel <- function(x, runs_dir = dragon_runs_dir(), wait = TRUE, timeout = 120) {
+  path <- pipeline_record_path(x, runs_dir)
+  rec <- read_json_retry(path)
+  if (!rec$status %in% c("queued", "running")) {
+    cli::cli_alert_info("Pipeline {.strong {rec$id}} is already {rec$status}.")
+    return(invisible(structure(rec, class = "dragon_pipeline_status")))
+  }
+  writeLines(now_iso(), cancel_path(path))
+  for (dir in active_pipeline_runs(rec)) writeLines(now_iso(), file.path(dir, "cancel.request"))
+  cli::cli_alert_info("Cancel requested for pipeline {.strong {rec$id}}.")
+  if (!isTRUE(wait)) return(invisible(dragon_pipeline_status(x, runs_dir)))
+  started <- Sys.time()
+  repeat {
+    rec <- read_json_retry(path)
+    if (!rec$status %in% c("queued", "running") || !pipeline_alive(x, rec)) break
+    if (as.numeric(difftime(Sys.time(), started, units = "secs")) > timeout) {
+      kill_pipeline_process(x, rec)
+      break
+    }
+    Sys.sleep(1)
+  }
+  rec <- read_json_retry(path)
+  if (rec$status %in% c("queued", "running")) {
+    rec$status <- "cancelled"
+    rec$finished_at <- now_iso()
+    rec$error <- "Stopped by dragon_pipeline_cancel()."
+    for (j in seq_along(rec$steps)) {
+      st <- rec$steps[[j]]$state
+      if (identical(st, "running")) rec$steps[[j]]$state <- "cancelled"
+      else if (identical(st, "queued")) rec$steps[[j]]$state <- "skipped"
+    }
+    write_json(rec, path)
+  }
+  cli::cli_alert_success("Pipeline {.strong {rec$id}} is {rec$status}.")
+  invisible(structure(rec, class = "dragon_pipeline_status"))
+}
+
+# Runs this pipeline may be training right now: created after it started
+# and still going.
+active_pipeline_runs <- function(rec) {
+  if (is.null(rec$started_at) || is.null(rec$runs_dir)) return(character())
+  df <- dragon_runs(rec$runs_dir)
+  keep <- df$state %in% c("queued", "running") & !is.na(df$created_at) & df$created_at >= rec$started_at
+  df$dir[keep]
+}
+
+pid_alive <- function(pid) {
+  if (is.null(pid)) return(NA)
+  tryCatch(ps::ps_is_running(ps::ps_handle(as.integer(pid))), error = function(e) FALSE)
+}
+
+pipeline_alive <- function(x, rec) {
+  if (inherits(x, "dragon_pipeline") && !is.null(x$process)) return(x$process$is_alive())
+  alive <- pid_alive(rec$pid)
+  if (is.na(alive)) TRUE else alive
+}
+
+kill_pipeline_process <- function(x, rec) {
+  if (inherits(x, "dragon_pipeline") && !is.null(x$process) && x$process$is_alive()) {
+    if (is.function(x$process$kill_tree)) x$process$kill_tree() else x$process$kill()
+    return(invisible(TRUE))
+  }
+  if (!is.null(rec$pid)) {
+    h <- tryCatch(ps::ps_handle(as.integer(rec$pid)), error = function(e) NULL)
+    if (!is.null(h)) {
+      kids <- tryCatch(ps::ps_children(h, recursive = TRUE), error = function(e) list())
+      for (k in kids) tryCatch(ps::ps_kill(k), error = function(e) NULL)
+      tryCatch(ps::ps_kill(h), error = function(e) NULL)
+    }
+  }
+  invisible(TRUE)
 }
 
 #' @export
@@ -325,7 +469,10 @@ print.dragon_pipeline_status <- function(x, ...) {
   cli::cli_text("Pipeline {.strong {x$id}}: {.strong {x$status}}")
   for (i in seq_along(x$steps)) {
     s <- x$steps[[i]]
-    extra <- if (!is.null(s$run)) paste0(" \u2192 ", s$run) else if (!is.null(s$summary$pairs)) paste0(" \u2192 ", s$summary$pairs, " pairs") else ""
+    extra <- if (!is.null(s$run)) paste0(" \u2192 ", s$run)
+             else if (!is.null(s$summary$pairs)) paste0(" \u2192 ", s$summary$pairs, " pairs")
+             else if (!is.null(s$summary$merged)) paste0(" \u2192 ", s$summary$merged)
+             else ""
     cli::cli_text("  {i}. {s$type}: {s$state}{extra}")
     if (!is.null(s$error)) cli::cli_text("     {.emph {s$error}}")
   }

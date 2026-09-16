@@ -70,6 +70,7 @@ reference:
   - dragon_pipeline
   - dragon_step
   - dragon_pipeline_status
+  - dragon_pipeline_cancel
 - title: Cloud GPUs
   contents:
   - dragon_bundle

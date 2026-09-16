@@ -112,7 +112,11 @@ mod_pipeline_server <- function(id, state, runs_dir) {
       if (!length(recs)) return(shiny::p(class = "hint", "No pipelines yet."))
       shiny::tagList(lapply(recs[seq_len(min(5, length(recs)))], function(r) {
         shiny::div(class = "pipeline",
-          shiny::div(class = "pipeline-head", shiny::code(r$id), state_pill(r$status)),
+          shiny::div(class = "pipeline-head", shiny::code(r$id), state_pill(r$status),
+            if (isTRUE(r$status %in% c("queued", "running"))) shiny::tags$button(
+              type = "button", class = "btn btn-sm btn-outline-danger fb-btn", title = "Stop after the current step",
+              onclick = sprintf("Shiny.setInputValue('%s', {id: '%s', nonce: Math.random()}, {priority: 'event'})", ns("cancel"), r$id),
+              "Cancel")),
           shiny::tags$ol(class = "pipeline-steps", lapply(r$steps, function(s) {
             detail <- if (!is.null(s$run)) shiny::code(s$run)
                       else if (!is.null(s$summary$pairs)) sprintf("%d pairs", s$summary$pairs)
@@ -124,6 +128,17 @@ mod_pipeline_server <- function(id, state, runs_dir) {
           }))
         )
       }))
+    })
+
+    shiny::observeEvent(input$cancel, {
+      id <- input$cancel$id
+      if (is.null(id) || !nzchar(id)) return()
+      res <- tryCatch(suppressMessages(dragon_pipeline_cancel(id, runs_dir = runs_dir, wait = FALSE)),
+                      error = function(e) { notify_error(e); NULL })
+      if (!is.null(res)) {
+        shiny::showNotification("Cancel requested. A training step stops after saving a checkpoint; any other step finishes first, then the pipeline stops.",
+                                type = "message", duration = 8)
+      }
     })
 
     runs <- shiny::reactivePoll(3000, session,

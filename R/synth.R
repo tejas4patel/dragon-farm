@@ -295,3 +295,13 @@ dragon_synthesize_pairs <- function(prompts, student, judge = NULL, teacher = NU
   }
   ds
 }
+
+# Reload pairs that dragon_synthesize_pairs() wrote, e.g. from a pipeline record.
+load_synth_pairs <- function(file) {
+  ds <- dragon_dataset(file, name = basename(file))
+  ds <- dragon_map_pairs(ds, prompt = "prompt", chosen = "chosen", rejected = "rejected",
+                         system = if ("system" %in% names(ds$data)) "system")
+  meta_path <- paste0(tools::file_path_sans_ext(file), ".meta.json")
+  if (file.exists(meta_path)) attr(ds, "synthesis") <- read_json(meta_path)
+  ds
+}

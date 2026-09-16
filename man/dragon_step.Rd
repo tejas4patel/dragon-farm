@@ -8,6 +8,7 @@
 \alias{dragon_step_reinforce}
 \alias{dragon_step_judge}
 \alias{dragon_step_evaluate}
+\alias{dragon_step_merge}
 \title{Steps of a post-training pipeline}
 \usage{
 dragon_step_train(dataset, lora = dragon_lora(), args = NULL, n_samples = 10)
@@ -47,6 +48,8 @@ dragon_step_reinforce(
 dragon_step_judge(against = "base", judge = NULL, n = 20, rubric = NULL)
 
 dragon_step_evaluate(metrics = TRUE)
+
+dragon_step_merge(out = NULL)
 }
 \arguments{
 \item{dataset}{A mapped dataset for the stage. \code{dragon_step_prefer()}
@@ -73,6 +76,9 @@ data, or a character vector or mapped dataset.}
 \item{against}{As in \code{\link[=dragon_judge]{dragon_judge()}}.}
 
 \item{metrics}{As in \code{\link[=dragon_evaluate]{dragon_evaluate()}}.}
+
+\item{out}{As \code{out_dir} in \code{\link[=dragon_merge]{dragon_merge()}}: where the merged model goes;
+\code{NULL} means \verb{merged/} inside the run.}
 }
 \value{
 A \code{dragon_step} object.
@@ -80,8 +86,9 @@ A \code{dragon_step} object.
 \description{
 Each step becomes one stage of \code{\link[=dragon_pipeline]{dragon_pipeline()}}. Stages chain: a
 training step's run is the starting point of the next training step, a
-synthesis step's pairs feed the next preference step, and judge and
-evaluate steps measure the most recent run.
+synthesis step's pairs feed the next preference step, judge and
+evaluate steps measure the most recent run, and a merge step writes it
+out as a standalone model.
 }
 \examples{
 \dontrun{

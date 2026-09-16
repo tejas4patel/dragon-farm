@@ -74,7 +74,10 @@
 .pipeline-steps .step { font-weight: 600; }
 .pipeline-steps .step.running { color: var(--df-accent); }
 .pipeline-steps .step.failed { color: var(--df-bad); }
-.pipeline-steps .step.queued { color: var(--df-muted); }
+.pipeline-steps .step.queued, .pipeline-steps .step.skipped { color: var(--df-muted); }
+.pipeline-steps .step.cancelled { color: var(--df-bad); }
+.pipeline-head .fb-btn { margin-left: auto; }
+.task-running::before { content: "\25CF "; color: var(--df-accent); }
 .stage-box { margin-bottom: 8px; }
 .judge-row { display: flex; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--df-line, #E4E7E4); font-size: 0.88rem; }
 .judge-prompt { flex: 1; color: var(--df-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

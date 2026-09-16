@@ -16,7 +16,7 @@ mod_tryit_ui <- function(id) {
         ),
         shiny::checkboxInput(ns("compare"), "Also show the base model's reply", value = TRUE),
         shiny::actionButton(ns("go"), "Generate", class = "btn-primary"),
-        shiny::p(class = "text-muted small mt-2", "Each request loads the model in a fresh process, so expect a few seconds of delay.")
+        shiny::p(class = "text-muted small mt-2", "The local worker keeps the model loaded between requests, so only the first one is slow.")
       ),
       bslib::layout_columns(
         col_widths = c(6, 6),
@@ -154,18 +154,23 @@ mod_tryit_server <- function(id, state, runs_dir) {
       }
       rubric <- if (nzchar(trimws(input$rubric %||% ""))) input$rubric
       against <- if (identical(input$against, "none")) NULL else "base"
-      shiny::withProgress(message = "Generating replies and judging", detail = "Two model loads plus the judge calls; this takes a few minutes", {
-        res <- tryCatch(
-          suppressMessages(dragon_judge(r, against = against, n = input$judge_n %||% 10, judge = judge, rubric = rubric)),
-          error = function(e) { notify_error(e); NULL }
-        )
-        judgement(res)
+      h <- tryCatch(
+        app_task_start(r, dragon_step_judge(against = against, judge = judge, n = input$judge_n %||% 10, rubric = rubric), runs_dir, "judge"),
+        error = function(e) { notify_error(e); NULL }
+      )
+      if (is.null(h)) return()
+      judgement(NULL)
+      judge_task(list(id = h$id, state = "running"))
+      app_task_watch(h, function(rec) {
+        judge_task(list(id = h$id, state = rec$status, error = task_error(rec)))
+        if (identical(rec$status, "succeeded")) judgement(last_judgement(r))
       })
     })
 
+    judge_task <- shiny::reactiveVal(NULL)
     output$judge_out <- shiny::renderUI({
       j <- judgement()
-      if (is.null(j)) return(NULL)
+      if (is.null(j)) return(task_status_ui(judge_task(), "The judge"))
       s <- j$summary
       headline <- if (identical(j$mode, "pairwise")) {
         sprintf("Wins %.0f%% \u00b7 ties %.0f%% \u00b7 losses %.0f%% over %d prompts (position-consistent %.0f%%)",
@@ -216,27 +221,30 @@ mod_tryit_server <- function(id, state, runs_dir) {
         return()
       }
       rubric <- if (nzchar(trimws(input$rubric %||% ""))) input$rubric
-      shiny::withProgress(message = "Sampling replies and scoring them", detail = "One model load, then the judge calls", {
-        ds <- tryCatch(
-          suppressMessages(dragon_synthesize_pairs(prompts, student = r, judge = judge,
-                                                   n_samples = input$synth_samples %||% 4, min_gap = input$synth_gap %||% 2,
-                                                   rubric = rubric, runs_dir = runs_dir)),
-          error = function(e) { notify_error(e); NULL }
-        )
-        if (!is.null(ds)) {
-          state$dataset <- ds
-          state$mapped <- ds
-          synth_result(list(n = nrow(ds$data), file = ds$source, run = r$id,
-                            chosen = mean(ds$data$chosen_score), rejected = mean(ds$data$rejected_score)))
-          shiny::showNotification(sprintf("%d pairs loaded. Go to Train, pick %s under Start from, and run DPO.", nrow(ds$data), r$id),
-                                  type = "message", duration = 12)
-        }
+      step <- dragon_step_synthesize_pairs(prompts = input$synth_split %||% "train", n = input$synth_n %||% 50, judge = judge,
+                                           n_samples_per_prompt = input$synth_samples %||% 4, min_gap = input$synth_gap %||% 2,
+                                           rubric = rubric)
+      h <- tryCatch(app_task_start(r, step, runs_dir, "improve"), error = function(e) { notify_error(e); NULL })
+      if (is.null(h)) return()
+      synth_result(NULL)
+      synth_task(list(id = h$id, state = "running"))
+      app_task_watch(h, function(rec) {
+        synth_task(list(id = h$id, state = rec$status, error = task_error(rec)))
+        if (!identical(rec$status, "succeeded")) return()
+        ds <- load_synth_pairs(rec$steps[[1]]$summary$file)
+        state$dataset <- ds
+        state$mapped <- ds
+        synth_result(list(n = nrow(ds$data), file = ds$source, run = r$id,
+                          chosen = mean(ds$data$chosen_score), rejected = mean(ds$data$rejected_score)))
+        shiny::showNotification(sprintf("%d pairs loaded. Go to Train, pick %s under Start from, and run DPO.", nrow(ds$data), r$id),
+                                type = "message", duration = 12)
       })
     })
 
+    synth_task <- shiny::reactiveVal(NULL)
     output$synth_out <- shiny::renderUI({
       s <- synth_result()
-      if (is.null(s)) return(NULL)
+      if (is.null(s)) return(task_status_ui(synth_task(), "Pair building"))
       shiny::tagList(
         shiny::p(class = "text-success small",
                  sprintf("%d pairs built from %s (mean judge score: chosen %.1f, rejected %.1f).", s$n, s$run, s$chosen, s$rejected)),
@@ -248,14 +256,19 @@ mod_tryit_server <- function(id, state, runs_dir) {
     shiny::observeEvent(input$merge, {
       r <- run()
       out <- if (nzchar(trimws(input$merge_dir %||% ""))) input$merge_dir else NULL
-      shiny::withProgress(message = "Merging adapter into the base model", {
-        res <- tryCatch(dragon_merge(r, out), error = function(e) { notify_error(e); NULL })
-        merged(res)
+      h <- tryCatch(app_task_start(r, dragon_step_merge(out), runs_dir, "merge"), error = function(e) { notify_error(e); NULL })
+      if (is.null(h)) return()
+      merged(NULL)
+      merge_task(list(id = h$id, state = "running"))
+      app_task_watch(h, function(rec) {
+        merge_task(list(id = h$id, state = rec$status, error = task_error(rec)))
+        if (identical(rec$status, "succeeded")) merged(rec$steps[[1]]$summary$merged)
       })
     })
+    merge_task <- shiny::reactiveVal(NULL)
     output$merge_result <- shiny::renderUI({
       m <- merged()
-      if (is.null(m)) return(NULL)
+      if (is.null(m)) return(task_status_ui(merge_task(), "The merge"))
       shiny::p(class = "text-success small", "Merged model saved to ", shiny::code(m),
                ". It loads with plain transformers and needs nothing from dragonfarm.")
     })

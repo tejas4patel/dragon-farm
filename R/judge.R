@@ -435,3 +435,24 @@ print.dragon_judgement <- function(x, ...) {
   if (isTRUE(s$unparsed > 0)) cli::cli_alert_warning("{s$unparsed} judge repl{?y/ies} could not be parsed and were left out.")
   invisible(x)
 }
+
+# The latest entry of judge.json, shaped like a dragon_judge() result.
+last_judgement <- function(run) {
+  path <- run_path(run, "judge.json")
+  if (!file.exists(path)) return(NULL)
+  history <- read_json(path)
+  if (!length(history)) return(NULL)
+  entry <- history[[length(history)]]
+  rows <- entry$details %||% list()
+  cols <- unique(unlist(lapply(rows, names)))
+  details <- as.data.frame(lapply(stats::setNames(cols, cols), function(nm) {
+    vapply(rows, function(r) {
+      v <- r[[nm]]
+      if (is.null(v) || !length(v) || is.na(v[[1]])) NA_character_ else as.character(v[[1]])
+    }, character(1))
+  }), stringsAsFactors = FALSE)
+  if ("score" %in% names(details)) details$score <- as.numeric(details$score)
+  if ("verdict" %in% names(details)) details$verdict[is.na(details$verdict)] <- "unparsed"
+  list(mode = entry$mode, against = entry$against, judge = entry$judge, judged_at = entry$judged_at,
+       summary = entry$summary, details = details)
+}

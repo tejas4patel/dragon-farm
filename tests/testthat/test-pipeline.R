@@ -105,3 +105,126 @@ test_that("the pipeline module refuses to start without inputs and lists records
     expect_equal(recs[[1]]$id, "p1")
   })
 })
+
+test_that("a merge step is a step, and pipeline summaries mention merged output", {
+  expect_s3_class(dragon_step_merge(), "dragon_step")
+  expect_equal(dragon_step_merge("out/dir")$out, "out/dir")
+  expect_error(dragon_step_merge(42), "out")
+  rec <- structure(list(id = "p", status = "succeeded",
+                        steps = list(list(type = "merge", state = "succeeded", summary = list(merged = "D:/m")))),
+                   class = "dragon_pipeline_status")
+  expect_true(any(grepl("D:/m", testthat::capture_messages(print(rec)))))
+})
+
+test_that("a cancel request stops a pipeline between steps", {
+  runs <- tempfile("runs-")
+  dir.create(runs)
+  run <- fixture_with_samples()
+  rec_path <- file.path(dragonfarm:::pipelines_dir(runs), "p-cancel.json")
+  record <- list(id = "p-cancel", status = "queued", runs_dir = runs,
+                 steps = list(list(type = "evaluate", state = "queued"), list(type = "evaluate", state = "queued")))
+  dragonfarm:::write_json(record, rec_path)
+  writeLines("now", dragonfarm:::cancel_path(rec_path))
+  out <- suppressMessages(dragonfarm:::run_pipeline(run, list(dragon_step_evaluate(), dragon_step_evaluate()), runs, record, rec_path))
+  expect_equal(out$status, "cancelled")
+  expect_equal(vapply(out$steps, `[[`, "", "state"), c("skipped", "skipped"))
+  st <- dragon_pipeline_status("p-cancel", runs_dir = runs)
+  expect_equal(st$status, "cancelled")
+  expect_true(any(grepl("cancelled", testthat::capture_messages(print(st)))))
+  # cancelling again is a no-op
+  again <- suppressMessages(dragon_pipeline_cancel("p-cancel", runs_dir = runs))
+  expect_equal(again$status, "cancelled")
+})
+
+test_that("dragon_pipeline_cancel marks the record, asks running runs to stop, and kills a stuck runner", {
+  runs <- tempfile("runs-")
+  dir.create(runs)
+  # a run this pipeline started that is still training
+  run_dir <- file.path(runs, "20260916-120000-child")
+  dir.create(run_dir)
+  dragonfarm:::write_json(list(created_at = "2026-09-16T12:00:00Z", stage = "sft", model = list(id = "x/y")), file.path(run_dir, "config.json"))
+  dragonfarm:::write_json(list(state = "running"), file.path(run_dir, "status.json"))
+  # an older run that is not part of it
+  old_dir <- file.path(runs, "20260901-000000-old")
+  dir.create(old_dir)
+  dragonfarm:::write_json(list(created_at = "2026-09-01T00:00:00Z", stage = "sft", model = list(id = "x/y")), file.path(old_dir, "config.json"))
+  dragonfarm:::write_json(list(state = "running"), file.path(old_dir, "status.json"))
+
+  sleeper <- processx::process$new(file.path(R.home("bin"), "Rscript"), c("-e", "Sys.sleep(120)"), windows_hide_window = TRUE)
+  withr::defer(if (sleeper$is_alive()) sleeper$kill())
+  rec_path <- file.path(dragonfarm:::pipelines_dir(runs), "p-live.json")
+  dragonfarm:::write_json(list(id = "p-live", status = "running", runs_dir = runs, started_at = "2026-09-16T11:59:00Z",
+                               pid = sleeper$get_pid(),
+                               steps = list(list(type = "train", state = "running"), list(type = "judge", state = "queued"))),
+                          rec_path)
+
+  st <- suppressMessages(dragon_pipeline_cancel("p-live", runs_dir = runs, wait = FALSE))
+  expect_equal(st$status, "running")
+  expect_true(file.exists(dragonfarm:::cancel_path(rec_path)))
+  expect_true(file.exists(file.path(run_dir, "cancel.request")))
+  expect_false(file.exists(file.path(old_dir, "cancel.request")))
+
+  st <- suppressMessages(dragon_pipeline_cancel("p-live", runs_dir = runs, wait = TRUE, timeout = 0))
+  expect_equal(st$status, "cancelled")
+  expect_equal(vapply(st$steps, `[[`, "", "state"), c("cancelled", "skipped"))
+  Sys.sleep(0.5)
+  expect_false(sleeper$is_alive())
+  # once the process is gone, a stale "running" record reads as failed
+  dragonfarm:::write_json(list(id = "p-dead", status = "running", pid = sleeper$get_pid(), steps = list()),
+                          file.path(dragonfarm:::pipelines_dir(runs), "p-dead.json"))
+  expect_equal(dragon_pipeline_status("p-dead", runs_dir = runs)$status, "failed")
+})
+
+test_that("the pipeline module's cancel button writes a cancel request", {
+  root <- tempfile("runs-")
+  dir.create(file.path(root, "pipelines"), recursive = TRUE)
+  dragonfarm:::write_json(list(id = "p1", status = "running", runs_dir = root, pid = Sys.getpid(),
+                               steps = list(list(type = "train", state = "running"))),
+                          file.path(root, "pipelines", "p1.json"))
+  state <- shiny::reactiveValues(dataset = NULL, mapped = NULL, model = NULL, run = NULL)
+  shiny::testServer(dragonfarm:::mod_pipeline_server, args = list(state = state, runs_dir = root), {
+    html <- as.character(output$pipelines$html)
+    expect_match(html, "Cancel")
+    session$setInputs(cancel = list(id = "p1", nonce = 1))
+    expect_true(file.exists(file.path(root, "pipelines", "p1.cancel")))
+  })
+})
+
+test_that("app task helpers summarise records and read judgements back", {
+  rec <- list(status = "failed", steps = list(list(type = "judge", state = "failed", error = "boom")))
+  expect_equal(dragonfarm:::task_error(rec), "boom")
+  expect_equal(dragonfarm:::task_error(list(status = "failed", steps = list())), "no details were recorded")
+  expect_null(dragonfarm:::task_status_ui(NULL, "x"))
+  running <- as.character(dragonfarm:::task_status_ui(list(id = "p9", state = "running"), "The judge"))
+  expect_match(running, "p9")
+  failed <- as.character(dragonfarm:::task_status_ui(list(id = "p9", state = "failed", error = "boom"), "The judge"))
+  expect_match(failed, "boom")
+  expect_null(dragonfarm:::task_status_ui(list(id = "p9", state = "succeeded"), "x"))
+
+  run <- fixture_with_samples()
+  expect_null(dragonfarm:::last_judgement(run))
+  dragonfarm:::write_json(list(
+    list(mode = "score", summary = list(mean_score = 6, n = 1), details = list(list(prompt = "a", reply = "b", score = 6))),
+    list(mode = "pairwise", against = "base", summary = list(win_rate = 0.5, n = 2),
+         details = list(list(prompt = "p1", a = "x", b = "y", verdict = "a"), list(prompt = "p2", a = "x", b = "y", verdict = NULL)))
+  ), file.path(run$dir, "judge.json"))
+  j <- dragonfarm:::last_judgement(run)
+  expect_equal(j$mode, "pairwise")
+  expect_equal(nrow(j$details), 2)
+  expect_equal(j$details$verdict, c("a", "unparsed"))
+  expect_equal(j$summary$win_rate, 0.5)
+})
+
+test_that("synthesized pairs reload from their file", {
+  dir <- tempfile("synth-")
+  dir.create(dir)
+  file <- file.path(dir, "pairs.jsonl")
+  df <- data.frame(prompt = c("q1", "q2"), chosen = c("good", "great"), rejected = c("bad", "worse"),
+                   chosen_score = c(8, 9), rejected_score = c(3, 2), system = "Be brief.", stringsAsFactors = FALSE)
+  dragonfarm:::write_synth(df, file, list(kind = "pairs"))
+  ds <- dragonfarm:::load_synth_pairs(file)
+  expect_equal(dragonfarm:::mapping_kind(ds), "pairs")
+  expect_equal(nrow(ds$data), 2)
+  expect_equal(ds$mapping$system, "{`system`}")
+  expect_equal(attr(ds, "synthesis")$kind, "pairs")
+})
