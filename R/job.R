@@ -128,7 +128,11 @@ dragon_wait <- function(run, timeout = Inf, poll = 2) {
     cli::cli_alert_warning("Run {.strong {run$id}} was cancelled. The adapter holds the last checkpoint.")
   } else {
     msg <- "Run {.strong {run$id}} succeeded."
-    if (!is.null(st$eval_loss)) msg <- paste0(msg, " Eval loss {round(st$eval_loss, 3)}, perplexity {round(st$perplexity, 2)}.")
+    if (!is.null(st$pref_accuracy)) {
+      msg <- paste0(msg, " Preference accuracy {round(100 * st$pref_accuracy)}%, reward margin {round(st$reward_margin, 3)}.")
+    } else if (!is.null(st$eval_loss) && !is.null(st$perplexity)) {
+      msg <- paste0(msg, " Eval loss {round(st$eval_loss, 3)}, perplexity {round(st$perplexity, 2)}.")
+    }
     cli::cli_alert_success(msg)
   }
   invisible(run)
