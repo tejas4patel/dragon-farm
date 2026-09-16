@@ -173,12 +173,13 @@
 <td>Streaming reaches R (<code>on_token</code>); the Shiny panel shows whole replies for now.</td>
 </tr><tr><td>D4</td>
 <td>Context window handling: token count per turn, warn near the model’s limit, drop or summarise oldest turns</td>
-<td>planned</td>
-<td>Small models have 2K to 8K contexts.</td>
+<td>done</td>
+<td>
+<code>dragon_chat(context_window=)</code>, <code>$context_usage()</code>; drops the oldest turns (an LLM-summarizing alternative was not built).</td>
 </tr><tr><td>D5</td>
 <td>Side-by-side chat: same conversation sent to two backends or two runs (before and after a stage)</td>
-<td>planned</td>
-<td>Extends the existing base-versus-tuned comparison.</td>
+<td>done</td>
+<td>Compare toggle in the Chat tab; feedback stays scoped to the primary conversation.</td>
 </tr><tr><td>D6</td>
 <td>Feedback in the thread: thumbs up or down, edit a reply</td>
 <td>done</td>
@@ -190,8 +191,9 @@
 <code><a href="reference/dragon_feedback.html">dragon_feedback()</a></code>.</td>
 </tr><tr><td>D8</td>
 <td>Save and load transcripts; export a conversation as a training example</td>
-<td>planned</td>
-<td></td>
+<td>done</td>
+<td>
+<code>$save()</code>/<code><a href="reference/dragon_chat.html">dragon_chat_load()</a></code> existed; added Load transcript and Export as training example to the app.</td>
 </tr></tbody></table></div>
 <div class="section level2">
 <h2 id="e-data-and-training">E. Data and training<a class="anchor" aria-label="anchor" href="#e-data-and-training"></a></h2>

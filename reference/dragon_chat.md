@@ -17,7 +17,8 @@ dragon_chat(
   temperature = 0.7,
   top_p = 0.9,
   base = FALSE,
-  runs_dir = dragon_runs_dir()
+  runs_dir = dragon_runs_dir(),
+  context_window = NULL
 )
 
 dragon_chat_load(path, x = NULL, backend = dragon_backend())
@@ -53,6 +54,16 @@ dragon_chat_load(path, x = NULL, backend = dragon_backend())
   `feedback/`). See
   [`dragon_feedback()`](https://dragonfarm.dev/reference/dragon_feedback.md).
 
+- context_window:
+
+  Approximate token budget for the conversation (system prompt plus
+  history), such as a small model's 2K to 8K context. When the next turn
+  would go over it, `$say()` drops the oldest user/assistant pair and
+  tries again until it fits, keeping the system prompt and the most
+  recent turns. `NULL` (the default) never drops turns. The token count
+  is a rough estimate (about 4 characters per token), not the model's
+  own tokenizer.
+
 - path:
 
   A transcript written by `$save()`.
@@ -67,9 +78,11 @@ again for the last reply; `$rate("up")` or `$rate("down")` records a
 verdict on the last reply and `$edit(text)` replaces it with a better
 one, both saved as feedback that
 [`dragon_feedback()`](https://dragonfarm.dev/reference/dragon_feedback.md)
-turns into training data; `$save(path)` and `dragon_chat_load(path)`
-write and read a transcript; `$as_example()` returns the conversation as
-one training row.
+turns into training data; `$context_usage()` reports the estimated
+tokens used, the window, and how many turns have been dropped to stay
+under it (`NULL` when `context_window` is not set); `$save(path)` and
+`dragon_chat_load(path)` write and read a transcript; `$as_example()`
+returns the conversation as one training row.
 
 ## Examples
 

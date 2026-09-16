@@ -66,7 +66,8 @@ example.</p>
 <span>  temperature <span class="op">=</span> <span class="fl">0.7</span>,</span>
 <span>  top_p <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>  base <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  runs_dir <span class="op">=</span> <span class="fu"><a href="dragon_runs_dir.html">dragon_runs_dir</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  runs_dir <span class="op">=</span> <span class="fu"><a href="dragon_runs_dir.html">dragon_runs_dir</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  context_window <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">dragon_chat_load</span><span class="op">(</span><span class="va">path</span>, x <span class="op">=</span> <span class="cn">NULL</span>, backend <span class="op">=</span> <span class="fu"><a href="dragon_backend.html">dragon_backend</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -102,6 +103,16 @@ model id. Ignored by server backends, which serve a fixed model.</p></dd>
 (under <code>feedback/</code>). See <code><a href="dragon_feedback.html">dragon_feedback()</a></code>.</p></dd>
 
 
+<dt id="arg-context-window">context_window<a class="anchor" aria-label="anchor" href="#arg-context-window"></a></dt>
+<dd><p>Approximate token budget for the conversation
+(system prompt plus history), such as a small model's 2K to 8K
+context. When the next turn would go over it, <code>$say()</code> drops the
+oldest user/assistant pair and tries again until it fits, keeping the
+system prompt and the most recent turns. <code>NULL</code> (the default) never
+drops turns. The token count is a rough estimate (about 4 characters
+per token), not the model's own tokenizer.</p></dd>
+
+
 <dt id="arg-path">path<a class="anchor" aria-label="anchor" href="#arg-path"></a></dt>
 <dd><p>A transcript written by <code>$save()</code>.</p></dd>
 
@@ -116,6 +127,9 @@ drops the last exchange; <code>$regenerate()</code> asks again for the last repl
 <code>$rate("up")</code> or <code>$rate("down")</code> records a verdict on the last reply
 and <code>$edit(text)</code> replaces it with a better one, both saved as feedback
 that <code><a href="dragon_feedback.html">dragon_feedback()</a></code> turns into training data;
+<code>$context_usage()</code> reports the estimated tokens used, the window, and
+how many turns have been dropped to stay under it (<code>NULL</code> when
+<code>context_window</code> is not set);
 <code>$save(path)</code> and <code>dragon_chat_load(path)</code> write and read a transcript;
 <code>$as_example()</code> returns the conversation as one training row.</p>
     </div>
