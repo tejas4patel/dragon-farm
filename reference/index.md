@@ -19,6 +19,8 @@
   : Map columns for preference optimization
 - [`dragon_map_prompts()`](https://dragonfarm.dev/reference/dragon_map_prompts.md)
   : Map columns for reinforcement learning
+- [`dragon_conversations()`](https://dragonfarm.dev/reference/dragon_conversations.md)
+  : Multi-turn conversations as training data
 - [`dragon_synthesize()`](https://dragonfarm.dev/reference/dragon_synthesize.md)
   : Write fine-tuning data with a teacher model
 - [`dragon_synthesize_pairs()`](https://dragonfarm.dev/reference/dragon_synthesize_pairs.md)
@@ -104,6 +106,8 @@
 - [`dragon_chat()`](https://dragonfarm.dev/reference/dragon_chat.md)
   [`dragon_chat_load()`](https://dragonfarm.dev/reference/dragon_chat.md)
   : Talk to a model, with memory of the conversation
+- [`dragon_feedback()`](https://dragonfarm.dev/reference/dragon_feedback.md)
+  : Training data from chat feedback
 
 ## After training
 

@@ -34,6 +34,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/quickstart.html">Quickstart: fine-tune a small model from R</a></li>
+    <li><a class="dropdown-item" href="../articles/post-training-loop.html">The post-training loop: fine-tune, judge, prefer, repeat</a></li>
+    <li><a class="dropdown-item" href="../articles/reinforcement-learning.html">Reinforcement learning with rewards you can check</a></li>
     <li><a class="dropdown-item" href="../articles/shiny-app.html">The dragon-farm app</a></li>
   </ul>
 </li>
@@ -73,15 +75,18 @@
 app that you cannot do from the console, and every run it starts is a
 normal run directory.</p>
 <div class="section level2">
-<h2 id="the-six-panels">The six panels<a class="anchor" aria-label="anchor" href="#the-six-panels"></a>
+<h2 id="the-eight-panels">The eight panels<a class="anchor" aria-label="anchor" href="#the-eight-panels"></a>
 </h2>
 <p><strong>1 Data.</strong> Drop a CSV, TSV, JSONL, JSON, or Parquet
 file on the input, or click “Load the example tickets”. You see row and
 column counts and the first eight rows.</p>
-<p><strong>2 Map.</strong> The columns appear as chips in the left
-bucket. Drag them into System, Prompt, or Response. Two chips in one
-slot are joined with a blank line. The template fields below fill in as
-you drag and can be edited by hand for anything else, for example
+<p><strong>2 Map.</strong> Choose the kind of data first: prompt and
+response rows for fine-tuning, chosen and rejected pairs for preference
+optimization, or prompts with an optional reference for reinforcement
+learning. The columns appear as chips in the left bucket. Drag them into
+System, Prompt, or Response. Two chips in one slot are joined with a
+blank line. The template fields below fill in as you drag and can be
+edited by hand for anything else, for example
 <code>Ticket #{id}: {subject}</code>. The right side shows the first
 three rows exactly as the model will see them.</p>
 <p><strong>3 Model.</strong> Pick a preset or type a Hugging Face model
@@ -90,17 +95,34 @@ and reports whether the chosen model fits in GPU memory and whether it
 needs a token.</p>
 <p><strong>4 Train.</strong> Epochs, learning rate, rank, sequence
 length, and batch size are on the front. Everything else is under
-Advanced. The panel refuses to start until the first three steps are
-complete, and estimates the number of optimizer steps from your
-settings.</p>
-<p><strong>5 Monitor.</strong> A live loss curve with evaluation points,
-step count, ETA, the trainer log, and the R code for the run. Cancel
-asks the trainer to stop after the current step and save. Resume picks
-up from the last checkpoint. Every run in the runs directory is listed,
-including ones started from the console.</p>
+Advanced. The stage follows the data kind: preference pairs show the DPO
+or ORPO method and beta, RL prompts show a reward builder. “Start from”
+continues from an earlier run instead of a base model. The panel refuses
+to start until the first three steps are complete, and estimates the
+number of optimizer steps from your settings. “No GPU here?” packages
+the run for a cloud GPU instead.</p>
+<p><strong>5 Monitor.</strong> A live loss curve with evaluation points
+(and mean reward for RL runs), step count, ETA, the trainer log, and the
+R code for the run. Cancel asks the trainer to stop after the current
+step and save. Resume picks up from the last checkpoint. Every run in
+the runs directory is listed, including ones started from the console.
+Below: task metrics over the held-out rows, a comparison table of every
+run, and import of results trained in the cloud.</p>
 <p><strong>6 Try it.</strong> Type a prompt and see the fine-tuned reply
-next to the base model’s reply. “Merge and save” writes a standalone
-model directory.</p>
+next to the base model’s reply. Judge compares the run against what it
+started from with a language model as referee. Improve samples the run’s
+own replies, has the judge rank them, and loads the result as preference
+pairs for the next stage. “Merge and save” writes a standalone model
+directory.</p>
+<p><strong>7 Chat.</strong> A conversation with memory: every turn sends
+the whole history. Answer from a run on this machine, an Ollama model,
+or any OpenAI-compatible server. Rate replies, edit them, or ask again;
+<code><a href="../reference/dragon_feedback.html">dragon_feedback()</a></code> turns those verdicts into training data.
+Save the transcript as JSON.</p>
+<p><strong>8 Pipeline.</strong> Runs the standard loop in a background R
+process: fine-tune, sample and judge into pairs, DPO, judge again,
+metrics. Shows each pipeline’s steps as they finish and the lineage of
+every run in the directory.</p>
 </div>
 <div class="section level2">
 <h2 id="running-it-for-other-people">Running it for other people<a class="anchor" aria-label="anchor" href="#running-it-for-other-people"></a>

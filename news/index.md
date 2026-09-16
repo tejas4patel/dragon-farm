@@ -2,6 +2,23 @@
 
 ## dragonfarm (development version)
 
+- Human feedback becomes data. In
+  [`dragon_chat()`](https://dragonfarm.dev/reference/dragon_chat.md) and
+  the app’s Chat panel, replies can be rated up or down, edited, or
+  regenerated; every verdict is saved under `feedback/`.
+  [`dragon_feedback()`](https://dragonfarm.dev/reference/dragon_feedback.md)
+  turns them into a conversations dataset of liked and edited replies
+  and a preference-pairs dataset where the same prompt drew a liked and
+  a disliked reply.
+
+- [`dragon_conversations()`](https://dragonfarm.dev/reference/dragon_conversations.md):
+  whole multi-turn conversations as training data, from a list, a JSONL
+  file, or a data frame. They train wherever prompt and response rows
+  do.
+
+- Two new vignettes: the post-training loop, and reinforcement learning
+  with verifiable rewards.
+
 - Inference backends.
   [`dragon_generate()`](https://dragonfarm.dev/reference/dragon_generate.md)
   and everything built on it now route through a `backend`:
@@ -18,6 +35,7 @@
   [`dragon_worker_stop()`](https://dragonfarm.dev/reference/dragon_worker_stop.md)
   frees the worker’s memory. Set a session default with
   `options(dragonfarm.backend)`.
+
 - [`dragon_chat()`](https://dragonfarm.dev/reference/dragon_chat.md): a
   conversation object with memory, streaming through `on_token` where
   the backend supports it, save and load of transcripts, and export of a

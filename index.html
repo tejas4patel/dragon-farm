@@ -36,6 +36,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/quickstart.html">Quickstart: fine-tune a small model from R</a></li>
+    <li><a class="dropdown-item" href="articles/post-training-loop.html">The post-training loop: fine-tune, judge, prefer, repeat</a></li>
+    <li><a class="dropdown-item" href="articles/reinforcement-learning.html">Reinforcement learning with rewards you can check</a></li>
     <li><a class="dropdown-item" href="articles/shiny-app.html">The dragon-farm app</a></li>
   </ul>
 </li>
@@ -183,11 +185,22 @@
 <span><span class="va">vllm</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_backend.html">dragon_backend_server</a></span><span class="op">(</span><span class="st">"https://my-pod.example.com/v1"</span>, model <span class="op">=</span> <span class="st">"me/support-0.5b"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/dragon_chat.html">dragon_chat</a></span><span class="op">(</span>backend <span class="op">=</span> <span class="va">vllm</span><span class="op">)</span><span class="op">$</span><span class="fu">say</span><span class="op">(</span><span class="st">"Hello"</span><span class="op">)</span></span></code></pre></div>
 <p>The default backend is a local worker that keeps the last two models loaded, so judge and synthesis loops stop paying a model load per call. The app’s Chat panel offers the same choice of backend.</p>
+<p>Conversations are also where human feedback comes from. Rate a reply, fix it, and the verdict is saved; <code><a href="reference/dragon_feedback.html">dragon_feedback()</a></code> turns the verdicts into data for the next stage:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">chat</span><span class="op">$</span><span class="fu">rate</span><span class="op">(</span><span class="st">"down"</span><span class="op">)</span></span>
+<span><span class="va">chat</span><span class="op">$</span><span class="fu">regenerate</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">chat</span><span class="op">$</span><span class="fu">rate</span><span class="op">(</span><span class="st">"up"</span><span class="op">)</span></span>
+<span><span class="va">chat</span><span class="op">$</span><span class="fu">edit</span><span class="op">(</span><span class="st">"Hold the recessed button on the back for ten seconds."</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fb</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_feedback.html">dragon_feedback</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">better</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_train.html">dragon_train</a></span><span class="op">(</span><span class="va">fb</span><span class="op">$</span><span class="va">sft</span>, <span class="va">dpo</span>, wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>      <span class="co"># liked and edited replies, with context</span></span>
+<span><span class="va">dpo2</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_prefer.html">dragon_prefer</a></span><span class="op">(</span><span class="va">fb</span><span class="op">$</span><span class="va">pairs</span>, <span class="va">better</span>, wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>  <span class="co"># liked versus disliked replies to the same prompt</span></span></code></pre></div>
+<p>Whole conversations work as training data too: <code><a href="reference/dragon_conversations.html">dragon_conversations()</a></code> takes a list of message lists or a JSONL file of them.</p>
 </div>
 <div class="section level2">
 <h2 id="the-whole-loop-in-one-call">The whole loop in one call<a class="anchor" aria-label="anchor" href="#the-whole-loop-in-one-call"></a>
 </h2>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_pipeline.html">dragon_pipeline</a></span><span class="op">(</span><span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="reference/dragon_step.html">dragon_step_train</a></span><span class="op">(</span><span class="va">tickets</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="reference/dragon_step.html">dragon_step_synthesize_pairs</a></span><span class="op">(</span>prompts <span class="op">=</span> <span class="st">"train"</span>, n <span class="op">=</span> <span class="fl">150</span>, judge <span class="op">=</span> <span class="fu"><a href="reference/dragon_llm_anthropic.html">dragon_judge_anthropic</a></span><span class="op">(</span>model <span class="op">=</span> <span class="st">"claude-sonnet-5"</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -204,7 +217,7 @@
 <h2 id="did-it-help-metrics-judges-and-comparisons">Did it help? Metrics, judges, and comparisons<a class="anchor" aria-label="anchor" href="#did-it-help-metrics-judges-and-comparisons"></a>
 </h2>
 <p>Held-out loss says a stage trained. It does not say the replies got better. Three tools answer that:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Deterministic checks over every held-out row</span></span>
 <span><span class="fu"><a href="reference/dragon_evaluate.html">dragon_evaluate</a></span><span class="op">(</span><span class="va">dpo</span>, metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exact"</span>, <span class="st">"token_f1"</span>, <span class="st">"json_valid"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -224,7 +237,7 @@
 <h2 id="no-gpu-train-in-the-cloud">No GPU? Train in the cloud<a class="anchor" aria-label="anchor" href="#no-gpu-train-in-the-cloud"></a>
 </h2>
 <p>The run directory is the whole contract between R and the trainer, so a run can be trained on any machine with a GPU and its results copied back. <code><a href="reference/dragon_bundle.html">dragon_bundle()</a></code> zips the run, <code><a href="reference/dragon_remote.html">dragon_remote()</a></code> opens a provider with the dragon-farm notebook and prints the steps, and <code><a href="reference/dragon_import.html">dragon_import()</a></code> puts the trained adapter into place. Nothing else changes: <code><a href="reference/dragon_generate.html">dragon_generate()</a></code> and <code><a href="reference/dragon_merge.html">dragon_merge()</a></code> work on the imported run as if it had trained locally.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="fu"><a href="reference/dragon_example_data.html">dragon_example_data</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_map.html">dragon_map</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"{subject}\n\n{body}"</span>, response <span class="op">=</span> <span class="st">"reply"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_bundle.html">dragon_bundle</a></span><span class="op">(</span><span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span><span class="op">)</span></span>
@@ -410,7 +423,7 @@
 <div class="section level2">
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a>
 </h2>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span><span class="op">)</span>                                  <span class="co"># unit tests, no Python needed</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>DRAGONFARM_INTEGRATION <span class="op">=</span> <span class="st">"true"</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span>filter <span class="op">=</span> <span class="st">"integration"</span><span class="op">)</span>            <span class="co"># trains SmolLM2-135M for 6 steps</span></span></code></pre></div>

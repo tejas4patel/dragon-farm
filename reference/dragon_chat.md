@@ -16,7 +16,8 @@ dragon_chat(
   max_new_tokens = 256,
   temperature = 0.7,
   top_p = 0.9,
-  base = FALSE
+  base = FALSE,
+  runs_dir = dragon_runs_dir()
 )
 
 dragon_chat_load(path, x = NULL, backend = dragon_backend())
@@ -46,6 +47,12 @@ dragon_chat_load(path, x = NULL, backend = dragon_backend())
 
   Talk to what the run started from instead of the run.
 
+- runs_dir:
+
+  Where feedback from `$rate()` and `$edit()` is recorded (under
+  `feedback/`). See
+  [`dragon_feedback()`](https://dragonfarm.dev/reference/dragon_feedback.md).
+
 - path:
 
   A transcript written by `$save()`.
@@ -55,9 +62,14 @@ dragon_chat_load(path, x = NULL, backend = dragon_backend())
 A `dragon_chat` object with methods: `$say(text, on_token = NULL)` sends
 a user turn and returns the reply (streaming pieces to `on_token` when
 the backend supports it); `$history()` returns the messages; `$reset()`
-clears them; `$save(path)` and `dragon_chat_load(path)` write and read a
-transcript; `$as_example()` returns the conversation as one training
-row.
+clears them; `$undo()` drops the last exchange; `$regenerate()` asks
+again for the last reply; `$rate("up")` or `$rate("down")` records a
+verdict on the last reply and `$edit(text)` replaces it with a better
+one, both saved as feedback that
+[`dragon_feedback()`](https://dragonfarm.dev/reference/dragon_feedback.md)
+turns into training data; `$save(path)` and `dragon_chat_load(path)`
+write and read a transcript; `$as_example()` returns the conversation as
+one training row.
 
 ## Examples
 

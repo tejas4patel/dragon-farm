@@ -4,7 +4,9 @@
 <url><loc>https://dragonfarm.dev/LICENSE-text.html</loc></url>
 <url><loc>https://dragonfarm.dev/LICENSE.html</loc></url>
 <url><loc>https://dragonfarm.dev/articles/index.html</loc></url>
+<url><loc>https://dragonfarm.dev/articles/post-training-loop.html</loc></url>
 <url><loc>https://dragonfarm.dev/articles/quickstart.html</loc></url>
+<url><loc>https://dragonfarm.dev/articles/reinforcement-learning.html</loc></url>
 <url><loc>https://dragonfarm.dev/articles/shiny-app.html</loc></url>
 <url><loc>https://dragonfarm.dev/authors.html</loc></url>
 <url><loc>https://dragonfarm.dev/index.html</loc></url>
@@ -17,10 +19,12 @@
 <url><loc>https://dragonfarm.dev/reference/dragon_check.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_code.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_compare.html</loc></url>
+<url><loc>https://dragonfarm.dev/reference/dragon_conversations.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_dataset.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_evaluate.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_example_data.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_export_gguf.html</loc></url>
+<url><loc>https://dragonfarm.dev/reference/dragon_feedback.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_generate.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_hardware.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_import.html</loc></url>
