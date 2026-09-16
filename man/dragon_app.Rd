@@ -17,7 +17,8 @@ A Shiny app object. Printing it runs the app.
 \description{
 A Shiny app that walks through the same steps as the R API: drop in a
 dataset, drag its columns into prompt and response slots, pick a model,
-train in the background, watch the loss curve, and try the result.
+train in the background, watch the loss curve, try the result, and run
+the whole post-training loop as a pipeline.
 Every run started here is a normal run directory, and the Monitor panel
 shows the R code that reproduces it.
 }

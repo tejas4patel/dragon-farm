@@ -64,20 +64,51 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       if (is.null(m)) "messages" else mapping_kind(m) %||% "messages"
     })
     is_pairs <- shiny::reactive(identical(kind(), "pairs"))
+    is_rl <- shiny::reactive(identical(kind(), "prompts"))
 
-    # Preference runs need a lower learning rate; nudge the default once when
-    # the mapping switches kind.
-    shiny::observeEvent(is_pairs(), {
-      if (is_pairs()) {
-        shiny::updateNumericInput(session, "learning_rate", value = 5e-5)
-        shiny::updateNumericInput(session, "epochs", value = 2)
-      } else {
-        shiny::updateNumericInput(session, "learning_rate", value = 2e-4)
-        shiny::updateNumericInput(session, "epochs", value = 3)
-      }
+    # Preference and RL runs need lower learning rates; nudge the defaults
+    # once when the mapping switches kind.
+    shiny::observeEvent(kind(), {
+      switch(kind(),
+        pairs = {
+          shiny::updateNumericInput(session, "learning_rate", value = 5e-5)
+          shiny::updateNumericInput(session, "epochs", value = 2)
+        },
+        prompts = {
+          shiny::updateNumericInput(session, "learning_rate", value = 1e-5)
+          shiny::updateNumericInput(session, "epochs", value = 1)
+          shiny::updateNumericInput(session, "grad_accum", value = 1)
+        },
+        {
+          shiny::updateNumericInput(session, "learning_rate", value = 2e-4)
+          shiny::updateNumericInput(session, "epochs", value = 3)
+        }
+      )
     }, ignoreInit = TRUE)
 
     output$stage_ui <- shiny::renderUI({
+      if (is_rl()) {
+        return(shiny::div(class = "stage-box",
+          shiny::p(class = "text-muted small", "Stage: reinforcement learning (GRPO). The model writes several answers per prompt; the rewards below decide which ones it learns from."),
+          shiny::checkboxGroupInput(ns("reward_types"), "Rewards (summed)", inline = TRUE,
+            choices = c("numeric answer" = "numeric", "exact match" = "exact", "contains reference" = "contains",
+                        "valid JSON" = "json", "length cap" = "length", "keywords" = "keyword", "regex" = "regex"),
+            selected = "numeric"),
+          bslib::layout_columns(
+            col_widths = c(4, 4, 4),
+            shiny::textInput(ns("reward_regex"), "Regex pattern", placeholder = "^T-\\d{4}"),
+            shiny::textInput(ns("reward_words"), "Keywords (comma separated)", placeholder = "refund, replace"),
+            shiny::numericInput(ns("reward_max_chars"), "Max characters", value = 400, min = 10, step = 10)
+          ),
+          bslib::layout_columns(
+            col_widths = c(3, 3, 3, 3),
+            shiny::numericInput(ns("group_size"), "Samples per prompt", value = 4, min = 2, max = 16, step = 1),
+            shiny::numericInput(ns("kl_beta"), "KL beta", value = 0.04, min = 0, max = 1, step = 0.01),
+            shiny::numericInput(ns("rl_temperature"), "Temperature", value = 1.0, min = 0.1, max = 2, step = 0.1),
+            shiny::numericInput(ns("rl_max_new_tokens"), "Max new tokens", value = 128, min = 8, step = 8)
+          )
+        ))
+      }
       if (!is_pairs()) {
         return(shiny::p(class = "text-muted small", "Stage: supervised fine-tuning on prompt and response rows."))
       }
@@ -140,9 +171,11 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       steps <- if (!is.na(input$max_steps %||% NA)) input$max_steps else ceiling((n - n_eval) / eff) * (input$epochs %||% 3)
       b <- base()
       shiny::tags$ul(class = "checklist ok",
-        shiny::tags$li(sprintf("%d %s, %d held out", n - n_eval, if (is_pairs()) "training pairs" else "training rows", n_eval)),
+        shiny::tags$li(sprintf("%d %s, %d held out", n - n_eval, switch(kind(), pairs = "training pairs", prompts = "prompts", "training rows"), n_eval)),
         shiny::tags$li(if (is.null(b)) shiny::code(state$model$id) else shiny::span("Continue from run ", shiny::code(b$id))),
-        shiny::tags$li(if (is_pairs()) sprintf("%s, beta %s", toupper(input$method %||% "dpo"), input$beta %||% 0.1) else "Supervised fine-tuning"),
+        shiny::tags$li(if (is_pairs()) sprintf("%s, beta %s", toupper(input$method %||% "dpo"), input$beta %||% 0.1)
+                       else if (is_rl()) sprintf("GRPO, %d samples per prompt, rewards: %s", input$group_size %||% 4, paste(input$reward_types %||% "numeric", collapse = ", "))
+                       else "Supervised fine-tuning"),
         shiny::tags$li(sprintf("Effective batch %d, about %d optimizer steps", eff, as.integer(steps)))
       )
     })
@@ -157,7 +190,11 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
         model = if (is.null(b)) state$model$id else b,
         kind = kind(),
         method = input$method %||% "dpo",
-        beta = input$beta %||% 0.1,
+        beta = if (is_rl()) input$kl_beta %||% 0.04 else input$beta %||% 0.1,
+        rewards = if (is_rl()) rewards_from_inputs(input),
+        group_size = input$group_size %||% 4,
+        rl_temperature = input$rl_temperature %||% 1.0,
+        rl_max_new_tokens = input$rl_max_new_tokens %||% 128,
         lora = dragon_lora(r = input$rank, alpha = input$alpha, dropout = input$dropout),
         args = dragon_train_args(
           epochs = input$epochs, learning_rate = input$learning_rate,
@@ -172,6 +209,12 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
     }
 
     launch <- function(s, hardware) {
+      if (identical(s$kind, "prompts")) {
+        return(dragon_reinforce(s$dataset, s$model, rewards = s$rewards, group_size = s$group_size, beta = s$beta,
+                                temperature = s$rl_temperature, max_new_tokens = s$rl_max_new_tokens,
+                                lora = s$lora, args = s$args, hardware = hardware, name = s$name,
+                                trust_remote_code = s$trust_remote_code))
+      }
       if (identical(s$kind, "pairs")) {
         dragon_prefer(s$dataset, s$model, method = s$method, beta = s$beta, lora = s$lora, args = s$args,
                       hardware = hardware, name = s$name, trust_remote_code = s$trust_remote_code)
@@ -219,7 +262,9 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
         s <- settings()
         run <- dragon_bundle(s$dataset, s$model, lora = s$lora, args = s$args, name = s$name,
                              trust_remote_code = s$trust_remote_code,
-                             method = if (identical(s$kind, "pairs")) s$method, beta = s$beta)
+                             method = if (identical(s$kind, "pairs")) s$method, beta = s$beta,
+                             rewards = s$rewards, group_size = s$group_size,
+                             temperature = s$rl_temperature, max_new_tokens = s$rl_max_new_tokens)
         info <- dragon_remote(run, provider, open = FALSE)
         list(run = run, info = info)
       }, error = function(e) { notify_error(e); NULL })
@@ -258,4 +303,25 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       shiny::p(class = "small text-muted", "Latest run: ", shiny::code(run$id))
     })
   })
+}
+
+
+# Reward list from the Train panel's inputs.
+rewards_from_inputs <- function(input) {
+  types <- input$reward_types %||% "numeric"
+  out <- lapply(types, function(tp) {
+    switch(tp,
+      regex = if (nzchar(trimws(input$reward_regex %||% ""))) dragon_reward("regex", pattern = input$reward_regex),
+      keyword = {
+        words <- trimws(strsplit(input$reward_words %||% "", ",")[[1]])
+        words <- words[nzchar(words)]
+        if (length(words)) dragon_reward("keyword", words = words)
+      },
+      length = dragon_reward("length", max_chars = as.integer(input$reward_max_chars %||% 400), weight = 0.5),
+      dragon_reward(tp)
+    )
+  })
+  out <- Filter(Negate(is.null), out)
+  if (!length(out)) cli::cli_abort("Pick at least one reward (a regex reward needs a pattern, a keyword reward needs words).")
+  out
 }

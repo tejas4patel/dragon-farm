@@ -39,7 +39,16 @@ def main():
 
     metrics, samples = None, []
     if cfg["data"].get("eval"):
-        if stage == "prefer":
+        if stage == "reinforce":
+            from .reinforce import eval_reinforce, read_prompt_records
+            from .rewards import RewardSet
+
+            rl = cfg.get("reinforce") or {}
+            records = read_prompt_records(run_dir / cfg["data"]["eval"])
+            rewards = RewardSet(rl.get("rewards") or [], run_dir=run_dir)
+            metrics, samples = eval_reinforce(model, tok, rewards, records, hw.device,
+                                              int(rl.get("max_new_tokens", 128)), a.n_samples)
+        elif stage == "prefer":
             from .data import load_pairs_split
             from .prefer import eval_pairs, sample_pair_generations
 

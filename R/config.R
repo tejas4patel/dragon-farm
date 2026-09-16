@@ -102,7 +102,7 @@ dragon_hardware <- function(device = c("auto", "cuda", "mps", "cpu"),
 
 build_config <- function(run_id, model, files, lora, args, hardware, n_samples,
                          revision = NULL, trust_remote_code = FALSE,
-                         stage = "sft", prefer = NULL, base = NULL) {
+                         stage = "sft", prefer = NULL, base = NULL, reinforce = NULL) {
   list(
     schema_version = 1L,
     run_id = run_id,
@@ -114,6 +114,7 @@ build_config <- function(run_id, model, files, lora, args, hardware, n_samples,
       base_adapters = if (length(base$adapters)) as.list(base$adapters)
     ),
     prefer = if (identical(stage, "prefer")) list(method = prefer$method, beta = prefer$beta),
+    reinforce = if (identical(stage, "reinforce")) reinforce,
     data = list(
       train = files$train, eval = files$eval, format = files$format %||% "messages",
       n_train = files$n_train, n_eval = files$n_eval

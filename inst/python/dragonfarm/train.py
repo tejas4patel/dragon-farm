@@ -2,8 +2,9 @@
 
 Runs one stage of post-training, chosen by config.json's ``stage``:
 
-* ``sft``    supervised fine-tuning on prompt/response rows
-* ``prefer`` preference optimization (DPO or ORPO) on chosen/rejected pairs
+* ``sft``       supervised fine-tuning on prompt/response rows
+* ``prefer``    preference optimization (DPO or ORPO) on chosen/rejected pairs
+* ``reinforce`` GRPO with verifiable rewards on prompt rows
 
 Earlier stages chain through ``model.base_adapters``: those adapters are
 folded into the base weights before this stage's LoRA is added.
@@ -260,7 +261,27 @@ def run_prefer(cfg, run_dir, status, resume, hw, tok, model, cancel):
     return "succeeded"
 
 
-STAGES = {"sft": run_sft, "prefer": run_prefer}
+def run_reinforce_stage(cfg, run_dir, status, resume, hw, tok, model, cancel):
+    from .evaluate_utils import write_eval_files
+    from .reinforce import eval_reinforce, run_reinforce
+
+    rewards, eval_records = run_reinforce(cfg, run_dir, status, resume, hw, tok, model, cancel)
+    if not finish(model, tok, run_dir, cancel):
+        return "cancelled"
+    rl = cfg.get("reinforce") or {}
+    metrics, samples = None, []
+    if eval_records:
+        print("[dragonfarm] evaluating", flush=True)
+        n = int(cfg.get("eval", {}).get("n_samples", 10))
+        metrics, samples = eval_reinforce(model, tok, rewards, eval_records, hw.device,
+                                          int(rl.get("max_new_tokens", 128)), n)
+    write_eval_files(run_dir, metrics, samples)
+    if metrics:
+        status.update(reward_mean=metrics["reward_mean"], reward_breakdown=metrics["reward_breakdown"])
+    return "succeeded"
+
+
+STAGES = {"sft": run_sft, "prefer": run_prefer, "reinforce": run_reinforce_stage}
 
 
 def train(run_dir: Path, status: Status, resume: bool) -> str:

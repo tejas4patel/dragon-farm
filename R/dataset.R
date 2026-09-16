@@ -69,6 +69,8 @@ print.dragon_dataset <- function(x, ...) {
     if (identical(m$kind, "pairs")) {
       cli::cli_text("Chosen: {.val {escape_newlines(m$chosen)}}")
       cli::cli_text("Rejected: {.val {escape_newlines(m$rejected)}}")
+    } else if (identical(m$kind, "prompts")) {
+      cli::cli_text("Reference: {if (is.null(m$reference)) 'none' else escape_newlines(m$reference)} (RL prompts)")
     } else {
       cli::cli_text("Response: {.val {escape_newlines(m$response)}}")
     }

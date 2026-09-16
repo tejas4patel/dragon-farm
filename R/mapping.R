@@ -36,15 +36,13 @@ check_dataset <- function(dataset, mapped = FALSE, kind = NULL) {
     cli::cli_abort("The dataset has no column mapping. Call {.fn dragon_map} first, or {.fn dragon_map_pairs} for preference pairs.")
   }
   if (!is.null(kind) && !identical(mapping_kind(dataset), kind)) {
-    if (identical(kind, "messages")) {
-      cli::cli_abort(c(
-        "This dataset is mapped as preference pairs, but this step needs prompt and response rows.",
-        "i" = "Use {.fn dragon_prefer} for pairs, or map the dataset again with {.fn dragon_map}."
-      ))
-    }
+    mappers <- c(messages = "dragon_map", pairs = "dragon_map_pairs", prompts = "dragon_map_prompts")
+    stages <- c(messages = "dragon_train", pairs = "dragon_prefer", prompts = "dragon_reinforce")
+    labels <- c(messages = "prompt and response rows", pairs = "preference pairs", prompts = "RL prompts")
+    have <- mapping_kind(dataset)
     cli::cli_abort(c(
-      "This dataset is mapped as prompt and response rows, but preference optimization needs pairs.",
-      "i" = "Map it with {.fn dragon_map_pairs}, naming a chosen and a rejected column."
+      "This dataset is mapped as {labels[[have]]}, but this step needs {labels[[kind]]}.",
+      "i" = "Use {.fn {stages[[have]]}} with this mapping, or map the dataset again with {.fn {mappers[[kind]]}}."
     ))
   }
   invisible(dataset)

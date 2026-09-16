@@ -1,5 +1,23 @@
 # dragonfarm (development version)
 
+* Pipelines. `dragon_pipeline()` chains stages built from `dragon_step_*()`
+  constructors (train, synthesize pairs, prefer, reinforce, judge,
+  evaluate), threading each stage's run into the next and writing a record
+  after every step. `background = TRUE` runs it in a separate R process;
+  `dragon_pipeline_status()` follows it. `dragon_compare()` accepts a
+  pipeline. The app gains a Pipeline panel that launches the standard
+  recipe and shows every run's lineage.
+
+* Reinforcement learning. `dragon_map_prompts()` maps prompts with an
+  optional reference answer, `dragon_reward()` defines verifiable rewards
+  (exact, contains, numeric, regex, JSON, length, keyword, or a custom
+  Python function), and `dragon_reinforce()` runs GRPO: the model samples a
+  group of answers per prompt, the rewards score them, and it learns from
+  the ones that beat their group's average, with a KL penalty towards the
+  model it started from. Implemented in the package's own trainer, so no
+  new dependency. Evaluation reports mean held-out reward per reward; the
+  app's Map and Train panels gain an RL mode with a reward builder.
+
 * Synthetic data closes the loop. `dragon_synthesize()` has a teacher model
   answer your prompts to make fine-tuning data; `dragon_synthesize_pairs()`
   samples a run's own replies, has a judge score them, and keeps the best

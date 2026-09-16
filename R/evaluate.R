@@ -69,6 +69,7 @@ dragon_evaluate <- function(run, n_samples = 10, recompute = FALSE, metrics = NU
       eval_tokens = stats$eval_tokens,
       pref_accuracy = stats$pref_accuracy, reward_margin = stats$reward_margin,
       eval_pairs = stats$eval_pairs, method = stats$method,
+      reward_mean = stats$reward_mean, reward_breakdown = stats$reward_breakdown, eval_prompts = stats$eval_prompts,
       metrics = metric_summary,
       samples = samples_df
     ),
@@ -78,7 +79,10 @@ dragon_evaluate <- function(run, n_samples = 10, recompute = FALSE, metrics = NU
 
 #' @export
 print.dragon_eval <- function(x, ...) {
-  if (!is.null(x$pref_accuracy)) {
+  if (!is.null(x$reward_mean)) {
+    parts <- if (length(x$reward_breakdown)) paste(sprintf("%s %s", names(x$reward_breakdown), formatC(unlist(x$reward_breakdown), digits = 3, format = "fg")), collapse = " \u00b7 ") else ""
+    cli::cli_text("Mean reward {.strong {round(x$reward_mean, 3)}} over {x$eval_prompts} held-out prompt{?s}{if (nzchar(parts)) paste0(' (', parts, ')') else ''}")
+  } else if (!is.null(x$pref_accuracy)) {
     cli::cli_text("{toupper(x$method %||% 'preference')} on {x$eval_pairs} held-out pair{?s}: accuracy {.strong {round(100 * x$pref_accuracy)}%} \u00b7 reward margin {.strong {round(x$reward_margin, 3)}} \u00b7 loss {round(x$eval_loss, 4)}")
   } else if (is.null(x$eval_loss)) {
     cli::cli_text("No held-out rows were evaluated for this run.")

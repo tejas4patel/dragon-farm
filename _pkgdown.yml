@@ -15,6 +15,7 @@ reference:
   - dragon_dataset
   - dragon_map
   - dragon_map_pairs
+  - dragon_map_prompts
   - dragon_synthesize
   - dragon_synthesize_pairs
   - dragon_prompts
@@ -30,6 +31,8 @@ reference:
   contents:
   - dragon_train
   - dragon_prefer
+  - dragon_reinforce
+  - dragon_reward
   - dragon_resume
   - dragon_wait
   - dragon_cancel
@@ -54,6 +57,11 @@ reference:
   - dragon_generate
   - dragon_merge
   - dragon_export_gguf
+- title: Pipelines
+  contents:
+  - dragon_pipeline
+  - dragon_step
+  - dragon_pipeline_status
 - title: Cloud GPUs
   contents:
   - dragon_bundle

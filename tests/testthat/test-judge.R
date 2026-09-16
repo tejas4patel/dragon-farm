@@ -183,3 +183,20 @@ test_that("judgements are recorded on the run and surface in comparisons", {
   dragonfarm:::record_judgement(run, res)
   expect_length(dragonfarm:::read_json(file.path(run$dir, "judge.json")), 2)
 })
+
+test_that("judging falls back to training prompts when nothing was held out", {
+  # 10 pairs: 5% held out rounds to zero rows
+  ds <- dragon_map_pairs(dragon_dataset(data.frame(q = paste("Q", 1:10), g = "good", b = "bad")), "q", "g", "b")
+  run <- suppressMessages(dragon_bundle(ds, "HuggingFaceTB/SmolLM2-135M-Instruct", runs_dir = tempfile("runs-")))
+  expect_length(dragonfarm:::eval_prompts(run, NULL, n = 5, seed = 1)$prompts, 0)
+  tr <- dragonfarm:::eval_prompts(run, NULL, n = 5, seed = 1, split = "train")
+  expect_length(tr$prompts, 5)
+  expect_true(all(tr$references == "good"))
+  rl <- suppressMessages(dragon_bundle(
+    dragon_map_prompts(dragon_dataset(data.frame(q = paste("Q", 1:40), a = as.character(1:40))), "q", reference = "a"),
+    "HuggingFaceTB/SmolLM2-135M-Instruct", runs_dir = tempfile("runs-"), rewards = dragon_reward("numeric")
+  ))
+  ev <- dragonfarm:::eval_prompts(rl, NULL, n = 5, seed = 1)
+  expect_length(ev$prompts, 2)
+  expect_false(any(is.na(ev$references)))
+})

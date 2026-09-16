@@ -127,13 +127,16 @@ mod_monitor_server <- function(id, state, runs_dir) {
         shiny::div(class = "kv", shiny::span("State"), state_pill(st$state)),
         shiny::div(class = "kv", shiny::span("Model"), shiny::code(cfg$model$id)),
         shiny::div(class = "kv", shiny::span("Stage"), shiny::strong(
-          if (identical(cfg$stage, "prefer")) sprintf("%s, beta %s", toupper(cfg$prefer$method), cfg$prefer$beta) else "fine-tune")),
+          if (identical(cfg$stage, "prefer")) sprintf("%s, beta %s", toupper(cfg$prefer$method), cfg$prefer$beta)
+          else if (identical(cfg$stage, "reinforce")) sprintf("GRPO, %d rewards", length(cfg$reinforce$rewards))
+          else "fine-tune")),
         if (!is.null(cfg$model$base_run)) shiny::div(class = "kv", shiny::span("Continues"), shiny::code(cfg$model$base_run)),
         shiny::div(class = "kv", shiny::span("Device"), shiny::strong(st$device %||% "-")),
         shiny::div(class = "kv", shiny::span("Step"), shiny::strong(sprintf("%d / %s", as.integer(step), st$total_steps %||% "?"))),
         shiny::div(class = "kv", shiny::span("Loss"), shiny::strong(last_loss)),
         shiny::div(class = "kv", shiny::span("ETA"), shiny::strong(eta)),
         if (!is.null(st$pref_accuracy)) shiny::div(class = "kv", shiny::span("Pref. accuracy"), shiny::strong(sprintf("%.0f%% (margin %.3f)", 100 * st$pref_accuracy, st$reward_margin))),
+        if (!is.null(st$reward_mean)) shiny::div(class = "kv", shiny::span("Held-out reward"), shiny::strong(sprintf("%.3f", st$reward_mean))),
         if (!is.null(st$eval_loss) && is.null(st$pref_accuracy)) shiny::div(class = "kv", shiny::span("Eval loss"), shiny::strong(sprintf("%.3f (ppl %.2f)", st$eval_loss, st$perplexity))),
         if (!is.null(st$error)) shiny::pre(class = "error-box", st$error)
       )
@@ -157,12 +160,19 @@ mod_monitor_server <- function(id, state, runs_dir) {
                                name = "eval loss", marker = list(color = "#B8702A", size = 9),
                                line = list(color = "#B8702A", dash = "dot"))
       }
+      rw <- if ("reward" %in% names(pr)) pr[!is.na(pr$reward), , drop = FALSE] else pr[0, , drop = FALSE]
+      if (nrow(rw)) {
+        p <- plotly::add_trace(p, x = rw$step, y = rw$reward, type = "scatter", mode = "lines+markers",
+                               name = "mean reward", yaxis = "y2", line = list(color = "#3D7A4E", width = 2),
+                               marker = list(color = "#3D7A4E", size = 5))
+      }
       if (!nrow(train) && !nrow(ev)) {
         p <- plotly::layout(p, annotations = list(text = "Waiting for the first logged step", showarrow = FALSE, x = 0.5, y = 0.5, xref = "paper", yref = "paper"))
       }
       plotly::config(plotly::layout(p,
         xaxis = list(title = "step", zeroline = FALSE),
         yaxis = list(title = "loss", zeroline = FALSE, rangemode = "tozero"),
+        yaxis2 = list(title = "reward", overlaying = "y", side = "right", zeroline = FALSE, showgrid = FALSE),
         margin = list(l = 50, r = 20, t = 10, b = 40),
         legend = list(orientation = "h", x = 0, y = 1.1),
         paper_bgcolor = "rgba(0,0,0,0)", plot_bgcolor = "rgba(0,0,0,0)"

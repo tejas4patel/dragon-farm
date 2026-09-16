@@ -112,7 +112,12 @@ remote_notebook_source <- function() {
 #' @param method For a dataset mapped with [dragon_map_pairs()], the
 #'   preference method, `"dpo"` or `"orpo"`. Defaults to `"dpo"`. Ignored for
 #'   prompt and response data.
-#' @param beta Preference strength for `method`. See [dragon_prefer()].
+#' @param beta Preference strength for `method`, or the KL weight for an RL
+#'   run. Defaults to 0.1 and 0.04 respectively.
+#' @param rewards For a dataset mapped with [dragon_map_prompts()], the
+#'   [dragon_reward()] list an RL run needs.
+#' @param group_size,temperature,max_new_tokens RL sampling settings. See
+#'   [dragon_reinforce()].
 #' @return A `dragon_run` whose state is `"bundled"`.
 #' @export
 #' @examples
@@ -128,18 +133,30 @@ remote_notebook_source <- function() {
 dragon_bundle <- function(dataset, model, lora = dragon_lora(), args = dragon_train_args(),
                           name = NULL, run_dir = NULL, runs_dir = dragon_runs_dir(),
                           n_samples = 10, revision = NULL, trust_remote_code = FALSE,
-                          method = NULL, beta = 0.1) {
+                          method = NULL, beta = NULL, rewards = NULL, group_size = 4,
+                          temperature = 1.0, max_new_tokens = 128) {
   check_dataset(dataset)
-  stage <- if (identical(mapping_kind(dataset), "pairs")) "prefer" else "sft"
+  stage <- switch(mapping_kind(dataset) %||% "messages", pairs = "prefer", prompts = "reinforce", "sft")
   prefer <- NULL
+  reinforce <- NULL
   if (stage == "prefer") {
     method <- if (is.null(method)) "dpo" else match.arg(method, c("dpo", "orpo"))
+    beta <- beta %||% 0.1
     check_number(beta, "beta", min = 1e-4, max = 10)
     prefer <- list(method = method, beta = beta)
+  } else if (stage == "reinforce") {
+    if (is.null(rewards)) cli::cli_abort("This dataset is mapped as RL prompts; pass {.arg rewards} (see {.fn dragon_reward}).")
+    beta <- beta %||% 0.04
+    check_number(beta, "beta", min = 0, max = 10)
+    check_number(group_size, "group_size", min = 2, max = 64, integer = TRUE)
+    check_number(temperature, "temperature", min = 0.05, max = 3)
+    check_number(max_new_tokens, "max_new_tokens", min = 1, integer = TRUE)
+    reinforce <- list(rewards = as_reward_specs(rewards), group_size = as.integer(group_size), beta = beta,
+                      temperature = temperature, max_new_tokens = as.integer(max_new_tokens))
   }
   prep <- prepare_run(dataset, model, lora, args, dragon_hardware(), name, run_dir, runs_dir,
                       n_samples, revision = revision, trust_remote_code = trust_remote_code,
-                      state = "bundled", check_token = FALSE, stage = stage, prefer = prefer)
+                      state = "bundled", check_token = FALSE, stage = stage, prefer = prefer, reinforce = reinforce)
   run <- new_run(prep$run_dir)
   paths <- bundle_run(run)
   cli::cli_alert_success("Bundled run {.strong {run$id}} ({prep$files$n_train} training rows, {prep$files$n_eval} held out).")
@@ -178,8 +195,8 @@ bundle_run <- function(run) {
   if (file.exists(run_path(run, "dataset.json"))) {
     file.copy(run_path(run, "dataset.json"), file.path(staging, "run", "dataset.json"))
   }
-  if (dir.exists(run_path(run, "base_adapters"))) {
-    file.copy(run_path(run, "base_adapters"), file.path(staging, "run"), recursive = TRUE)
+  for (extra in c("base_adapters", "rewards")) {
+    if (dir.exists(run_path(run, extra))) file.copy(run_path(run, extra), file.path(staging, "run"), recursive = TRUE)
   }
   write_json(list(state = "queued", created_at = now_iso(), pid = NULL), file.path(staging, "run", "status.json"))
 

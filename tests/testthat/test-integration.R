@@ -193,3 +193,99 @@ test_that("metrics and a judge run over a finished run", {
   expect_equal(dragonfarm:::run_config(dpo)$model$base_run, run$id)
   expect_match(dragon_code(dpo), "synth/", fixed = TRUE)
 })
+
+
+test_that("a GRPO stage trains with verifiable rewards, evaluates, and generates", {
+  skip_if_not(identical(Sys.getenv("DRAGONFARM_INTEGRATION"), "true"), "set DRAGONFARM_INTEGRATION=true")
+  skip_on_cran()
+
+  a <- 1:40
+  math <- data.frame(question = sprintf("What is %d + %d? Answer with just the number.", a, a),
+                     answer = as.character(2 * a), stringsAsFactors = FALSE)
+  ds <- dragon_map_prompts(dragon_dataset(math), prompt = "question", reference = "answer") |>
+    dragon_split(0.1, seed = 1)
+  py <- tempfile("digits-", fileext = ".py")
+  writeLines(c("def reward(prompt, completion, reference, row):",
+               "    return 1.0 if any(ch.isdigit() for ch in completion) else 0.0"), py)
+
+  run <- dragon_reinforce(
+    ds, "HuggingFaceTB/SmolLM2-135M-Instruct",
+    rewards = list(dragon_reward("numeric"), dragon_reward("length", max_chars = 40, weight = 0.5),
+                   dragon_reward("custom", file = py, name = "has_digit")),
+    group_size = 3, temperature = 1.0, max_new_tokens = 12,
+    lora = dragon_lora(r = 4, alpha = 8),
+    args = dragon_train_args(max_steps = 3, batch_size = 2, grad_accum = 1, max_seq_len = 128,
+                             save_steps = 3, learning_rate = 1e-5),
+    runs_dir = tempfile("runs-"), n_samples = 2, wait = TRUE
+  )
+  st <- dragon_status(run)
+  expect_equal(st$state, "succeeded")
+  expect_equal(st$stage, "reinforce")
+  expect_equal(st$total_steps, 3)
+  expect_true(is.numeric(st$reward_mean))
+  expect_named(st$reward_breakdown, c("numeric", "length", "has_digit"))
+
+  pr <- dragon_progress(run)
+  expect_equal(nrow(pr), 3)
+  expect_true(all(!is.na(pr$reward)))
+  expect_true(all(!is.na(pr$kl)))
+  expect_true("reward_has_digit" %in% names(pr))
+  expect_true(file.exists(file.path(run$dir, "checkpoints", "checkpoint-3")))
+  expect_true(file.exists(file.path(run$dir, "adapter", "adapter_config.json")))
+
+  ev <- dragon_evaluate(run)
+  expect_true(is.numeric(ev$reward_mean))
+  expect_equal(ev$eval_prompts, 4)
+  expect_true("reward" %in% names(ev$samples))
+  expect_length(dragon_generate(run, "What is 2 + 2?", max_new_tokens = 8, temperature = 0), 1)
+  expect_match(dragon_code(run), "dragon_reinforce(", fixed = TRUE)
+  expect_equal(dragon_compare(run)$reward, st$reward_mean)
+})
+
+
+test_that("a pipeline chains fine-tune, self-made pairs, DPO, judge, and metrics", {
+  skip_if_not(identical(Sys.getenv("DRAGONFARM_INTEGRATION"), "true"), "set DRAGONFARM_INTEGRATION=true")
+  skip_on_cran()
+
+  ds <- dragon_dataset(dragon_example_data())
+  ds$data <- ds$data[1:30, ]
+  ds <- dragon_map(ds, prompt = "subject", response = "reply") |> dragon_split(0.1, seed = 1)
+  scorer <- function(prompts) {
+    vapply(prompts, function(p) {
+      if (grepl("Reply A:", p, fixed = TRUE)) {
+        a <- sub(".*Reply A:\n(.*?)\n\nReply B:.*", "\\1", p)
+        b <- sub(".*Reply B:\n(.*?)\n\nRespond with JSON.*", "\\1", p)
+        w <- if (nchar(a) < nchar(b)) "A" else if (nchar(b) < nchar(a)) "B" else "tie"
+        sprintf('{"winner": "%s", "reason": "shorter"}', w)
+      } else {
+        reply <- sub(".*Reply to rate:\n(.*?)\n\nRespond with JSON.*", "\\1", p)
+        sprintf('{"score": %d, "reason": "shorter"}', max(1, 10 - nchar(reply) %/% 12))
+      }
+    }, character(1), USE.NAMES = FALSE)
+  }
+  small <- dragon_train_args(max_steps = 2, batch_size = 2, grad_accum = 1, max_seq_len = 192, logging_steps = 1, save_steps = 2)
+  runs <- tempfile("runs-")
+  p <- suppressMessages(dragon_pipeline(
+    "HuggingFaceTB/SmolLM2-135M-Instruct",
+    list(
+      dragon_step_train(ds, lora = dragon_lora(r = 4, alpha = 8), args = small, n_samples = 0),
+      dragon_step_synthesize_pairs(prompts = "train", n = 4, judge = scorer, n_samples_per_prompt = 3,
+                                   min_gap = 0.5, temperature = 1.0, max_new_tokens = 20),
+      dragon_step_prefer(lora = dragon_lora(r = 4, alpha = 8), args = small, n_samples = 0),
+      dragon_step_judge(against = "base", judge = scorer, n = 2),
+      dragon_step_evaluate(metrics = c("token_f1", "length_ratio"))
+    ),
+    runs_dir = runs, name = "loop"
+  ))
+  expect_equal(p$status, "succeeded")
+  expect_length(p$runs, 2)
+  expect_equal(vapply(p$steps, `[[`, character(1), "state"), rep("succeeded", 5))
+  expect_equal(dragonfarm:::run_config(p$runs[[2]])$model$base_run, p$runs[[1]]$id)
+  expect_true(p$results[[2]]$pairs >= 1)
+  expect_equal(p$results[[4]]$mode, "pairwise")
+  cmp <- dragon_compare(p)
+  expect_equal(nrow(cmp), 2)
+  expect_equal(cmp$stage, c("sft", "prefer"))
+  rec <- dragon_pipeline_status(p$id, runs_dir = runs)
+  expect_equal(rec$status, "succeeded")
+})

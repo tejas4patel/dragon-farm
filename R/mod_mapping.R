@@ -6,7 +6,8 @@ mod_mapping_ui <- function(id) {
       shiny::radioButtons(
         ns("mode"), NULL, inline = TRUE,
         choices = c("Fine-tune: prompt and response" = "messages",
-                    "Preference pairs: prompt, chosen, rejected" = "pairs")
+                    "Preference pairs: prompt, chosen, rejected" = "pairs",
+                    "Reinforcement learning: prompt and optional reference" = "prompts")
       ),
       shiny::uiOutput(ns("mode_help")),
       shiny::uiOutput(ns("buckets"))
@@ -20,13 +21,17 @@ mod_mapping_ui <- function(id) {
                          placeholder = "You are a support agent for a smart-home company."),
         shiny::textInput(ns("prompt_tpl"), "Prompt", value = "", width = "100%"),
         shiny::conditionalPanel(
-          condition = sprintf("input['%s'] != 'pairs'", ns("mode")),
+          condition = sprintf("input['%s'] == 'messages'", ns("mode")),
           shiny::textInput(ns("response_tpl"), "Response", value = "", width = "100%")
         ),
         shiny::conditionalPanel(
           condition = sprintf("input['%s'] == 'pairs'", ns("mode")),
           shiny::textInput(ns("chosen_tpl"), "Chosen (the better reply)", value = "", width = "100%"),
           shiny::textInput(ns("rejected_tpl"), "Rejected (the worse reply)", value = "", width = "100%")
+        ),
+        shiny::conditionalPanel(
+          condition = sprintf("input['%s'] == 'prompts'", ns("mode")),
+          shiny::textInput(ns("reference_tpl"), "Reference answer (optional, for exact and numeric rewards)", value = "", width = "100%")
         ),
         shiny::uiOutput(ns("status"))
       ),
@@ -54,6 +59,10 @@ mod_mapping_server <- function(id, state, nav_to) {
         shiny::p(class = "text-muted small",
           "Each row needs one prompt and two replies to it: the one you prefer and the one you do not. ",
           "This feeds preference optimization (DPO or ORPO), usually on top of a fine-tuned run.")
+      } else if (identical(mode(), "prompts")) {
+        shiny::p(class = "text-muted small",
+          "Each row is a prompt the model practises on. A reference answer lets exact and numeric rewards check it. ",
+          "Other columns are available to custom reward functions. This feeds GRPO in the Train step.")
       } else {
         shiny::p(class = "text-muted small",
           "Drop one or more columns into Prompt and Response. Several columns in one slot are joined with a blank line. ",
@@ -74,12 +83,18 @@ mod_mapping_server <- function(id, state, nav_to) {
         sortable::add_rank_list("System", labels = NULL, input_id = ns("system"), options = drag_opts),
         sortable::add_rank_list("Prompt", labels = NULL, input_id = ns("prompt"), options = drag_opts)
       )
-      slots <- if (identical(mode(), "pairs")) c(slots, list(
-        sortable::add_rank_list("Chosen", labels = NULL, input_id = ns("chosen"), options = drag_opts),
-        sortable::add_rank_list("Rejected", labels = NULL, input_id = ns("rejected"), options = drag_opts)
-      )) else c(slots, list(
-        sortable::add_rank_list("Response", labels = NULL, input_id = ns("response"), options = drag_opts)
-      ))
+      slots <- switch(mode(),
+        pairs = c(slots, list(
+          sortable::add_rank_list("Chosen", labels = NULL, input_id = ns("chosen"), options = drag_opts),
+          sortable::add_rank_list("Rejected", labels = NULL, input_id = ns("rejected"), options = drag_opts)
+        )),
+        prompts = c(slots, list(
+          sortable::add_rank_list("Reference (optional)", labels = NULL, input_id = ns("reference"), options = drag_opts)
+        )),
+        c(slots, list(
+          sortable::add_rank_list("Response", labels = NULL, input_id = ns("response"), options = drag_opts)
+        ))
+      )
       do.call(sortable::bucket_list, c(
         list(header = NULL, group_name = ns("buckets"), orientation = "horizontal",
              class = "default-sortable dragon-buckets"),
@@ -97,12 +112,13 @@ mod_mapping_server <- function(id, state, nav_to) {
     bind_slot("response", "response_tpl")
     bind_slot("chosen", "chosen_tpl")
     bind_slot("rejected", "rejected_tpl")
+    bind_slot("reference", "reference_tpl")
     shiny::observeEvent(input$system, {
       if (length(input$system)) shiny::updateTextInput(session, "system_tpl", value = chips_to_template(input$system))
     }, ignoreNULL = FALSE, ignoreInit = TRUE)
 
     shiny::observeEvent(state$dataset, {
-      for (f in c("prompt_tpl", "response_tpl", "chosen_tpl", "rejected_tpl", "system_tpl")) {
+      for (f in c("prompt_tpl", "response_tpl", "chosen_tpl", "rejected_tpl", "reference_tpl", "system_tpl")) {
         shiny::updateTextInput(session, f, value = "")
       }
     })
@@ -114,6 +130,13 @@ mod_mapping_server <- function(id, state, nav_to) {
       s <- unescape_newlines(input$system_tpl %||% "")
       sys <- if (nzchar(trimws(s))) s
       if (!nzchar(trimws(p))) return(NULL)
+      if (identical(mode(), "prompts")) {
+        ref <- unescape_newlines(input$reference_tpl %||% "")
+        return(tryCatch(
+          dragon_map_prompts(ds, prompt = p, reference = if (nzchar(trimws(ref))) ref, system = sys),
+          error = function(e) structure(list(message = conditionMessage(e)), class = "mapping_error")
+        ))
+      }
       if (identical(mode(), "pairs")) {
         ch <- unescape_newlines(input$chosen_tpl %||% "")
         rj <- unescape_newlines(input$rejected_tpl %||% "")
@@ -138,12 +161,12 @@ mod_mapping_server <- function(id, state, nav_to) {
 
     output$status <- shiny::renderUI({
       m <- mapped()
-      need <- if (identical(mode(), "pairs")) "Fill Prompt, Chosen, and Rejected to continue." else "Fill Prompt and Response to continue."
+      need <- switch(mode(), pairs = "Fill Prompt, Chosen, and Rejected to continue.", prompts = "Fill Prompt to continue.", "Fill Prompt and Response to continue.")
       if (is.null(m)) return(shiny::p(class = "hint", need))
       if (inherits(m, "mapping_error")) return(shiny::p(class = "text-danger small", m$message))
       shiny::tagList(
         shiny::p(class = "text-success small",
-                 if (identical(mode(), "pairs")) "Preference mapping is valid." else "Mapping is valid."),
+                 switch(mode(), pairs = "Preference mapping is valid.", prompts = "RL prompt mapping is valid.", "Mapping is valid.")),
         shiny::actionButton(ns("next"), "Next: choose a model", class = "btn-primary")
       )
     })

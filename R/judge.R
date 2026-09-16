@@ -55,7 +55,12 @@ dragon_judge <- function(x, against = NULL, prompts = NULL, n = 20, judge = NULL
   check_number(n, "n", min = 1, integer = TRUE)
   judge_fn <- as_judge(judge)
   set <- eval_prompts(run, prompts, n, seed)
-  if (!length(set$prompts)) cli::cli_abort("No prompts to judge. Pass {.arg prompts} or train with held-out rows.")
+  if (!length(set$prompts)) {
+    # Small datasets hold nothing out; fall back to the training prompts.
+    set <- eval_prompts(run, NULL, n, seed, split = "train")
+    if (length(set$prompts)) cli::cli_alert_info("No held-out rows in this run; judging on {length(set$prompts)} training prompt{?s} instead.")
+  }
+  if (!length(set$prompts)) cli::cli_abort("No prompts to judge. Pass {.arg prompts} or train on a dataset with rows.")
 
   mode <- if (is.null(against)) "score" else "pairwise"
   cli::cli_alert_info("Generating {length(set$prompts)} repl{?y/ies} from {.strong {run$id}}.")
@@ -98,15 +103,16 @@ dragon_judge <- function(x, against = NULL, prompts = NULL, n = 20, judge = NULL
   invisible(result)
 }
 
-# Held-out prompts (and references) from the run's eval file, in either data format.
-eval_prompts <- function(run, prompts, n, seed) {
+# Prompts (and references) from the run's eval or train file, in any data format.
+eval_prompts <- function(run, prompts, n, seed, split = "eval") {
   if (!is.null(prompts)) {
     if (!is.character(prompts) || !length(prompts)) cli::cli_abort("{.arg prompts} must be a character vector.")
     return(list(prompts = prompts, references = rep(NA_character_, length(prompts))))
   }
   cfg <- run_config(run)
-  if (is.null(cfg$data$eval)) return(list(prompts = character(), references = character()))
-  rows <- read_jsonl(run_path(run, cfg$data$eval))
+  rel <- cfg$data[[split]]
+  if (is.null(rel) || !file.exists(run_path(run, rel))) return(list(prompts = character(), references = character()))
+  rows <- read_jsonl(run_path(run, rel))
   if (!length(rows)) return(list(prompts = character(), references = character()))
   user_of <- function(msgs) {
     hit <- Filter(function(m) identical(m$role, "user"), msgs)
@@ -115,6 +121,9 @@ eval_prompts <- function(run, prompts, n, seed) {
   if (identical(cfg$data$format, "pairs")) {
     prompts <- vapply(rows, function(r) user_of(r$prompt), character(1))
     refs <- vapply(rows, function(r) as.character(r$chosen), character(1))
+  } else if (identical(cfg$data$format, "prompts")) {
+    prompts <- vapply(rows, function(r) user_of(r$prompt), character(1))
+    refs <- vapply(rows, function(r) if (is.null(r$reference)) NA_character_ else as.character(r$reference), character(1))
   } else {
     prompts <- vapply(rows, function(r) user_of(r$messages), character(1))
     refs <- vapply(rows, function(r) as.character(r$messages[[length(r$messages)]]$content), character(1))

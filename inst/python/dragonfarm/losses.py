@@ -27,6 +27,16 @@ def sequence_logps(logits, labels):
     return logp.sum(-1), mask.sum(-1)
 
 
+def token_logps(logits, labels):
+    """Per-token label log-probs (batch, seq-1) and a float mask of counted positions."""
+    logits = logits[:, :-1, :]
+    labels = labels[:, 1:]
+    mask = (labels != IGNORE_INDEX)
+    safe = labels.masked_fill(~mask, 0)
+    logp = torch.log_softmax(logits.float(), dim=-1).gather(-1, safe.unsqueeze(-1)).squeeze(-1)
+    return logp * mask, mask.float()
+
+
 def dpo_loss(policy_chosen, policy_rejected, ref_chosen, ref_rejected, beta):
     """Direct Preference Optimization (Rafailov et al., 2023).
 

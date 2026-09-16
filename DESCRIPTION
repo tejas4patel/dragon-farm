@@ -36,6 +36,7 @@ Suggests:
     ellmer,
     httr2,
     knitr,
+    pkgload,
     rmarkdown,
     testthat (>= 3.0.0),
     withr

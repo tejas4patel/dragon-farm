@@ -16,7 +16,11 @@ dragon_bundle(
   revision = NULL,
   trust_remote_code = FALSE,
   method = NULL,
-  beta = 0.1
+  beta = NULL,
+  rewards = NULL,
+  group_size = 4,
+  temperature = 1,
+  max_new_tokens = 128
 )
 }
 \arguments{
@@ -51,7 +55,14 @@ at the end of training.}
 preference method, \code{"dpo"} or \code{"orpo"}. Defaults to \code{"dpo"}. Ignored for
 prompt and response data.}
 
-\item{beta}{Preference strength for \code{method}. See \code{\link[=dragon_prefer]{dragon_prefer()}}.}
+\item{beta}{Preference strength for \code{method}, or the KL weight for an RL
+run. Defaults to 0.1 and 0.04 respectively.}
+
+\item{rewards}{For a dataset mapped with \code{\link[=dragon_map_prompts]{dragon_map_prompts()}}, the
+\code{\link[=dragon_reward]{dragon_reward()}} list an RL run needs.}
+
+\item{group_size, temperature, max_new_tokens}{RL sampling settings. See
+\code{\link[=dragon_reinforce]{dragon_reinforce()}}.}
 }
 \value{
 A \code{dragon_run} whose state is \code{"bundled"}.

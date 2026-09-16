@@ -2,7 +2,8 @@
 #'
 #' A Shiny app that walks through the same steps as the R API: drop in a
 #' dataset, drag its columns into prompt and response slots, pick a model,
-#' train in the background, watch the loss curve, and try the result.
+#' train in the background, watch the loss curve, try the result, and run
+#' the whole post-training loop as a pipeline.
 #' Every run started here is a normal run directory, and the Monitor panel
 #' shows the R code that reproduces it.
 #'
@@ -42,6 +43,7 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), ...) {
     bslib::nav_panel("4 Train", value = "train", mod_train_ui("train")),
     bslib::nav_panel("5 Monitor", value = "monitor", mod_monitor_ui("monitor")),
     bslib::nav_panel("6 Try it", value = "tryit", mod_tryit_ui("tryit")),
+    bslib::nav_panel("7 Pipeline", value = "pipeline", mod_pipeline_ui("pipeline")),
     bslib::nav_spacer(),
     bslib::nav_item(shiny::uiOutput("hw_badge", inline = TRUE))
   )
@@ -56,6 +58,7 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), ...) {
     mod_train_server("train", state, nav_to, runs_dir)
     mod_monitor_server("monitor", state, runs_dir)
     mod_tryit_server("tryit", state, runs_dir)
+    mod_pipeline_server("pipeline", state, runs_dir)
 
     output$hw_badge <- shiny::renderUI({
       hw <- state$hardware

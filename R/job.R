@@ -39,7 +39,8 @@ process_alive <- function(run, st) {
 }
 
 progress_cols <- c("step", "epoch", "loss", "eval_loss", "lr", "grad_norm", "elapsed_s", "eta_s",
-                   "pref_acc", "reward_margin", "eval_pref_acc", "eval_reward_margin")
+                   "pref_acc", "reward_margin", "eval_pref_acc", "eval_reward_margin",
+                   "reward", "reward_std", "kl", "completion_len")
 
 dragon_progress_empty <- function() {
   as.data.frame(stats::setNames(replicate(length(progress_cols), numeric(), simplify = FALSE), progress_cols))
@@ -58,7 +59,8 @@ dragon_progress <- function(run) {
   if (!length(rows)) return(dragon_progress_empty())
   df <- records_to_df(rows)
   for (cn in setdiff(cols, names(df))) df[[cn]] <- NA_real_
-  df <- df[, cols]
+  extra <- setdiff(names(df), cols)          # per-reward columns such as reward_numeric
+  df <- df[, c(cols, extra), drop = FALSE]
   df[] <- lapply(df, as.numeric)
   df
 }
@@ -103,15 +105,22 @@ dragon_wait <- function(run, timeout = Inf, poll = 2) {
     } else if (is.null(bar)) {
       bar <- cli::cli_progress_bar("Starting trainer (loading model)", total = NA, clear = FALSE, auto_terminate = FALSE, .envir = environment())
     }
-    if (nrow(pr)) {
-      lossrows <- pr[!is.na(pr$loss), , drop = FALSE]
-      status_txt <- if (nrow(lossrows)) sprintf("loss %.3f", utils::tail(lossrows$loss, 1)) else ""
-      step <- max(pr$step, na.rm = TRUE)
-      if (total_known) cli::cli_progress_update(id = bar, set = min(step, total), status = status_txt, .envir = environment())
-      else cli::cli_progress_update(id = bar, status = status_txt, .envir = environment())
-    } else {
-      cli::cli_progress_update(id = bar, .envir = environment())
-    }
+    # The bar is decoration: a rendering problem (narrow console, odd width
+    # arithmetic in the terminal) must never end the wait.
+    try({
+      if (nrow(pr)) {
+        lossrows <- pr[!is.na(pr$loss), , drop = FALSE]
+        status_txt <- if (nrow(lossrows)) sprintf("loss %.3f", utils::tail(lossrows$loss, 1)) else ""
+        if ("reward" %in% names(pr) && any(!is.na(pr$reward))) {
+          status_txt <- sprintf("reward %.3f", utils::tail(pr$reward[!is.na(pr$reward)], 1))
+        }
+        step <- max(pr$step, na.rm = TRUE)
+        if (total_known) cli::cli_progress_update(id = bar, set = min(step, total), status = status_txt, .envir = environment())
+        else cli::cli_progress_update(id = bar, status = status_txt, .envir = environment())
+      } else {
+        cli::cli_progress_update(id = bar, .envir = environment())
+      }
+    }, silent = TRUE)
     if (st$state %in% c("succeeded", "failed", "cancelled")) break
     if (as.numeric(difftime(Sys.time(), started, units = "secs")) > timeout) {
       cli::cli_progress_done(id = bar)
@@ -131,7 +140,9 @@ dragon_wait <- function(run, timeout = Inf, poll = 2) {
     cli::cli_alert_warning("Run {.strong {run$id}} was cancelled. The adapter holds the last checkpoint.")
   } else {
     msg <- "Run {.strong {run$id}} succeeded."
-    if (!is.null(st$pref_accuracy)) {
+    if (!is.null(st$reward_mean)) {
+      msg <- paste0(msg, " Mean reward on held-out prompts {round(st$reward_mean, 3)}.")
+    } else if (!is.null(st$pref_accuracy)) {
       msg <- paste0(msg, " Preference accuracy {round(100 * st$pref_accuracy)}%, reward margin {round(st$reward_margin, 3)}.")
     } else if (!is.null(st$eval_loss) && !is.null(st$perplexity)) {
       msg <- paste0(msg, " Eval loss {round(st$eval_loss, 3)}, perplexity {round(st$perplexity, 2)}.")

@@ -107,3 +107,11 @@ hf_token_present <- function() {
     file.exists(file.path(Sys.getenv("HF_HOME", file.path(path.expand("~"), ".cache", "huggingface")), "token")) ||
     file.exists(file.path(path.expand("~"), ".cache", "huggingface", "token"))
 }
+
+# Deparse a value for generated code; whole numbers print without the L
+# suffix that integers read back from JSON would otherwise carry.
+fmt_arg <- function(x) {
+  if (is.null(x)) return("NULL")
+  if (is.numeric(x) && length(x) == 1 && !is.na(x) && x == round(x) && abs(x) < 1e15) return(format(x, scientific = FALSE))
+  deparse(x)
+}

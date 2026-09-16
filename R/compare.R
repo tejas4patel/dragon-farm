@@ -5,8 +5,8 @@
 #' accuracy, task metrics from [dragon_evaluate()], and the latest judge
 #' result from [dragon_judge()]. Runs that lack a measurement show `NA`.
 #'
-#' @param ... Runs, run directories, or nothing to list every run in
-#'   `runs_dir`.
+#' @param ... Runs, run directories, a single `dragon_pipeline` (its runs
+#'   are compared), or nothing to list every run in `runs_dir`.
 #' @param runs_dir Directory scanned when no runs are given.
 #' @return A data frame of class `dragon_comparison`.
 #' @export
@@ -17,7 +17,9 @@
 #' }
 dragon_compare <- function(..., runs_dir = dragon_runs_dir()) {
   runs <- list(...)
-  if (!length(runs)) {
+  if (length(runs) == 1 && inherits(runs[[1]], "dragon_pipeline")) {
+    runs <- as_pipeline_runs(runs[[1]])
+  } else if (!length(runs)) {
     df <- dragon_runs(runs_dir)
     runs <- lapply(df$dir, dragon_run)
   } else {
@@ -29,7 +31,7 @@ dragon_compare <- function(..., runs_dir = dragon_runs_dir()) {
     base <- data.frame(
       id = r$id, stage = r$stage, method = r$method, model = r$model, from = r$from, state = r$state,
       n_train = r$n_train, eval_loss = r$eval_loss, perplexity = r$perplexity,
-      pref_accuracy = r$pref_accuracy, judge = r$judge, judge_n = r$judge_n,
+      pref_accuracy = r$pref_accuracy, reward = r$reward, judge = r$judge, judge_n = r$judge_n,
       stringsAsFactors = FALSE
     )
     for (m in metric_names) base[[m]] <- if (!is.null(r$metrics[[m]])) r$metrics[[m]] else NA_real_
@@ -38,7 +40,7 @@ dragon_compare <- function(..., runs_dir = dragon_runs_dir()) {
   if (is.null(out)) {
     out <- data.frame(id = character(), stage = character(), method = character(), model = character(),
                       from = character(), state = character(), n_train = integer(), eval_loss = numeric(),
-                      perplexity = numeric(), pref_accuracy = numeric(), judge = numeric(), judge_n = integer(),
+                      perplexity = numeric(), pref_accuracy = numeric(), reward = numeric(), judge = numeric(), judge_n = integer(),
                       stringsAsFactors = FALSE)
   }
   rownames(out) <- NULL
@@ -55,7 +57,7 @@ run_summary_row <- function(run) {
   list(
     id = run$id,
     stage = cfg$stage %||% "sft",
-    method = cfg$prefer$method %||% NA_character_,
+    method = cfg$prefer$method %||% (if (identical(cfg$stage, "reinforce")) "grpo" else NA_character_),
     model = cfg$model$id %||% NA_character_,
     from = cfg$model$base_run %||% NA_character_,
     state = st$state %||% "unknown",
@@ -63,6 +65,7 @@ run_summary_row <- function(run) {
     eval_loss = as.numeric(st$eval_loss %||% NA_real_),
     perplexity = as.numeric(st$perplexity %||% NA_real_),
     pref_accuracy = as.numeric(st$pref_accuracy %||% NA_real_),
+    reward = as.numeric(st$reward_mean %||% NA_real_),
     judge = as.numeric(judge_value),
     judge_n = as.integer(judge$n %||% NA_integer_),
     metrics = lapply(metrics, as.numeric)

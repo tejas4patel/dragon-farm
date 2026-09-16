@@ -60,7 +60,11 @@ dataset_pairs <- function(dataset, idx = NULL) {
 
 # Rows of whichever kind the dataset is mapped as.
 dataset_rows <- function(dataset, idx = NULL) {
-  if (identical(mapping_kind(dataset), "pairs")) dataset_pairs(dataset, idx) else dataset_messages(dataset, idx)
+  switch(mapping_kind(dataset) %||% "messages",
+    pairs = dataset_pairs(dataset, idx),
+    prompts = dataset_prompts(dataset, idx),
+    dataset_messages(dataset, idx)
+  )
 }
 
 # A pairs row as chat turns for previews: prompt turns, then the two replies
@@ -75,5 +79,9 @@ pair_as_messages <- function(row) {
 # Rows of either kind as chat turns, for the console and app previews.
 preview_rows <- function(dataset, idx = NULL) {
   rows <- dataset_rows(dataset, idx)
-  if (identical(mapping_kind(dataset), "pairs")) lapply(rows, pair_as_messages) else rows
+  switch(mapping_kind(dataset) %||% "messages",
+    pairs = lapply(rows, pair_as_messages),
+    prompts = lapply(rows, prompt_as_messages),
+    rows
+  )
 }

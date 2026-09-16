@@ -103,3 +103,30 @@ function, so a trained model can be used the way it will be used.
 - Background pipelines need serializable steps; ellmer chat objects cannot be judges in background mode.
 - `dragon_evaluate(metrics = ...)` regenerates every held-out reply when fewer are saved; on large held-out sets that is slow.
 - The GRPO loop keeps advantages zero for groups whose rewards do not vary, which wastes those samples; a curriculum that drops always-solved or never-solved prompts is a possible improvement.
+
+## Ranked view (2026-09-16)
+
+| # | Item | Priority | Value | Effort (days) |
+|---|---|---|---|---|
+| 1 | Land steps 5 and 6 (A1, A2) | P0 | High | 0.2 |
+| 2 | Release 0.2.0 (B1 to B3, B6) | P0 | High | 0.5 |
+| 3 | Live test of the Claude judge and teacher (F5) | P0 | High | 0.1 |
+| 4 | Persistent local inference worker (C1) | P1 | High | 0.5 |
+| 5 | Serve through Ollama (C3) | P1 | High | 0.5 |
+| 6 | OpenAI-compatible client and `backend` argument (C2, C5) | P1 | High | 0.5 |
+| 7 | Chat UI with context (D1 to D3) | P1 | High | 1.5 |
+| 8 | Domain layout and DNS (G1, G2) | P1 | Medium | 0.1 |
+| 9 | Vignettes for the loop and for RL (B4, B5) | P1 | Medium | 0.5 |
+| 10 | Chat feedback becomes data (D6, D7) | P2 | High | 1 |
+| 11 | App actions off the Shiny thread, pipeline cancel (F1, F2) | P2 | Medium | 1 |
+| 12 | Publish to the Hub, Serve and Publish buttons (C4, C6) | P2 | Medium | 0.5 |
+| 13 | Multi-turn data, quality filters, judged distillation (E1 to E3) | P2 | Medium | 1.5 |
+| 14 | Python package, then R depends on it (G5, G6) | P2 | Medium | 2 |
+| 15 | Product site (G4) | P2 | Medium | 1 |
+| 16 | Chat polish: context limits, side-by-side, transcripts (D4, D5, D8) | P3 | Medium | 1 |
+| 17 | Command rewards, GRPO options, optimizer resume (E4 to E6) | P3 | Medium | 1 |
+| 18 | RunPod and Modal deploy helpers (C7) | P3 | Low | 0.5 |
+| 19 | Housekeeping (F3, F4, F8) | P3 | Low | 0.5 |
+| 20 | Gradio UI, hosted training, full fine-tuning (G7, G8, E7) | P3 | Low now | Large |
+
+Items 4 to 7 are one arc (inference hosts, then chat) to do as a block after 0.2.0.

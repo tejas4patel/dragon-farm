@@ -68,7 +68,7 @@ dragon_runs <- function(runs_dir = dragon_runs_dir()) {
       id = basename(d), dir = normalizePath(d, winslash = "/"),
       state = st$state %||% "unknown",
       stage = cfg$stage %||% "sft",
-      method = cfg$prefer$method %||% NA_character_,
+      method = cfg$prefer$method %||% (if (identical(cfg$stage, "reinforce")) "grpo" else NA_character_),
       model = cfg$model$id %||% NA_character_,
       created_at = cfg$created_at %||% NA_character_,
       eval_loss = as.numeric(st$eval_loss %||% NA_real_),
@@ -86,10 +86,12 @@ print.dragon_run <- function(x, ...) {
   cli::cli_text("{.cls dragon_run} {.strong {x$id}}")
   cli::cli_text("Directory: {.path {x$dir}}")
   if (!is.null(cfg)) {
-    unit <- if (identical(cfg$data$format, "pairs")) "pairs" else "training rows"
+    unit <- switch(cfg$data$format %||% "messages", pairs = "pairs", prompts = "prompts", "training rows")
     cli::cli_text("Model: {.val {cfg$model$id}} \u00b7 LoRA r={cfg$lora$r} \u00b7 {cfg$data$n_train} {unit}")
     if (identical(cfg$stage, "prefer")) {
       cli::cli_text("Stage: preference optimization ({toupper(cfg$prefer$method)}, beta {cfg$prefer$beta}){if (!is.null(cfg$model$base_run)) paste0(' \u00b7 continues ', cfg$model$base_run) else ''}")
+    } else if (identical(cfg$stage, "reinforce")) {
+      cli::cli_text("Stage: reinforcement learning (GRPO, {length(cfg$reinforce$rewards)} reward{?s}, group {cfg$reinforce$group_size}, beta {cfg$reinforce$beta}){if (!is.null(cfg$model$base_run)) paste0(' \u00b7 continues ', cfg$model$base_run) else ''}")
     } else if (!is.null(cfg$model$base_run)) {
       cli::cli_text("Stage: fine-tuning \u00b7 continues {cfg$model$base_run}")
     }
@@ -100,7 +102,9 @@ print.dragon_run <- function(x, ...) {
     last <- pr[max(which(!is.na(pr$loss))), ]
     cli::cli_text("Progress: step {last$step}{if (!is.null(st$total_steps)) paste0('/', st$total_steps) else ''} \u00b7 loss {round(last$loss, 3)}")
   }
-  if (!is.null(st$pref_accuracy)) {
+  if (!is.null(st$reward_mean)) {
+    cli::cli_text("Held-out reward: {round(st$reward_mean, 3)}")
+  } else if (!is.null(st$pref_accuracy)) {
     cli::cli_text("Preference accuracy: {round(100 * st$pref_accuracy)}% \u00b7 reward margin {round(st$reward_margin, 3)} \u00b7 loss {round(st$eval_loss, 3)}")
   } else if (!is.null(st$eval_loss)) {
     cli::cli_text("Eval loss: {round(st$eval_loss, 3)} \u00b7 perplexity {round(st$perplexity, 2)}")

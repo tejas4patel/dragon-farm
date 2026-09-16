@@ -37,6 +37,11 @@ class CancelFlag:
         return self.requested
 
 
+def append_progress(run_dir, row):
+    with open(Path(run_dir) / "progress.jsonl", "a", encoding="utf-8") as f:
+        f.write(json.dumps(row) + "\n")
+
+
 class ProgressCallback(TrainerCallback):
     def __init__(self, run_dir, status, cancel: CancelFlag):
         self.run_dir = Path(run_dir)
@@ -46,8 +51,7 @@ class ProgressCallback(TrainerCallback):
         self.t0 = time.time()
 
     def _append(self, row):
-        with open(self.progress_path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(row) + "\n")
+        append_progress(self.run_dir, row)
 
     def on_train_begin(self, args, state, control, **kwargs):
         self.t0 = time.time()

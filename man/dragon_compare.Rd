@@ -7,8 +7,8 @@
 dragon_compare(..., runs_dir = dragon_runs_dir())
 }
 \arguments{
-\item{...}{Runs, run directories, or nothing to list every run in
-\code{runs_dir}.}
+\item{...}{Runs, run directories, a single \code{dragon_pipeline} (its runs
+are compared), or nothing to list every run in \code{runs_dir}.}
 
 \item{runs_dir}{Directory scanned when no runs are given.}
 }

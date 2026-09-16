@@ -15,7 +15,7 @@ dragon_code <- function(run) {
   m <- meta$mapping %||% list(prompt = "prompt", response = "response")
   kind <- m$kind %||% "messages"
   stage <- cfg$stage %||% "sft"
-  fmt <- function(x) if (is.null(x)) "NULL" else deparse(x)
+  fmt <- fmt_arg
 
   lora_line <- sprintf("dragon_lora(r = %d, alpha = %s, dropout = %s, target_modules = %s)",
                        cfg$lora$r, fmt(cfg$lora$alpha), fmt(cfg$lora$dropout),
@@ -38,6 +38,9 @@ dragon_code <- function(run) {
   map_line <- if (kind == "pairs") {
     sprintf("dragon_map_pairs(prompt = %s, chosen = %s, rejected = %s%s)",
             fmt(m$prompt), fmt(m$chosen), fmt(m$rejected), system_part)
+  } else if (kind == "prompts") {
+    sprintf("dragon_map_prompts(prompt = %s%s%s)", fmt(m$prompt),
+            if (!is.null(m$reference)) paste0(", reference = ", fmt(m$reference)) else "", system_part)
   } else {
     sprintf("dragon_map(prompt = %s, response = %s%s)", fmt(m$prompt), fmt(m$response), system_part)
   }
@@ -49,9 +52,17 @@ dragon_code <- function(run) {
   } else {
     sprintf("    model = %s,", fmt(cfg$model$id))
   }
-  fn <- if (stage == "prefer") "dragon_prefer" else "dragon_train"
+  fn <- switch(stage, prefer = "dragon_prefer", reinforce = "dragon_reinforce", "dragon_train")
   stage_lines <- if (stage == "prefer") {
     c(sprintf("    method = %s,", fmt(cfg$prefer$method)), sprintf("    beta = %s,", fmt(cfg$prefer$beta)))
+  } else if (stage == "reinforce") {
+    rl <- cfg$reinforce
+    rewards <- vapply(rl$rewards, reward_code, character(1))
+    c("    rewards = list(",
+      paste0("      ", rewards, c(rep(",", length(rewards) - 1), "")),
+      "    ),",
+      sprintf("    group_size = %s, beta = %s, temperature = %s, max_new_tokens = %s,",
+              fmt(rl$group_size), fmt(rl$beta), fmt(rl$temperature), fmt(rl$max_new_tokens)))
   }
 
   paste(

@@ -50,8 +50,9 @@ dragon_train <- function(dataset, model, lora = dragon_lora(), args = dragon_tra
 # Shared by dragon_train() and dragon_bundle(). Returns list(run_dir, files).
 prepare_run <- function(dataset, model, lora, args, hardware, name, run_dir, runs_dir, n_samples,
                         revision = NULL, trust_remote_code = FALSE, state = "queued",
-                        check_token = TRUE, stage = "sft", prefer = NULL) {
-  check_dataset(dataset, mapped = TRUE, kind = if (identical(stage, "prefer")) "pairs" else "messages")
+                        check_token = TRUE, stage = "sft", prefer = NULL, reinforce = NULL) {
+  kind <- switch(stage, prefer = "pairs", reinforce = "prompts", "messages")
+  check_dataset(dataset, mapped = TRUE, kind = kind)
   base <- resolve_base(model)
   model <- base$model
   if (!is.null(base$run_id)) {
@@ -77,7 +78,8 @@ prepare_run <- function(dataset, model, lora, args, hardware, name, run_dir, run
   }
 
   if (is.null(run_dir)) {
-    default_name <- paste0(basename(model), if (identical(stage, "prefer")) paste0("-", prefer$method))
+    suffix <- switch(stage, prefer = paste0("-", prefer$method), reinforce = "-grpo", "")
+    default_name <- paste0(basename(model), suffix)
     run_dir <- unique_run_dir(runs_dir, name %||% default_name)
   }
   if (file.exists(file.path(run_dir, "config.json"))) {
@@ -97,10 +99,12 @@ prepare_run <- function(dataset, model, lora, args, hardware, name, run_dir, run
     rel_adapters <- c(rel_adapters, rel)
   }
 
+  if (!is.null(reinforce)) reinforce$rewards <- localize_rewards(reinforce$rewards, run_dir)
+
   files <- write_dataset_files(dataset, run_dir)
   cfg <- build_config(basename(run_dir), model, files, lora, args, hardware, n_samples,
                       revision = revision, trust_remote_code = trust_remote_code,
-                      stage = stage, prefer = prefer,
+                      stage = stage, prefer = prefer, reinforce = reinforce,
                       base = list(run_id = base$run_id, adapters = rel_adapters))
   write_json(cfg, file.path(run_dir, "config.json"))
   write_json(

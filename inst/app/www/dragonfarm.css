@@ -56,6 +56,14 @@
 .bubble.assistant { background: var(--df-accent-soft); }
 .bubble.chosen { background: #E3F0E6; }
 .bubble.rejected { background: #F6E0E0; }
+.bubble.reference { background: #EFE7DA; }
+.pipeline { padding: 8px 0; border-bottom: 1px solid var(--df-line, #E4E7E4); }
+.pipeline-head { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+.pipeline-steps { margin: 0; padding-left: 20px; font-size: 0.88rem; }
+.pipeline-steps .step { font-weight: 600; }
+.pipeline-steps .step.running { color: var(--df-accent); }
+.pipeline-steps .step.failed { color: var(--df-bad); }
+.pipeline-steps .step.queued { color: var(--df-muted); }
 .stage-box { margin-bottom: 8px; }
 .judge-row { display: flex; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--df-line, #E4E7E4); font-size: 0.88rem; }
 .judge-prompt { flex: 1; color: var(--df-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
