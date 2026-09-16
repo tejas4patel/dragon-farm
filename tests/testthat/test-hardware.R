@@ -3,7 +3,7 @@ flat <- function(d) paste(d$lines, collapse = "\n")
 test_that("cpu_diagnosis explains a missing driver", {
   d <- cpu_diagnosis(NULL, NA_real_, windows = TRUE)
   expect_equal(d$reason, "no_driver")
-  expect_match(flat(d), "nvidia.com/drivers", fixed = TRUE)
+  expect_match(flat(d), "nvidia.com/en-us/drivers/", fixed = TRUE)
   expect_match(flat(d), "CUDA Toolkit is not needed", fixed = TRUE)
 })
 

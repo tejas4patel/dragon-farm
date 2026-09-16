@@ -1,3 +1,8 @@
+# dragonfarm (development version)
+
+* Driver download link updated to NVIDIA's canonical URL, which CRAN's URL
+  check had flagged as a redirect.
+
 # dragonfarm 0.1.1
 
 * `dragon_check()` now explains a CPU-only result on a machine with an NVIDIA

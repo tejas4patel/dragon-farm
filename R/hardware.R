@@ -46,7 +46,7 @@ cpu_diagnosis <- function(torch_cuda_build, driver, windows = is_windows()) {
   if (is.na(driver)) {
     return(list(reason = "no_driver", lines = fmt(c(
       "i" = "No NVIDIA driver was found ({.code nvidia-smi} is not on the PATH).",
-      "i" = "If this machine has an NVIDIA GPU, install the current driver from {.url https://www.nvidia.com/drivers}, restart, and run {.fn dragon_check} again. The CUDA Toolkit is not needed: torch bundles its own CUDA libraries.",
+      "i" = "If this machine has an NVIDIA GPU, install the current driver from {.url https://www.nvidia.com/en-us/drivers/}, restart, and run {.fn dragon_check} again. The CUDA Toolkit is not needed: torch bundles its own CUDA libraries.",
       "i" = "If there is no NVIDIA GPU, this is expected. Models of 135M to 360M parameters train on the CPU."
     ))))
   }
@@ -70,7 +70,7 @@ cpu_diagnosis <- function(torch_cuda_build, driver, windows = is_windows()) {
   if (driver < need) {
     return(list(reason = "driver_too_old", lines = fmt(c(
       "!" = "torch was built for CUDA {torch_cuda_build}, which needs NVIDIA driver {need} or newer. This machine has {driver}.",
-      "i" = "Update the driver from {.url https://www.nvidia.com/drivers} (recommended), or install a torch build that matches the current driver:",
+      "i" = "Update the driver from {.url https://www.nvidia.com/en-us/drivers/} (recommended), or install a torch build that matches the current driver:",
       " " = "  Sys.setenv(DRAGONFARM_TORCH_INDEX = \"{url}\")",
       "i" = "Then restart R and run {.fn dragon_check} again."
     ))))
