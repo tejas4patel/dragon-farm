@@ -1,4 +1,4 @@
-# dragonfarm (development version)
+# dragonfarm 0.2.0
 
 * Pipelines. `dragon_pipeline()` chains stages built from `dragon_step_*()`
   constructors (train, synthesize pairs, prefer, reinforce, judge,
