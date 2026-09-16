@@ -7,6 +7,8 @@ model to answer in your format and your domain, and gives you back an adapter
 or a merged model that loads with plain Hugging Face `transformers`. Training
 runs in a background Python process that the package sets up for you.
 
+Documentation: <https://dragonfarm.dev>
+
 ## Install
 
 ```r
