@@ -17,6 +17,8 @@
   dataset columns to prompt, response, and system text
 - [`dragon_map_pairs()`](https://dragonfarm.dev/reference/dragon_map_pairs.md)
   : Map columns for preference optimization
+- [`dragon_map_prompts()`](https://dragonfarm.dev/reference/dragon_map_prompts.md)
+  : Map columns for reinforcement learning
 - [`dragon_synthesize()`](https://dragonfarm.dev/reference/dragon_synthesize.md)
   : Write fine-tuning data with a teacher model
 - [`dragon_synthesize_pairs()`](https://dragonfarm.dev/reference/dragon_synthesize_pairs.md)
@@ -45,6 +47,10 @@
   Fine-tune a model with LoRA
 - [`dragon_prefer()`](https://dragonfarm.dev/reference/dragon_prefer.md)
   : Preference optimization with DPO or ORPO
+- [`dragon_reinforce()`](https://dragonfarm.dev/reference/dragon_reinforce.md)
+  : Reinforcement learning with verifiable rewards (GRPO)
+- [`dragon_reward()`](https://dragonfarm.dev/reference/dragon_reward.md)
+  : Verifiable rewards for reinforcement learning
 - [`dragon_resume()`](https://dragonfarm.dev/reference/dragon_resume.md)
   : Resume a run from its latest checkpoint
 - [`dragon_wait()`](https://dragonfarm.dev/reference/dragon_wait.md) :
@@ -92,6 +98,20 @@
   Merge the adapter into the base model
 - [`dragon_export_gguf()`](https://dragonfarm.dev/reference/dragon_export_gguf.md)
   : Export a merged model to GGUF
+
+## Pipelines
+
+- [`dragon_pipeline()`](https://dragonfarm.dev/reference/dragon_pipeline.md)
+  : Run several post-training stages as one pipeline
+- [`dragon_step_train()`](https://dragonfarm.dev/reference/dragon_step.md)
+  [`dragon_step_prefer()`](https://dragonfarm.dev/reference/dragon_step.md)
+  [`dragon_step_synthesize_pairs()`](https://dragonfarm.dev/reference/dragon_step.md)
+  [`dragon_step_reinforce()`](https://dragonfarm.dev/reference/dragon_step.md)
+  [`dragon_step_judge()`](https://dragonfarm.dev/reference/dragon_step.md)
+  [`dragon_step_evaluate()`](https://dragonfarm.dev/reference/dragon_step.md)
+  : Steps of a post-training pipeline
+- [`dragon_pipeline_status()`](https://dragonfarm.dev/reference/dragon_pipeline_status.md)
+  : Progress of a pipeline
 
 ## Cloud GPUs
 

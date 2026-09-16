@@ -18,7 +18,8 @@ dragon_compare(..., runs_dir = dragon_runs_dir())
 
 - ...:
 
-  Runs, run directories, or nothing to list every run in `runs_dir`.
+  Runs, run directories, a single `dragon_pipeline` (its runs are
+  compared), or nothing to list every run in `runs_dir`.
 
 - runs_dir:
 

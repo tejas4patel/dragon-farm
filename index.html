@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">dragonfarm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,10 +134,26 @@
 <p>Passing a run as the model chains the stages: the earlier adapters are folded into the weights before the new stage adds its own. <code>method = "orpo"</code> needs no reference model and can start from a base model directly. The app has the same path: choose “Preference pairs” in the Map panel and a run to start from in the Train panel.</p>
 </div>
 <div class="section level2">
+<h2 id="reinforcement-learning-with-rewards-you-can-check">Reinforcement learning with rewards you can check<a class="anchor" aria-label="anchor" href="#reinforcement-learning-with-rewards-you-can-check"></a>
+</h2>
+<p>When the goal is verifiable, a correct number, valid JSON, a format, a length budget, reinforcement learning beats preference data. The model writes several answers per prompt, the rewards score them, and it learns from the ones that beat their group’s average (GRPO):</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">math</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="st">"arithmetic.csv"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/dragon_map_prompts.html">dragon_map_prompts</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"question"</span>, reference <span class="op">=</span> <span class="st">"answer"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">rl</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_reinforce.html">dragon_reinforce</a></span><span class="op">(</span></span>
+<span>  <span class="va">math</span>, <span class="va">sft</span>,</span>
+<span>  rewards <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="reference/dragon_reward.html">dragon_reward</a></span><span class="op">(</span><span class="st">"numeric"</span><span class="op">)</span>, <span class="fu"><a href="reference/dragon_reward.html">dragon_reward</a></span><span class="op">(</span><span class="st">"length"</span>, max_chars <span class="op">=</span> <span class="fl">300</span>, weight <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  group_size <span class="op">=</span> <span class="fl">6</span>, wait <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/dragon_evaluate.html">dragon_evaluate</a></span><span class="op">(</span><span class="va">rl</span><span class="op">)</span>   <span class="co"># mean held-out reward, per reward</span></span></code></pre></div>
+<p>Built-in rewards cover exact and numeric answers, regex and JSON formats, length, and keywords; a <code>"custom"</code> reward points at a Python function that sees the prompt, the completion, the reference, and the row’s other columns. It is the right tool for verifiable goals and the wrong one for vague ones; use <code><a href="reference/dragon_prefer.html">dragon_prefer()</a></code> for “be more helpful”.</p>
+</div>
+<div class="section level2">
 <h2 id="make-the-data-teachers-and-self-improvement">Make the data: teachers and self-improvement<a class="anchor" aria-label="anchor" href="#make-the-data-teachers-and-self-improvement"></a>
 </h2>
 <p>Small models are only as good as their training data, and most teams do not have a few hundred hand-written ideal replies. Two shortcuts:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># A stronger model answers your prompts; its replies become the training set.</span></span>
 <span><span class="va">teacher</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_llm_anthropic.html">dragon_llm_anthropic</a></span><span class="op">(</span>system <span class="op">=</span> <span class="st">"You are a concise, warm support agent."</span><span class="op">)</span></span>
 <span><span class="va">synth</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_synthesize.html">dragon_synthesize</a></span><span class="op">(</span><span class="fu"><a href="reference/dragon_prompts.html">dragon_prompts</a></span><span class="op">(</span><span class="va">sft</span>, <span class="st">"train"</span><span class="op">)</span>, <span class="va">teacher</span>, system <span class="op">=</span> <span class="st">"You are a concise, warm support agent."</span><span class="op">)</span></span>
@@ -152,10 +168,26 @@
 <p>That last sequence, sample, judge, train, judge again, is the loop that turns a fine-tune into a development cycle. The app’s Try it panel has the same Improve step.</p>
 </div>
 <div class="section level2">
+<h2 id="the-whole-loop-in-one-call">The whole loop in one call<a class="anchor" aria-label="anchor" href="#the-whole-loop-in-one-call"></a>
+</h2>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_pipeline.html">dragon_pipeline</a></span><span class="op">(</span><span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="reference/dragon_step.html">dragon_step_train</a></span><span class="op">(</span><span class="va">tickets</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="reference/dragon_step.html">dragon_step_synthesize_pairs</a></span><span class="op">(</span>prompts <span class="op">=</span> <span class="st">"train"</span>, n <span class="op">=</span> <span class="fl">150</span>, judge <span class="op">=</span> <span class="fu"><a href="reference/dragon_llm_anthropic.html">dragon_judge_anthropic</a></span><span class="op">(</span>model <span class="op">=</span> <span class="st">"claude-sonnet-5"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="reference/dragon_step.html">dragon_step_prefer</a></span><span class="op">(</span>method <span class="op">=</span> <span class="st">"dpo"</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="reference/dragon_step.html">dragon_step_judge</a></span><span class="op">(</span>against <span class="op">=</span> <span class="st">"base"</span>, judge <span class="op">=</span> <span class="fu"><a href="reference/dragon_llm_anthropic.html">dragon_judge_anthropic</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="reference/dragon_step.html">dragon_step_evaluate</a></span><span class="op">(</span>metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"token_f1"</span>, <span class="st">"length_ratio"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span>, background <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/dragon_pipeline_status.html">dragon_pipeline_status</a></span><span class="op">(</span><span class="va">p</span><span class="op">)</span>   <span class="co"># step by step, while it runs</span></span>
+<span><span class="fu"><a href="reference/dragon_compare.html">dragon_compare</a></span><span class="op">(</span><span class="va">p</span><span class="op">)</span>           <span class="co"># its runs side by side, when it is done</span></span></code></pre></div>
+<p>The app’s Pipeline panel runs the same recipe and draws the lineage of every run in the directory.</p>
+</div>
+<div class="section level2">
 <h2 id="did-it-help-metrics-judges-and-comparisons">Did it help? Metrics, judges, and comparisons<a class="anchor" aria-label="anchor" href="#did-it-help-metrics-judges-and-comparisons"></a>
 </h2>
 <p>Held-out loss says a stage trained. It does not say the replies got better. Three tools answer that:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Deterministic checks over every held-out row</span></span>
 <span><span class="fu"><a href="reference/dragon_evaluate.html">dragon_evaluate</a></span><span class="op">(</span><span class="va">dpo</span>, metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exact"</span>, <span class="st">"token_f1"</span>, <span class="st">"json_valid"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -175,7 +207,7 @@
 <h2 id="no-gpu-train-in-the-cloud">No GPU? Train in the cloud<a class="anchor" aria-label="anchor" href="#no-gpu-train-in-the-cloud"></a>
 </h2>
 <p>The run directory is the whole contract between R and the trainer, so a run can be trained on any machine with a GPU and its results copied back. <code><a href="reference/dragon_bundle.html">dragon_bundle()</a></code> zips the run, <code><a href="reference/dragon_remote.html">dragon_remote()</a></code> opens a provider with the dragon-farm notebook and prints the steps, and <code><a href="reference/dragon_import.html">dragon_import()</a></code> puts the trained adapter into place. Nothing else changes: <code><a href="reference/dragon_generate.html">dragon_generate()</a></code> and <code><a href="reference/dragon_merge.html">dragon_merge()</a></code> work on the imported run as if it had trained locally.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="fu"><a href="reference/dragon_example_data.html">dragon_example_data</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_map.html">dragon_map</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"{subject}\n\n{body}"</span>, response <span class="op">=</span> <span class="st">"reply"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_bundle.html">dragon_bundle</a></span><span class="op">(</span><span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span><span class="op">)</span></span>
@@ -361,7 +393,7 @@
 <div class="section level2">
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a>
 </h2>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span><span class="op">)</span>                                  <span class="co"># unit tests, no Python needed</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>DRAGONFARM_INTEGRATION <span class="op">=</span> <span class="st">"true"</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span>filter <span class="op">=</span> <span class="st">"integration"</span><span class="op">)</span>            <span class="co"># trains SmolLM2-135M for 6 steps</span></span></code></pre></div>

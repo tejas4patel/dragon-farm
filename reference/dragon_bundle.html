@@ -13,7 +13,7 @@ that runs it. Nothing is trained locally and Python is not needed."></head><body
 
     <a class="navbar-brand me-2" href="../index.html">dragonfarm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,7 +40,7 @@ that runs it. Nothing is trained locally and Python is not needed."></head><body
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Package a run for a cloud GPU</h1>
-      <small class="dont-index">Source: <a href="https://github.com/tejas4patel/dragon-farm/blob/main/R/remote.R" class="external-link"><code>R/remote.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tejas4patel/dragon-farm/blob/v0.2.0/R/remote.R" class="external-link"><code>R/remote.R</code></a></small>
       <div class="d-none name"><code>dragon_bundle.Rd</code></div>
     </div>
 
@@ -65,7 +65,11 @@ that runs it. Nothing is trained locally and Python is not needed.</p>
 <span>  revision <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  trust_remote_code <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  method <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  beta <span class="op">=</span> <span class="fl">0.1</span></span>
+<span>  beta <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rewards <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  group_size <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  temperature <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  max_new_tokens <span class="op">=</span> <span class="fl">128</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -127,7 +131,18 @@ prompt and response data.</p></dd>
 
 
 <dt id="arg-beta">beta<a class="anchor" aria-label="anchor" href="#arg-beta"></a></dt>
-<dd><p>Preference strength for <code>method</code>. See <code><a href="dragon_prefer.html">dragon_prefer()</a></code>.</p></dd>
+<dd><p>Preference strength for <code>method</code>, or the KL weight for an RL
+run. Defaults to 0.1 and 0.04 respectively.</p></dd>
+
+
+<dt id="arg-rewards">rewards<a class="anchor" aria-label="anchor" href="#arg-rewards"></a></dt>
+<dd><p>For a dataset mapped with <code><a href="dragon_map_prompts.html">dragon_map_prompts()</a></code>, the
+<code><a href="dragon_reward.html">dragon_reward()</a></code> list an RL run needs.</p></dd>
+
+
+<dt id="arg-group-size-temperature-max-new-tokens">group_size, temperature, max_new_tokens<a class="anchor" aria-label="anchor" href="#arg-group-size-temperature-max-new-tokens"></a></dt>
+<dd><p>RL sampling settings. See
+<code><a href="dragon_reinforce.html">dragon_reinforce()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

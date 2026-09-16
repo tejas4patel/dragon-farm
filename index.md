@@ -122,6 +122,34 @@ folded into the weights before the new stage adds its own.
 model directly. The app has the same path: choose “Preference pairs” in
 the Map panel and a run to start from in the Train panel.
 
+## Reinforcement learning with rewards you can check
+
+When the goal is verifiable, a correct number, valid JSON, a format, a
+length budget, reinforcement learning beats preference data. The model
+writes several answers per prompt, the rewards score them, and it learns
+from the ones that beat their group’s average (GRPO):
+
+``` r
+
+math <- dragon_dataset("arithmetic.csv") |>
+  dragon_map_prompts(prompt = "question", reference = "answer")
+
+rl <- dragon_reinforce(
+  math, sft,
+  rewards = list(dragon_reward("numeric"), dragon_reward("length", max_chars = 300, weight = 0.2)),
+  group_size = 6, wait = TRUE
+)
+dragon_evaluate(rl)   # mean held-out reward, per reward
+```
+
+Built-in rewards cover exact and numeric answers, regex and JSON
+formats, length, and keywords; a `"custom"` reward points at a Python
+function that sees the prompt, the completion, the reference, and the
+row’s other columns. It is the right tool for verifiable goals and the
+wrong one for vague ones; use
+[`dragon_prefer()`](https://dragonfarm.dev/reference/dragon_prefer.md)
+for “be more helpful”.
+
 ## Make the data: teachers and self-improvement
 
 Small models are only as good as their training data, and most teams do
@@ -145,6 +173,25 @@ dragon_judge(dpo, against = "base", judge = dragon_judge_anthropic())
 That last sequence, sample, judge, train, judge again, is the loop that
 turns a fine-tune into a development cycle. The app’s Try it panel has
 the same Improve step.
+
+## The whole loop in one call
+
+``` r
+
+p <- dragon_pipeline("Qwen/Qwen2.5-0.5B-Instruct", list(
+  dragon_step_train(tickets),
+  dragon_step_synthesize_pairs(prompts = "train", n = 150, judge = dragon_judge_anthropic(model = "claude-sonnet-5")),
+  dragon_step_prefer(method = "dpo"),
+  dragon_step_judge(against = "base", judge = dragon_judge_anthropic()),
+  dragon_step_evaluate(metrics = c("token_f1", "length_ratio"))
+), background = TRUE)
+
+dragon_pipeline_status(p)   # step by step, while it runs
+dragon_compare(p)           # its runs side by side, when it is done
+```
+
+The app’s Pipeline panel runs the same recipe and draws the lineage of
+every run in the directory.
 
 ## Did it help? Metrics, judges, and comparisons
 

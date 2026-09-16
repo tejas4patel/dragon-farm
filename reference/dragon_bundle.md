@@ -22,7 +22,11 @@ dragon_bundle(
   revision = NULL,
   trust_remote_code = FALSE,
   method = NULL,
-  beta = 0.1
+  beta = NULL,
+  rewards = NULL,
+  group_size = 4,
+  temperature = 1,
+  max_new_tokens = 128
 )
 ```
 
@@ -91,8 +95,21 @@ dragon_bundle(
 
 - beta:
 
-  Preference strength for `method`. See
-  [`dragon_prefer()`](https://dragonfarm.dev/reference/dragon_prefer.md).
+  Preference strength for `method`, or the KL weight for an RL run.
+  Defaults to 0.1 and 0.04 respectively.
+
+- rewards:
+
+  For a dataset mapped with
+  [`dragon_map_prompts()`](https://dragonfarm.dev/reference/dragon_map_prompts.md),
+  the
+  [`dragon_reward()`](https://dragonfarm.dev/reference/dragon_reward.md)
+  list an RL run needs.
+
+- group_size, temperature, max_new_tokens:
+
+  RL sampling settings. See
+  [`dragon_reinforce()`](https://dragonfarm.dev/reference/dragon_reinforce.md).
 
 ## Value
 

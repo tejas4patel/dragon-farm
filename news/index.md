@@ -1,6 +1,32 @@
 # Changelog
 
-## dragonfarm (development version)
+## dragonfarm 0.2.0
+
+- Pipelines.
+  [`dragon_pipeline()`](https://dragonfarm.dev/reference/dragon_pipeline.md)
+  chains stages built from `dragon_step_*()` constructors (train,
+  synthesize pairs, prefer, reinforce, judge, evaluate), threading each
+  stage’s run into the next and writing a record after every step.
+  `background = TRUE` runs it in a separate R process;
+  [`dragon_pipeline_status()`](https://dragonfarm.dev/reference/dragon_pipeline_status.md)
+  follows it.
+  [`dragon_compare()`](https://dragonfarm.dev/reference/dragon_compare.md)
+  accepts a pipeline. The app gains a Pipeline panel that launches the
+  standard recipe and shows every run’s lineage.
+
+- Reinforcement learning.
+  [`dragon_map_prompts()`](https://dragonfarm.dev/reference/dragon_map_prompts.md)
+  maps prompts with an optional reference answer,
+  [`dragon_reward()`](https://dragonfarm.dev/reference/dragon_reward.md)
+  defines verifiable rewards (exact, contains, numeric, regex, JSON,
+  length, keyword, or a custom Python function), and
+  [`dragon_reinforce()`](https://dragonfarm.dev/reference/dragon_reinforce.md)
+  runs GRPO: the model samples a group of answers per prompt, the
+  rewards score them, and it learns from the ones that beat their
+  group’s average, with a KL penalty towards the model it started from.
+  Implemented in the package’s own trainer, so no new dependency.
+  Evaluation reports mean held-out reward per reward; the app’s Map and
+  Train panels gain an RL mode with a reward builder.
 
 - Synthetic data closes the loop.
   [`dragon_synthesize()`](https://dragonfarm.dev/reference/dragon_synthesize.md)

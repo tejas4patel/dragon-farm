@@ -1,5 +1,6 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://dragonfarm.dev/404.html</loc></url>
+<url><loc>https://dragonfarm.dev/BACKLOG.html</loc></url>
 <url><loc>https://dragonfarm.dev/LICENSE-text.html</loc></url>
 <url><loc>https://dragonfarm.dev/LICENSE.html</loc></url>
 <url><loc>https://dragonfarm.dev/articles/index.html</loc></url>
@@ -26,21 +27,27 @@
 <url><loc>https://dragonfarm.dev/reference/dragon_lora.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_map.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_map_pairs.html</loc></url>
+<url><loc>https://dragonfarm.dev/reference/dragon_map_prompts.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_merge.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_metrics.html</loc></url>
+<url><loc>https://dragonfarm.dev/reference/dragon_pipeline.html</loc></url>
+<url><loc>https://dragonfarm.dev/reference/dragon_pipeline_status.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_prefer.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_presets.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_preview.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_prompts.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_python_requirements.html</loc></url>
+<url><loc>https://dragonfarm.dev/reference/dragon_reinforce.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_remote.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_remote_providers.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_resume.html</loc></url>
+<url><loc>https://dragonfarm.dev/reference/dragon_reward.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_run.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_runs.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_runs_dir.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_split.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_status.html</loc></url>
+<url><loc>https://dragonfarm.dev/reference/dragon_step.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_synthesize.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_synthesize_pairs.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_train.html</loc></url>
