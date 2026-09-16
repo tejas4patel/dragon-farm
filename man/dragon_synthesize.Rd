@@ -10,6 +10,14 @@ dragon_synthesize(
   system = NULL,
   max_new_tokens = 512,
   temperature = 0.7,
+  judge = NULL,
+  min_score = 7,
+  rubric = NULL,
+  dedupe = TRUE,
+  near_dup_threshold = 0.92,
+  min_chars = 1,
+  max_chars = Inf,
+  min_alpha_ratio = 0,
   file = NULL,
   runs_dir = dragon_runs_dir(),
   name = "synthetic"
@@ -18,7 +26,8 @@ dragon_synthesize(
 \arguments{
 \item{prompts}{A character vector of prompts, or a mapped \code{dragon_dataset}
 whose prompt template is rendered for every row. See \code{\link[=dragon_prompts]{dragon_prompts()}}
-for prompts from an existing run.}
+for prompts from an existing run, which is how distillation from "the
+model's own prompts" is done: pass \code{dragon_prompts(run, "train")}.}
 
 \item{teacher}{The model that writes the replies: \code{\link[=dragon_llm_anthropic]{dragon_llm_anthropic()}},
 an \code{ellmer} chat, a model id or directory, a finished run, or any
@@ -31,6 +40,32 @@ so the student trains with the same instruction.}
 
 \item{temperature}{Sampling temperature for local teachers.}
 
+\item{judge}{Optional. Scores every surviving reply from 1 to 10 and
+drops the ones below \code{min_score}. See \code{\link[=dragon_judge]{dragon_judge()}} for what is
+accepted.}
+
+\item{min_score}{Minimum judge score to keep a reply. Only used when
+\code{judge} is given.}
+
+\item{rubric}{What the judge should value. See \code{\link[=dragon_judge]{dragon_judge()}}.}
+
+\item{dedupe}{Drop rows whose prompt repeats an earlier one, and rows
+whose response exactly or nearly repeats an earlier response (see
+\code{near_dup_threshold}).}
+
+\item{near_dup_threshold}{Word-overlap similarity (0 to 1) above which
+two responses count as near-duplicates. Lower catches more; \code{1}
+disables near-duplicate detection while leaving exact-duplicate
+detection on.}
+
+\item{min_chars, max_chars}{Keep only replies whose length in characters
+falls in this range.}
+
+\item{min_alpha_ratio}{Minimum share of printable ASCII characters in a
+reply; a crude filter for garbled output or a reply in the wrong
+script. \code{0} (the default) disables it; non-English replies need it
+left off or set low.}
+
 \item{file}{Where to write the JSONL. Defaults to a timestamped file under
 \verb{synth/} in \code{runs_dir}.}
 
@@ -41,14 +76,22 @@ so the student trains with the same instruction.}
 \value{
 A \code{dragon_dataset} mapped with prompt and response columns (and
 system, when given). The file path is its \code{source}, so \code{\link[=dragon_code]{dragon_code()}}
-reproduces runs trained on it.
+reproduces runs trained on it. \code{attr(ds, "synthesis")$dropped} breaks
+down what the quality pass (and the judge, if used) removed.
 }
 \description{
 Sends each prompt to a stronger model and keeps its replies as the
 responses to train on. This is the fastest way to get good training data
 for a small model: a few hundred prompts from your domain, answered the
-way you want them answered. The result is saved as JSONL and returned as a
-mapped dataset ready for \code{\link[=dragon_train]{dragon_train()}}.
+way you want them answered. A quality pass then drops rows that are too
+short or too long, look garbled, repeat an earlier prompt, or repeat
+(or nearly repeat) an earlier response, so a teacher's stock phrases
+don't dominate the dataset. Passing a \code{judge} adds distillation with a
+quality gate: it scores every surviving reply and keeps only the ones at
+or above \code{min_score}, the way you would with a teacher answering a
+student's own prompts (see \code{\link[=dragon_prompts]{dragon_prompts()}}) and filtering out its
+weaker answers. The result is saved as JSONL and returned as a mapped
+dataset ready for \code{\link[=dragon_train]{dragon_train()}}.
 }
 \examples{
 \dontrun{
@@ -58,5 +101,9 @@ persona <- "You are a concise, warm support agent for a smart-home company."
 teacher <- dragon_llm_anthropic(system = persona)
 synth <- dragon_synthesize(tickets, teacher, system = persona)
 run <- dragon_train(synth, "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+
+# Distill from the student's own prompts, keeping only replies a judge likes.
+distilled <- dragon_synthesize(dragon_prompts(run, "train"), teacher,
+                               judge = dragon_judge_anthropic(), min_score = 7)
 }
 }

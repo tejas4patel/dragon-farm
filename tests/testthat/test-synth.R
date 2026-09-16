@@ -72,6 +72,70 @@ test_that("dragon_synthesize drops empty and failed replies and can write to a c
   expect_error(dragon_synthesize(c("a"), NULL), "No teacher given")
 })
 
+test_that("dragon_synthesize's quality pass drops duplicate prompts and duplicate or near-duplicate responses", {
+  # an exact duplicate prompt: only the first occurrence is kept
+  teacher1 <- function(ps) paste("Answer for", ps)
+  ds1 <- suppressMessages(dragon_synthesize(c("p1", "p2", "p1"), teacher1, runs_dir = tempfile("runs-")))
+  expect_equal(ds1$data$prompt, c("p1", "p2"))
+  expect_equal(attr(ds1, "synthesis")$dropped$duplicate_prompt, 1)
+
+  # an exact duplicate response, for two different prompts
+  teacher2 <- function(ps) c("Same canned answer.", "A different, specific answer.", "Same canned answer.")
+  ds2 <- suppressMessages(dragon_synthesize(c("p1", "p2", "p3"), teacher2, runs_dir = tempfile("runs-")))
+  expect_equal(nrow(ds2$data), 2)
+  expect_equal(attr(ds2, "synthesis")$dropped$duplicate_response, 1)
+
+  # a near-duplicate response: 26 shared words plus one differing tail word
+  # (similarity 26/28 ~ 0.93) is flagged at the default threshold but not a stricter one
+  near_a <- paste(c(letters, "alpha"), collapse = " ")
+  near_b <- paste(c(letters, "beta"), collapse = " ")
+  teacher3 <- function(ps) c(near_a, near_b)
+  ds3 <- suppressMessages(dragon_synthesize(c("p1", "p2"), teacher3, runs_dir = tempfile("runs-")))
+  expect_equal(nrow(ds3$data), 1)
+  expect_equal(attr(ds3, "synthesis")$dropped$near_duplicate, 1)
+  ds3b <- suppressMessages(dragon_synthesize(c("p1", "p2"), teacher3, near_dup_threshold = 0.95, runs_dir = tempfile("runs-")))
+  expect_equal(nrow(ds3b$data), 2)
+
+  # dedupe = FALSE disables all of the above
+  ds4 <- suppressMessages(dragon_synthesize(c("p1", "p2", "p1"), teacher1, dedupe = FALSE, runs_dir = tempfile("runs-")))
+  expect_equal(nrow(ds4$data), 3)
+  expect_equal(attr(ds4, "synthesis")$dropped$duplicate_prompt, 0)
+})
+
+test_that("dragon_synthesize's quality pass applies length and garbled-text filters", {
+  teacher <- function(ps) c("ok", "A perfectly ordinary, complete answer to the question asked.", strrep("☃", 8))
+  ds <- suppressMessages(dragon_synthesize(c("short", "normal", "garbled"), teacher, min_chars = 5, runs_dir = tempfile("runs-")))
+  expect_setequal(ds$data$prompt, c("normal", "garbled"))   # "ok" (2 chars) is the only one below min_chars
+  expect_equal(attr(ds, "synthesis")$dropped$length, 1)
+
+  ds2 <- suppressMessages(dragon_synthesize(c("short", "normal", "garbled"), teacher, min_chars = 1, min_alpha_ratio = 0.9, runs_dir = tempfile("runs-")))
+  expect_setequal(ds2$data$prompt, c("short", "normal"))   # the snowmen have no ordinary characters
+  expect_equal(attr(ds2, "synthesis")$dropped$language, 1)
+
+  expect_error(
+    suppressMessages(dragon_synthesize(c("a", "b"), function(ps) c("x", "y"), min_chars = 10, runs_dir = tempfile("runs-"))),
+    "quality filters"
+  )
+})
+
+test_that("dragon_synthesize with a judge keeps only replies at or above min_score", {
+  # length_judge scores min(10, 1 + nchar(reply) %/% 6): 5 chars -> 1, 12 -> 3, 30 -> 6, 60 -> 10
+  teacher <- function(ps) c(strrep("x", 5), strrep("x", 12), strrep("x", 30), strrep("x", 60))
+  ds <- suppressMessages(dragon_synthesize(c("p1", "p2", "p3", "p4"), teacher,
+                                           judge = length_judge, min_score = 3, runs_dir = tempfile("runs-")))
+  expect_setequal(ds$data$prompt, c("p2", "p3", "p4"))
+  meta <- attr(ds, "synthesis")
+  expect_equal(meta$judge, "custom")
+  expect_equal(meta$min_score, 3)
+  expect_equal(meta$mean_score, 5)   # mean(1, 3, 6, 10), computed before the score filter
+  expect_equal(meta$dropped$low_score, 1)
+
+  expect_error(
+    suppressMessages(dragon_synthesize(c("a"), function(p) "x", judge = length_judge, min_score = 9, runs_dir = tempfile())),
+    "at or above"
+  )
+})
+
 test_that("judge mode keeps the best and worst sample per prompt and honours min_gap", {
   runs <- tempfile("runs-")
   ds <- suppressMessages(dragon_synthesize_pairs(c("p1", "p2", "p3"), student = fake_student, judge = length_judge,

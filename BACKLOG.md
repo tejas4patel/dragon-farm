@@ -62,8 +62,8 @@ function, so a trained model can be used the way it will be used.
 | Id | Item | Status | Notes |
 |---|---|---|---|
 | E1 | Multi-turn conversations as training data: a `messages` column holding whole conversations | done | `dragon_conversations()`. | Today rows are one prompt and one reply. |
-| E2 | Data quality pass in `dragon_synthesize()`: dedupe, drop near-duplicates, length and language filters | planned | |
-| E3 | Teacher-distilled SFT from the model's own prompts plus a judge filter (keep only replies the judge scores above a threshold) | planned | Combines synthesize and judge. |
+| E2 | Data quality pass in `dragon_synthesize()`: dedupe, drop near-duplicates, length and language filters | done | |
+| E3 | Teacher-distilled SFT from the model's own prompts plus a judge filter (keep only replies the judge scores above a threshold) | done | Folded into `dragon_synthesize(judge=, min_score=)` rather than a separate function. |
 | E4 | `dragon_reinforce()`: tests as rewards (run a command or Python test against the completion) | idea | Common for code tasks; a `"command"` reward type. |
 | E5 | `dragon_reinforce()`: optional length normalisation and reward clipping options exposed | idea | |
 | E6 | Resume for GRPO restores the optimizer state, not just the adapter and step | idea | |

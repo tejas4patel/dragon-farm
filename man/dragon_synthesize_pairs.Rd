@@ -23,7 +23,8 @@ dragon_synthesize_pairs(
 \arguments{
 \item{prompts}{A character vector of prompts, or a mapped \code{dragon_dataset}
 whose prompt template is rendered for every row. See \code{\link[=dragon_prompts]{dragon_prompts()}}
-for prompts from an existing run.}
+for prompts from an existing run, which is how distillation from "the
+model's own prompts" is done: pass \code{dragon_prompts(run, "train")}.}
 
 \item{student}{The model whose replies are being improved: normally the
 \code{dragon_run} you will continue from. Also a model id, ellmer chat, or

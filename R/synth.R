@@ -121,17 +121,97 @@ write_synth <- function(df, file, meta) {
   invisible(file)
 }
 
+# Cheap word-overlap similarity, used to catch near-duplicate responses
+# (the same templated answer with a word or two changed) without an NLP
+# dependency. Not meant for huge n: it is O(n) per item against the items
+# already kept, which is fine for the hundreds to low thousands of rows a
+# synthesis run produces.
+near_duplicate_keep <- function(text, threshold) {
+  n <- length(text)
+  if (n < 2 || !is.finite(threshold) || threshold >= 1) return(rep(TRUE, n))
+  words <- strsplit(text, "\\s+")
+  keep <- rep(TRUE, n)
+  kept_idx <- integer(0)
+  for (i in seq_len(n)) {
+    wi <- words[[i]]
+    dup <- FALSE
+    for (j in kept_idx) {
+      wj <- words[[j]]
+      if (abs(length(wi) - length(wj)) > max(2, 0.3 * max(length(wi), length(wj), 1))) next
+      uni <- length(union(wi, wj))
+      sim <- if (uni == 0) 1 else length(intersect(wi, wj)) / uni
+      if (sim >= threshold) { dup <- TRUE; break }
+    }
+    if (dup) keep[i] <- FALSE else kept_idx <- c(kept_idx, i)
+  }
+  keep
+}
+
+# Drops rows that are too short/long, too far from ordinary text (garbled
+# encoding, near-empty punctuation), an exact repeat of an earlier prompt,
+# or a near-duplicate of an earlier response. Returns the filtered rows
+# plus a named count of what each check dropped, for the synthesis meta.
+quality_filter <- function(df, prompt_col, response_col, dedupe = TRUE, near_dup_threshold = 0.92,
+                           min_chars = 1, max_chars = Inf, min_alpha_ratio = 0) {
+  dropped <- c(length = 0L, language = 0L, duplicate_prompt = 0L, duplicate_response = 0L, near_duplicate = 0L)
+  len <- nchar(df[[response_col]])
+  keep_len <- len >= min_chars & len <= max_chars
+  dropped["length"] <- sum(!keep_len)
+  df <- df[keep_len, , drop = FALSE]
+
+  if (min_alpha_ratio > 0 && nrow(df)) {
+    # Printable ASCII only: POSIX classes like [:punct:] are locale-dependent
+    # and can classify non-Latin symbols inconsistently across platforms,
+    # which this filter needs to avoid.
+    ratio <- vapply(df[[response_col]], function(x) {
+      n <- nchar(x)
+      if (n == 0) return(0)
+      nchar(gsub("[^\x20-\x7e]", "", x)) / n
+    }, numeric(1))
+    keep_lang <- ratio >= min_alpha_ratio
+    dropped["language"] <- sum(!keep_lang)
+    df <- df[keep_lang, , drop = FALSE]
+  }
+
+  if (isTRUE(dedupe) && nrow(df) > 1) {
+    dup_prompt <- duplicated(normalize_text(df[[prompt_col]]))
+    dropped["duplicate_prompt"] <- sum(dup_prompt)
+    df <- df[!dup_prompt, , drop = FALSE]
+
+    norm_resp <- normalize_text(df[[response_col]])
+    dup_resp <- duplicated(norm_resp)
+    dropped["duplicate_response"] <- sum(dup_resp)
+    df <- df[!dup_resp, , drop = FALSE]
+    norm_resp <- norm_resp[!dup_resp]
+
+    if (nrow(df) > 1) {
+      keep_near <- near_duplicate_keep(norm_resp, near_dup_threshold)
+      dropped["near_duplicate"] <- sum(!keep_near)
+      df <- df[keep_near, , drop = FALSE]
+    }
+  }
+  list(df = df, dropped = as.list(dropped))
+}
+
 #' Write fine-tuning data with a teacher model
 #'
 #' Sends each prompt to a stronger model and keeps its replies as the
 #' responses to train on. This is the fastest way to get good training data
 #' for a small model: a few hundred prompts from your domain, answered the
-#' way you want them answered. The result is saved as JSONL and returned as a
-#' mapped dataset ready for [dragon_train()].
+#' way you want them answered. A quality pass then drops rows that are too
+#' short or too long, look garbled, repeat an earlier prompt, or repeat
+#' (or nearly repeat) an earlier response, so a teacher's stock phrases
+#' don't dominate the dataset. Passing a `judge` adds distillation with a
+#' quality gate: it scores every surviving reply and keeps only the ones at
+#' or above `min_score`, the way you would with a teacher answering a
+#' student's own prompts (see [dragon_prompts()]) and filtering out its
+#' weaker answers. The result is saved as JSONL and returned as a mapped
+#' dataset ready for [dragon_train()].
 #'
 #' @param prompts A character vector of prompts, or a mapped `dragon_dataset`
 #'   whose prompt template is rendered for every row. See [dragon_prompts()]
-#'   for prompts from an existing run.
+#'   for prompts from an existing run, which is how distillation from "the
+#'   model's own prompts" is done: pass `dragon_prompts(run, "train")`.
 #' @param teacher The model that writes the replies: [dragon_llm_anthropic()],
 #'   an `ellmer` chat, a model id or directory, a finished run, or any
 #'   function from prompts to replies.
@@ -139,13 +219,33 @@ write_synth <- function(df, file, meta) {
 #'   so the student trains with the same instruction.
 #' @param max_new_tokens Reply length cap for local teachers.
 #' @param temperature Sampling temperature for local teachers.
+#' @param judge Optional. Scores every surviving reply from 1 to 10 and
+#'   drops the ones below `min_score`. See [dragon_judge()] for what is
+#'   accepted.
+#' @param min_score Minimum judge score to keep a reply. Only used when
+#'   `judge` is given.
+#' @param rubric What the judge should value. See [dragon_judge()].
+#' @param dedupe Drop rows whose prompt repeats an earlier one, and rows
+#'   whose response exactly or nearly repeats an earlier response (see
+#'   `near_dup_threshold`).
+#' @param near_dup_threshold Word-overlap similarity (0 to 1) above which
+#'   two responses count as near-duplicates. Lower catches more; `1`
+#'   disables near-duplicate detection while leaving exact-duplicate
+#'   detection on.
+#' @param min_chars,max_chars Keep only replies whose length in characters
+#'   falls in this range.
+#' @param min_alpha_ratio Minimum share of printable ASCII characters in a
+#'   reply; a crude filter for garbled output or a reply in the wrong
+#'   script. `0` (the default) disables it; non-English replies need it
+#'   left off or set low.
 #' @param file Where to write the JSONL. Defaults to a timestamped file under
 #'   `synth/` in `runs_dir`.
 #' @param runs_dir Parent directory for the default `file`.
 #' @param name Label used in the default file name.
 #' @return A `dragon_dataset` mapped with prompt and response columns (and
 #'   system, when given). The file path is its `source`, so [dragon_code()]
-#'   reproduces runs trained on it.
+#'   reproduces runs trained on it. `attr(ds, "synthesis")$dropped` breaks
+#'   down what the quality pass (and the judge, if used) removed.
 #' @export
 #' @examples
 #' \dontrun{
@@ -155,26 +255,57 @@ write_synth <- function(df, file, meta) {
 #' teacher <- dragon_llm_anthropic(system = persona)
 #' synth <- dragon_synthesize(tickets, teacher, system = persona)
 #' run <- dragon_train(synth, "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+#'
+#' # Distill from the student's own prompts, keeping only replies a judge likes.
+#' distilled <- dragon_synthesize(dragon_prompts(run, "train"), teacher,
+#'                                judge = dragon_judge_anthropic(), min_score = 7)
 #' }
 dragon_synthesize <- function(prompts, teacher, system = NULL, max_new_tokens = 512, temperature = 0.7,
+                              judge = NULL, min_score = 7, rubric = NULL,
+                              dedupe = TRUE, near_dup_threshold = 0.92, min_chars = 1, max_chars = Inf, min_alpha_ratio = 0,
                               file = NULL, runs_dir = dragon_runs_dir(), name = "synthetic") {
   prompts <- as_prompt_vector(prompts)
   fn <- as_llm(teacher, role = "teacher", temperature = temperature, max_new_tokens = max_new_tokens, system = system)
   cli::cli_alert_info("Asking {llm_label(fn)} to answer {length(prompts)} prompt{?s}.")
   replies <- call_llm(fn, prompts, "teacher")
   keep <- usable_reply(replies)
+  n_empty <- sum(!keep)
   if (!any(keep)) cli::cli_abort("The teacher returned no usable replies.")
   df <- data.frame(prompt = prompts[keep], response = trimws(replies[keep]), stringsAsFactors = FALSE)
+
+  q <- quality_filter(df, "prompt", "response", dedupe = dedupe, near_dup_threshold = near_dup_threshold,
+                      min_chars = min_chars, max_chars = max_chars, min_alpha_ratio = min_alpha_ratio)
+  df <- q$df
+  if (!nrow(df)) cli::cli_abort("No replies survived the quality filters. Loosen {.arg dedupe}, {.arg min_chars}, or {.arg min_alpha_ratio}.")
+
+  judge_fn <- NULL
+  n_low_score <- 0L
+  mean_score <- NA_real_
+  if (!is.null(judge)) {
+    judge_fn <- as_judge(judge)
+    cli::cli_alert_info("Scoring {nrow(df)} repl{?y/ies} with {llm_label(judge_fn)}.")
+    scored <- judge_scores(df$prompt, df$response, rep(NA_character_, nrow(df)), judge_fn, rubric)
+    score <- scored$details$score
+    keep_score <- !is.na(score) & score >= min_score
+    n_low_score <- sum(!keep_score)
+    mean_score <- if (any(!is.na(score))) mean(score, na.rm = TRUE) else NA_real_
+    df <- df[keep_score, , drop = FALSE]
+    if (!nrow(df)) cli::cli_abort("No replies scored at or above {.val {min_score}}. Lower {.arg min_score} or check the judge.")
+  }
+
   if (!is.null(system)) df$system <- system
+  dropped <- c(as.list(q$dropped), list(empty_or_failed = n_empty, low_score = n_low_score))
 
   file <- file %||% synth_path(runs_dir, name, "sft")
-  meta <- list(kind = "sft", teacher = llm_label(fn), system = system, n_prompts = length(prompts),
-               n_kept = nrow(df), created_at = now_iso())
+  meta <- list(kind = "sft", teacher = llm_label(fn), judge = if (!is.null(judge_fn)) llm_label(judge_fn),
+              min_score = if (!is.null(judge)) min_score, mean_score = mean_score,
+              system = system, n_prompts = length(prompts), n_kept = nrow(df), dropped = dropped, created_at = now_iso())
   write_synth(df, file, meta)
   ds <- dragon_dataset(file, name = basename(file))
   ds <- dragon_map(ds, prompt = "prompt", response = "response", system = if (!is.null(system)) "system")
   attr(ds, "synthesis") <- meta
-  cli::cli_alert_success("Wrote {nrow(df)} row{?s} to {.path {file}}{if (sum(!keep)) paste0(' (', sum(!keep), ' empty or failed replies dropped)') else ''}.")
+  n_dropped <- sum(unlist(dropped))
+  cli::cli_alert_success("Wrote {nrow(df)} row{?s} to {.path {file}}{if (n_dropped) paste0(' (', n_dropped, ' row', if (n_dropped != 1) 's', ' dropped by quality checks)') else ''}.")
   ds
 }
 
