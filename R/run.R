@@ -54,8 +54,8 @@ make_run_id <- function(name) {
 #' @export
 dragon_runs <- function(runs_dir = dragon_runs_dir()) {
   empty <- data.frame(
-    id = character(), dir = character(), state = character(), model = character(),
-    created_at = character(), eval_loss = numeric(), stringsAsFactors = FALSE
+    id = character(), dir = character(), state = character(), stage = character(), method = character(),
+    model = character(), created_at = character(), eval_loss = numeric(), stringsAsFactors = FALSE
   )
   if (!dir.exists(runs_dir)) return(empty)
   dirs <- list.dirs(runs_dir, recursive = FALSE, full.names = TRUE)
@@ -67,6 +67,8 @@ dragon_runs <- function(runs_dir = dragon_runs_dir()) {
     data.frame(
       id = basename(d), dir = normalizePath(d, winslash = "/"),
       state = st$state %||% "unknown",
+      stage = cfg$stage %||% "sft",
+      method = cfg$prefer$method %||% NA_character_,
       model = cfg$model$id %||% NA_character_,
       created_at = cfg$created_at %||% NA_character_,
       eval_loss = as.numeric(st$eval_loss %||% NA_real_),
@@ -83,14 +85,26 @@ print.dragon_run <- function(x, ...) {
   cfg <- tryCatch(run_config(x), error = function(e) NULL)
   cli::cli_text("{.cls dragon_run} {.strong {x$id}}")
   cli::cli_text("Directory: {.path {x$dir}}")
-  if (!is.null(cfg)) cli::cli_text("Model: {.val {cfg$model$id}} \u00b7 LoRA r={cfg$lora$r} \u00b7 {cfg$data$n_train} training rows")
+  if (!is.null(cfg)) {
+    unit <- if (identical(cfg$data$format, "pairs")) "pairs" else "training rows"
+    cli::cli_text("Model: {.val {cfg$model$id}} \u00b7 LoRA r={cfg$lora$r} \u00b7 {cfg$data$n_train} {unit}")
+    if (identical(cfg$stage, "prefer")) {
+      cli::cli_text("Stage: preference optimization ({toupper(cfg$prefer$method)}, beta {cfg$prefer$beta}){if (!is.null(cfg$model$base_run)) paste0(' \u00b7 continues ', cfg$model$base_run) else ''}")
+    } else if (!is.null(cfg$model$base_run)) {
+      cli::cli_text("Stage: fine-tuning \u00b7 continues {cfg$model$base_run}")
+    }
+  }
   cli::cli_text("State: {.strong {st$state}}{if (!is.null(st$device)) paste0(' on ', st$device) else ''}")
   pr <- tryCatch(dragon_progress(x), error = function(e) data.frame())
   if (nrow(pr) && "loss" %in% names(pr)) {
     last <- pr[max(which(!is.na(pr$loss))), ]
     cli::cli_text("Progress: step {last$step}{if (!is.null(st$total_steps)) paste0('/', st$total_steps) else ''} \u00b7 loss {round(last$loss, 3)}")
   }
-  if (!is.null(st$eval_loss)) cli::cli_text("Eval loss: {round(st$eval_loss, 3)} \u00b7 perplexity {round(st$perplexity, 2)}")
+  if (!is.null(st$pref_accuracy)) {
+    cli::cli_text("Preference accuracy: {round(100 * st$pref_accuracy)}% \u00b7 reward margin {round(st$reward_margin, 3)} \u00b7 loss {round(st$eval_loss, 3)}")
+  } else if (!is.null(st$eval_loss)) {
+    cli::cli_text("Eval loss: {round(st$eval_loss, 3)} \u00b7 perplexity {round(st$perplexity, 2)}")
+  }
   if (!is.null(st$error)) cli::cli_text("{.strong Error:} {st$error}")
   invisible(x)
 }

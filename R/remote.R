@@ -109,6 +109,10 @@ remote_notebook_source <- function() {
 #' [dragon_import()] to bring the results back into this run directory.
 #'
 #' @inheritParams dragon_train
+#' @param method For a dataset mapped with [dragon_map_pairs()], the
+#'   preference method, `"dpo"` or `"orpo"`. Defaults to `"dpo"`. Ignored for
+#'   prompt and response data.
+#' @param beta Preference strength for `method`. See [dragon_prefer()].
 #' @return A `dragon_run` whose state is `"bundled"`.
 #' @export
 #' @examples
@@ -123,10 +127,19 @@ remote_notebook_source <- function() {
 #' }
 dragon_bundle <- function(dataset, model, lora = dragon_lora(), args = dragon_train_args(),
                           name = NULL, run_dir = NULL, runs_dir = dragon_runs_dir(),
-                          n_samples = 10, revision = NULL, trust_remote_code = FALSE) {
+                          n_samples = 10, revision = NULL, trust_remote_code = FALSE,
+                          method = NULL, beta = 0.1) {
+  check_dataset(dataset)
+  stage <- if (identical(mapping_kind(dataset), "pairs")) "prefer" else "sft"
+  prefer <- NULL
+  if (stage == "prefer") {
+    method <- if (is.null(method)) "dpo" else match.arg(method, c("dpo", "orpo"))
+    check_number(beta, "beta", min = 1e-4, max = 10)
+    prefer <- list(method = method, beta = beta)
+  }
   prep <- prepare_run(dataset, model, lora, args, dragon_hardware(), name, run_dir, runs_dir,
                       n_samples, revision = revision, trust_remote_code = trust_remote_code,
-                      state = "bundled", check_token = FALSE)
+                      state = "bundled", check_token = FALSE, stage = stage, prefer = prefer)
   run <- new_run(prep$run_dir)
   paths <- bundle_run(run)
   cli::cli_alert_success("Bundled run {.strong {run$id}} ({prep$files$n_train} training rows, {prep$files$n_eval} held out).")
@@ -164,6 +177,9 @@ bundle_run <- function(run) {
   }
   if (file.exists(run_path(run, "dataset.json"))) {
     file.copy(run_path(run, "dataset.json"), file.path(staging, "run", "dataset.json"))
+  }
+  if (dir.exists(run_path(run, "base_adapters"))) {
+    file.copy(run_path(run, "base_adapters"), file.path(staging, "run"), recursive = TRUE)
   }
   write_json(list(state = "queued", created_at = now_iso(), pid = NULL), file.path(staging, "run", "status.json"))
 

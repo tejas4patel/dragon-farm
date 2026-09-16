@@ -22,7 +22,9 @@ dragon_logs(run, n = 50)
 \code{"queued"}, \code{"running"}, \code{"succeeded"}, \code{"failed"}, \code{"cancelled"}.
 
 \code{dragon_progress()}: a data frame with columns \code{step}, \code{epoch},
-\code{loss}, \code{eval_loss}, \code{lr}, \code{grad_norm}, \code{elapsed_s}, \code{eta_s}.
+\code{loss}, \code{eval_loss}, \code{lr}, \code{grad_norm}, \code{elapsed_s}, \code{eta_s}, and for
+preference runs \code{pref_acc}, \code{reward_margin}, \code{eval_pref_acc},
+\code{eval_reward_margin}.
 
 \code{dragon_logs()}: a character vector.
 }

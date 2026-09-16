@@ -4,6 +4,7 @@ mod_train_ui <- function(id) {
     col_widths = c(7, 5),
     bslib::card(
       bslib::card_header("Training settings"),
+      shiny::uiOutput(ns("stage_ui")),
       bslib::layout_columns(
         col_widths = c(6, 6),
         shiny::numericInput(ns("epochs"), "Epochs", value = 3, min = 0.1, step = 0.5),
@@ -35,6 +36,7 @@ mod_train_ui <- function(id) {
     ),
     bslib::card(
       bslib::card_header("Ready?"),
+      shiny::selectInput(ns("base_run"), "Start from", choices = c("The model chosen in step 3" = ""), width = "100%"),
       shiny::uiOutput(ns("checklist")),
       shiny::actionButton(ns("start"), "Start training", class = "btn-primary btn-lg", width = "100%"),
       shiny::uiOutput(ns("launched")),
@@ -53,15 +55,76 @@ mod_train_ui <- function(id) {
   )
 }
 
-mod_train_server <- function(id, state, nav_to) {
+mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
+
+    kind <- shiny::reactive({
+      m <- state$mapped
+      if (is.null(m)) "messages" else mapping_kind(m) %||% "messages"
+    })
+    is_pairs <- shiny::reactive(identical(kind(), "pairs"))
+
+    # Preference runs need a lower learning rate; nudge the default once when
+    # the mapping switches kind.
+    shiny::observeEvent(is_pairs(), {
+      if (is_pairs()) {
+        shiny::updateNumericInput(session, "learning_rate", value = 5e-5)
+        shiny::updateNumericInput(session, "epochs", value = 2)
+      } else {
+        shiny::updateNumericInput(session, "learning_rate", value = 2e-4)
+        shiny::updateNumericInput(session, "epochs", value = 3)
+      }
+    }, ignoreInit = TRUE)
+
+    output$stage_ui <- shiny::renderUI({
+      if (!is_pairs()) {
+        return(shiny::p(class = "text-muted small", "Stage: supervised fine-tuning on prompt and response rows."))
+      }
+      shiny::div(class = "stage-box",
+        shiny::p(class = "text-muted small", "Stage: preference optimization on chosen and rejected pairs."),
+        bslib::layout_columns(
+          col_widths = c(6, 6),
+          shiny::selectInput(ns("method"), "Method",
+                             choices = c("DPO (needs a fine-tuned start)" = "dpo", "ORPO (works from a base model)" = "orpo")),
+          shiny::numericInput(ns("beta"), "Beta (preference strength)", value = 0.1, min = 0.001, max = 10, step = 0.05)
+        )
+      )
+    })
+
+    # Finished runs with an adapter can be the starting point of the next stage.
+    base_runs <- shiny::reactivePoll(4000, session,
+      checkFunc = function() {
+        dirs <- list.dirs(runs_dir, recursive = FALSE)
+        paste(dirs, file.info(file.path(dirs, "status.json"))$mtime, collapse = "|")
+      },
+      valueFunc = function() {
+        df <- dragon_runs(runs_dir)
+        df[df$state == "succeeded" & file.exists(file.path(df$dir, "adapter", "adapter_config.json")), , drop = FALSE]
+      }
+    )
+    shiny::observe({
+      df <- base_runs()
+      labels <- if (nrow(df)) sprintf("%s  [%s, %s]", df$id, df$stage, basename(df$model)) else character()
+      choices <- c("The model chosen in step 3" = "", stats::setNames(df$id, labels))
+      selected <- shiny::isolate(input$base_run)
+      shiny::updateSelectInput(session, "base_run", choices = choices,
+                               selected = if (!is.null(selected) && selected %in% choices) selected else "")
+    })
+
+    base <- shiny::reactive({
+      id <- input$base_run
+      if (is.null(id) || !nzchar(id)) return(NULL)
+      dir <- file.path(runs_dir, id)
+      if (!file.exists(file.path(dir, "config.json"))) return(NULL)
+      dragon_run(dir)
+    })
 
     problems <- shiny::reactive({
       out <- character()
       if (is.null(state$dataset)) out <- c(out, "Load a dataset (step 1).")
-      if (is.null(state$mapped)) out <- c(out, "Map prompt and response columns (step 2).")
-      if (is.null(state$model$id) || !nzchar(state$model$id)) out <- c(out, "Choose a model (step 3).")
+      if (is.null(state$mapped)) out <- c(out, "Map the columns (step 2).")
+      if (is.null(base()) && (is.null(state$model$id) || !nzchar(state$model$id))) out <- c(out, "Choose a model (step 3) or a run to start from.")
       out
     })
 
@@ -75,9 +138,11 @@ mod_train_server <- function(id, state, nav_to) {
       n_eval <- floor(n * (input$eval_frac %||% 0.05))
       eff <- (input$batch_size %||% 4) * (input$grad_accum %||% 4)
       steps <- if (!is.na(input$max_steps %||% NA)) input$max_steps else ceiling((n - n_eval) / eff) * (input$epochs %||% 3)
+      b <- base()
       shiny::tags$ul(class = "checklist ok",
-        shiny::tags$li(sprintf("%d training rows, %d held out", n - n_eval, n_eval)),
-        shiny::tags$li(shiny::code(state$model$id)),
+        shiny::tags$li(sprintf("%d %s, %d held out", n - n_eval, if (is_pairs()) "training pairs" else "training rows", n_eval)),
+        shiny::tags$li(if (is.null(b)) shiny::code(state$model$id) else shiny::span("Continue from run ", shiny::code(b$id))),
+        shiny::tags$li(if (is_pairs()) sprintf("%s, beta %s", toupper(input$method %||% "dpo"), input$beta %||% 0.1) else "Supervised fine-tuning"),
         shiny::tags$li(sprintf("Effective batch %d, about %d optimizer steps", eff, as.integer(steps)))
       )
     })
@@ -86,9 +151,13 @@ mod_train_server <- function(id, state, nav_to) {
     # training and the cloud bundle so both produce the same run.
     settings <- function() {
       max_steps <- if (is.na(input$max_steps %||% NA)) NULL else as.integer(input$max_steps)
+      b <- base()
       list(
         dataset = dragon_split(state$mapped, eval_frac = input$eval_frac %||% 0.05, seed = input$seed %||% 42),
-        model = state$model$id,
+        model = if (is.null(b)) state$model$id else b,
+        kind = kind(),
+        method = input$method %||% "dpo",
+        beta = input$beta %||% 0.1,
         lora = dragon_lora(r = input$rank, alpha = input$alpha, dropout = input$dropout),
         args = dragon_train_args(
           epochs = input$epochs, learning_rate = input$learning_rate,
@@ -102,6 +171,16 @@ mod_train_server <- function(id, state, nav_to) {
       )
     }
 
+    launch <- function(s, hardware) {
+      if (identical(s$kind, "pairs")) {
+        dragon_prefer(s$dataset, s$model, method = s$method, beta = s$beta, lora = s$lora, args = s$args,
+                      hardware = hardware, name = s$name, trust_remote_code = s$trust_remote_code)
+      } else {
+        dragon_train(s$dataset, s$model, lora = s$lora, args = s$args, hardware = hardware,
+                     name = s$name, trust_remote_code = s$trust_remote_code)
+      }
+    }
+
     shiny::observeEvent(input$start, {
       p <- problems()
       if (length(p)) {
@@ -111,11 +190,7 @@ mod_train_server <- function(id, state, nav_to) {
       run <- tryCatch({
         s <- settings()
         shiny::withProgress(message = "Launching trainer", detail = "Preparing Python on first use", {
-          dragon_train(
-            s$dataset, s$model, lora = s$lora, args = s$args,
-            hardware = dragon_hardware(device = input$device, dtype = input$dtype),
-            name = s$name, trust_remote_code = s$trust_remote_code
-          )
+          launch(s, dragon_hardware(device = input$device, dtype = input$dtype))
         })
       }, error = function(e) { notify_error(e); NULL })
       if (!is.null(run)) {
@@ -143,7 +218,8 @@ mod_train_server <- function(id, state, nav_to) {
       res <- tryCatch({
         s <- settings()
         run <- dragon_bundle(s$dataset, s$model, lora = s$lora, args = s$args, name = s$name,
-                             trust_remote_code = s$trust_remote_code)
+                             trust_remote_code = s$trust_remote_code,
+                             method = if (identical(s$kind, "pairs")) s$method, beta = s$beta)
         info <- dragon_remote(run, provider, open = FALSE)
         list(run = run, info = info)
       }, error = function(e) { notify_error(e); NULL })

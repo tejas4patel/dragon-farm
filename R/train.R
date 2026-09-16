@@ -6,8 +6,11 @@
 #'
 #' @param dataset A mapped `dragon_dataset` (see [dragon_map()]).
 #' @param model A Hugging Face model id such as
-#'   `"HuggingFaceTB/SmolLM2-135M-Instruct"`, or a local model directory.
-#'   See [dragon_presets()].
+#'   `"HuggingFaceTB/SmolLM2-135M-Instruct"`, a local model directory, or a
+#'   finished `dragon_run` to continue from. In the last case the earlier
+#'   run's adapters are folded into the weights before this run adds its own,
+#'   so stages chain: fine-tune, then [dragon_prefer()], and so on. See
+#'   [dragon_presets()] for model ids.
 #' @param lora LoRA settings from [dragon_lora()].
 #' @param args Training settings from [dragon_train_args()].
 #' @param hardware Hardware settings from [dragon_hardware()].
@@ -47,9 +50,14 @@ dragon_train <- function(dataset, model, lora = dragon_lora(), args = dragon_tra
 # Shared by dragon_train() and dragon_bundle(). Returns list(run_dir, files).
 prepare_run <- function(dataset, model, lora, args, hardware, name, run_dir, runs_dir, n_samples,
                         revision = NULL, trust_remote_code = FALSE, state = "queued",
-                        check_token = TRUE) {
-  check_dataset(dataset, mapped = TRUE)
-  check_string(model, "model")
+                        check_token = TRUE, stage = "sft", prefer = NULL) {
+  check_dataset(dataset, mapped = TRUE, kind = if (identical(stage, "prefer")) "pairs" else "messages")
+  base <- resolve_base(model)
+  model <- base$model
+  if (!is.null(base$run_id)) {
+    trust_remote_code <- isTRUE(trust_remote_code) || isTRUE(base$trust_remote_code)
+    revision <- revision %||% base$revision
+  }
   if (!inherits(lora, "dragon_lora")) cli::cli_abort("{.arg lora} must come from {.fn dragon_lora}.")
   if (!inherits(args, "dragon_train_args")) cli::cli_abort("{.arg args} must come from {.fn dragon_train_args}.")
   if (!inherits(hardware, "dragon_hardware")) cli::cli_abort("{.arg hardware} must come from {.fn dragon_hardware}.")
@@ -69,7 +77,8 @@ prepare_run <- function(dataset, model, lora, args, hardware, name, run_dir, run
   }
 
   if (is.null(run_dir)) {
-    run_dir <- file.path(runs_dir, make_run_id(name %||% basename(model)))
+    default_name <- paste0(basename(model), if (identical(stage, "prefer")) paste0("-", prefer$method))
+    run_dir <- unique_run_dir(runs_dir, name %||% default_name)
   }
   if (file.exists(file.path(run_dir, "config.json"))) {
     cli::cli_abort("{.path {run_dir}} already holds a run. Pick another {.arg run_dir} or use {.fn dragon_resume}.")
@@ -77,9 +86,22 @@ prepare_run <- function(dataset, model, lora, args, hardware, name, run_dir, run
   dir.create(run_dir, recursive = TRUE, showWarnings = FALSE)
   run_dir <- normalizePath(run_dir, winslash = "/")
 
+  # Earlier-stage adapters travel with the run, so it stays self-contained
+  # (and bundles for the cloud) without shipping merged weights.
+  rel_adapters <- character()
+  for (i in seq_along(base$adapters)) {
+    rel <- sprintf("base_adapters/%d", i)
+    dst <- file.path(run_dir, rel)
+    dir.create(dst, recursive = TRUE, showWarnings = FALSE)
+    file.copy(list.files(base$adapters[i], full.names = TRUE), dst, recursive = TRUE)
+    rel_adapters <- c(rel_adapters, rel)
+  }
+
   files <- write_dataset_files(dataset, run_dir)
   cfg <- build_config(basename(run_dir), model, files, lora, args, hardware, n_samples,
-                      revision = revision, trust_remote_code = trust_remote_code)
+                      revision = revision, trust_remote_code = trust_remote_code,
+                      stage = stage, prefer = prefer,
+                      base = list(run_id = base$run_id, adapters = rel_adapters))
   write_json(cfg, file.path(run_dir, "config.json"))
   write_json(
     list(source = dataset$source, name = dataset$name, mapping = dataset$mapping,
@@ -89,6 +111,39 @@ prepare_run <- function(dataset, model, lora, args, hardware, name, run_dir, run
   write_json(list(state = state, created_at = now_iso(), pid = NULL), file.path(run_dir, "status.json"))
   writeLines(character(), file.path(run_dir, "log.txt"))
   list(run_dir = run_dir, files = files)
+}
+
+# Timestamped run directory that does not exist yet. Ids have one-second
+# resolution, so two runs started in the same second get a numeric suffix.
+unique_run_dir <- function(runs_dir, name) {
+  base <- file.path(runs_dir, make_run_id(name))
+  candidate <- base
+  i <- 1L
+  while (dir.exists(candidate)) {
+    i <- i + 1L
+    candidate <- paste0(base, "-", i)
+  }
+  candidate
+}
+
+# What a stage starts from: a model id or path, plus the ordered adapters of
+# the run it continues (each adapter's parents first, then its own).
+resolve_base <- function(model) {
+  if (inherits(model, "dragon_run")) {
+    cfg <- run_config(model)
+    adapter <- run_path(model, "adapter")
+    if (!file.exists(file.path(adapter, "adapter_config.json"))) {
+      st <- dragon_status(model)
+      cli::cli_abort("Run {.strong {model$id}} has no adapter to start from (state: {st$state}).")
+    }
+    parents <- vapply(cfg$model$base_adapters %||% list(), function(p) run_path(model, p), character(1))
+    return(list(
+      model = cfg$model$id, adapters = c(parents, adapter), run_id = model$id,
+      trust_remote_code = isTRUE(cfg$model$trust_remote_code), revision = cfg$model$revision
+    ))
+  }
+  check_string(model, "model")
+  list(model = model, adapters = character(), run_id = NULL, trust_remote_code = NULL, revision = NULL)
 }
 
 # One line pointing at cloud GPUs when this machine is already known to be

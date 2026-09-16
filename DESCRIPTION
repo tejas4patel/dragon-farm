@@ -33,6 +33,8 @@ Imports:
     zip
 Suggests:
     arrow,
+    ellmer,
+    httr2,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),

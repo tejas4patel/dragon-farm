@@ -1,4 +1,13 @@
-"""Entry point: python -m dragonfarm.train --run-dir <dir> [--resume]"""
+"""Entry point: python -m dragonfarm.train --run-dir <dir> [--resume]
+
+Runs one stage of post-training, chosen by config.json's ``stage``:
+
+* ``sft``    supervised fine-tuning on prompt/response rows
+* ``prefer`` preference optimization (DPO or ORPO) on chosen/rejected pairs
+
+Earlier stages chain through ``model.base_adapters``: those adapters are
+folded into the base weights before this stage's LoRA is added.
+"""
 
 import argparse
 import json
@@ -38,36 +47,79 @@ def latest_checkpoint(run_dir: Path):
     return max(cands, key=lambda p: int(p.name.split("-")[-1]))
 
 
-def train(run_dir: Path, status: Status, resume: bool) -> str:
-    with open(run_dir / "config.json", encoding="utf-8") as f:
-        cfg = json.load(f)
+def training_arguments(cfg, run_dir, hw, has_eval):
+    """TrainingArguments shared by every stage."""
+    import inspect
 
+    from transformers import TrainingArguments
+
+    t = cfg["train"]
+    extra = dict(t.get("extra") or {})
+    ta_params = set(inspect.signature(TrainingArguments.__init__).parameters)
+    warmup_ratio = float(t.get("warmup_ratio", 0.03))
+    if "warmup_ratio" in ta_params:
+        warmup_kwargs = {"warmup_ratio": warmup_ratio}
+    else:
+        # transformers >= 5: warmup_steps takes a fraction when below 1.
+        warmup_kwargs = {"warmup_steps": warmup_ratio}
+    kwargs = dict(
+        output_dir=str(run_dir / "checkpoints"),
+        num_train_epochs=float(t["epochs"]),
+        max_steps=int(t["max_steps"]) if t.get("max_steps") else -1,
+        learning_rate=float(t["learning_rate"]),
+        per_device_train_batch_size=int(t["per_device_batch_size"]),
+        per_device_eval_batch_size=int(t["per_device_batch_size"]),
+        gradient_accumulation_steps=int(t["gradient_accumulation"]),
+        weight_decay=float(t.get("weight_decay", 0.0)),
+        lr_scheduler_type="cosine",
+        logging_steps=int(t["logging_steps"]),
+        logging_first_step=True,
+        save_strategy="steps",
+        save_steps=int(t["save_steps"]),
+        save_total_limit=2,
+        eval_strategy="epoch" if has_eval else "no",
+        bf16=hw.bf16,
+        fp16=hw.fp16,
+        seed=int(t.get("seed", 42)),
+        report_to=[],
+        disable_tqdm=True,
+        remove_unused_columns=False,
+        dataloader_pin_memory=(hw.kind == "cuda"),
+        use_cpu=(hw.kind == "cpu"),
+        gradient_checkpointing=bool(t.get("gradient_checkpointing", False)),
+    )
+    kwargs.update(warmup_kwargs)
+    kwargs.update(extra)
+    unknown = [k for k in kwargs if k not in ta_params]
+    if unknown:
+        raise TypeError(f"TrainingArguments does not accept {unknown} in this transformers version")
+    return TrainingArguments(**kwargs)
+
+
+def load_policy(cfg, run_dir, hw, status):
+    """Base model, with earlier-stage adapters folded in, plus a fresh LoRA."""
     import torch
-    from transformers import Trainer, TrainingArguments
     from peft import LoraConfig, get_peft_model
 
-    from .callbacks import CancelFlag, ProgressCallback
-    from .data import PadCollator, load_split
-    from .evaluate_utils import eval_loss, sample_generations, write_eval_files
-    from .hardware import resolve
-    from .loading import load_base_model, load_tokenizer
-
-    cancel = CancelFlag(run_dir)
-    hw = resolve(cfg.get("hardware"))
-    status.update(device=hw.device_str, dtype=hw.dtype_name, device_name=hw.device_name)
-    print(f"[dragonfarm] device={hw.device_str} dtype={hw.dtype_name} ({hw.device_name})", flush=True)
+    from .loading import apply_base_adapters, load_base_model
 
     m = cfg["model"]
-    tok = load_tokenizer(m["id"], m.get("revision"), m.get("trust_remote_code", False))
+    load_4bit = cfg["hardware"].get("load_in_4bit", False)
+    base_adapters = [run_dir / p for p in (m.get("base_adapters") or [])]
+    if base_adapters and load_4bit:
+        raise RuntimeError("chaining from a previous run is not supported with load_in_4bit")
+
     print(f"[dragonfarm] loading {m['id']}", flush=True)
     model = load_base_model(
         m["id"], hw, revision=m.get("revision"),
-        trust_remote_code=m.get("trust_remote_code", False),
-        load_in_4bit=cfg["hardware"].get("load_in_4bit", False),
+        trust_remote_code=m.get("trust_remote_code", False), load_in_4bit=load_4bit,
     )
+    if base_adapters:
+        print(f"[dragonfarm] folding in {len(base_adapters)} earlier adapter(s) from {m.get('base_run')}", flush=True)
+        model = apply_base_adapters(model, base_adapters)
 
     t = cfg["train"]
-    if cfg["hardware"].get("load_in_4bit", False):
+    if load_4bit:
         from peft import prepare_model_for_kbit_training
 
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=t.get("gradient_checkpointing", False))
@@ -93,8 +145,34 @@ def train(run_dir: Path, status: Status, resume: bool) -> str:
     trainable, total = model.get_nb_trainable_parameters()
     status.update(trainable_params=int(trainable), total_params=int(total))
     print(f"[dragonfarm] trainable params {trainable:,} of {total:,}", flush=True)
+    return model
 
-    max_len = int(t["max_seq_len"])
+
+def make_trainer(cls, model, tok, targs, train_ds, eval_ds, collator, callbacks, **extra):
+    kwargs = dict(model=model, args=targs, train_dataset=train_ds, eval_dataset=eval_ds,
+                  data_collator=collator, callbacks=callbacks, **extra)
+    try:
+        return cls(processing_class=tok, **kwargs)
+    except TypeError:
+        return cls(tokenizer=tok, **kwargs)
+
+
+def finish(model, tok, run_dir, cancel):
+    adapter_dir = run_dir / "adapter"
+    model.save_pretrained(str(adapter_dir))
+    tok.save_pretrained(str(adapter_dir))
+    print(f"[dragonfarm] adapter saved to {adapter_dir}", flush=True)
+    return not cancel.check()
+
+
+def run_sft(cfg, run_dir, status, resume, hw, tok, model, cancel):
+    from transformers import Trainer
+
+    from .callbacks import ProgressCallback
+    from .data import PadCollator, load_split
+    from .evaluate_utils import eval_loss, sample_generations, write_eval_files
+
+    max_len = int(cfg["train"]["max_seq_len"])
     train_ds, _ = load_split(run_dir / cfg["data"]["train"], tok, max_len)
     if len(train_ds) == 0:
         raise RuntimeError("no trainable examples after tokenization; check the column mapping and max_seq_len")
@@ -106,59 +184,9 @@ def train(run_dir: Path, status: Status, resume: bool) -> str:
         if len(eval_ds) == 0:
             eval_ds = None
 
-    extra = dict(t.get("extra") or {})
-    import inspect
-
-    ta_params = set(inspect.signature(TrainingArguments.__init__).parameters)
-    warmup_ratio = float(t.get("warmup_ratio", 0.03))
-    if "warmup_ratio" in ta_params:
-        warmup_kwargs = {"warmup_ratio": warmup_ratio}
-    else:
-        # transformers >= 5: warmup_steps takes a fraction when below 1.
-        warmup_kwargs = {"warmup_steps": warmup_ratio}
-    targs_kwargs = dict(
-        output_dir=str(run_dir / "checkpoints"),
-        num_train_epochs=float(t["epochs"]),
-        max_steps=int(t["max_steps"]) if t.get("max_steps") else -1,
-        learning_rate=float(t["learning_rate"]),
-        per_device_train_batch_size=int(t["per_device_batch_size"]),
-        per_device_eval_batch_size=int(t["per_device_batch_size"]),
-        gradient_accumulation_steps=int(t["gradient_accumulation"]),
-        weight_decay=float(t.get("weight_decay", 0.0)),
-        lr_scheduler_type="cosine",
-        logging_steps=int(t["logging_steps"]),
-        logging_first_step=True,
-        save_strategy="steps",
-        save_steps=int(t["save_steps"]),
-        save_total_limit=2,
-        eval_strategy="epoch" if eval_ds is not None else "no",
-        bf16=hw.bf16,
-        fp16=hw.fp16,
-        seed=int(t.get("seed", 42)),
-        report_to=[],
-        disable_tqdm=True,
-        remove_unused_columns=False,
-        dataloader_pin_memory=(hw.kind == "cuda"),
-        use_cpu=(hw.kind == "cpu"),
-        gradient_checkpointing=bool(t.get("gradient_checkpointing", False)),
-    )
-    targs_kwargs.update(warmup_kwargs)
-    targs_kwargs.update(extra)
-    unknown = [k for k in targs_kwargs if k not in ta_params]
-    if unknown:
-        raise TypeError(f"TrainingArguments does not accept {unknown} in this transformers version")
-    targs = TrainingArguments(**targs_kwargs)
-
-    trainer_kwargs = dict(
-        model=model, args=targs, train_dataset=train_ds, eval_dataset=eval_ds,
-        data_collator=PadCollator(tok.pad_token_id),
-        callbacks=[ProgressCallback(run_dir, status, cancel)],
-    )
-    try:
-        trainer = Trainer(processing_class=tok, **trainer_kwargs)
-    except TypeError:
-        trainer = Trainer(tokenizer=tok, **trainer_kwargs)
-
+    targs = training_arguments(cfg, run_dir, hw, eval_ds is not None)
+    trainer = make_trainer(Trainer, model, tok, targs, train_ds, eval_ds, PadCollator(tok.pad_token_id),
+                           [ProgressCallback(run_dir, status, cancel)])
     resume_from = str(latest_checkpoint(run_dir)) if resume else None
     if resume and resume_from is None:
         print("[dragonfarm] no checkpoint found, starting from scratch", flush=True)
@@ -166,12 +194,7 @@ def train(run_dir: Path, status: Status, resume: bool) -> str:
           + (f", evaluating on {len(eval_ds)}" if eval_ds is not None else ""), flush=True)
     trainer.train(resume_from_checkpoint=resume_from)
 
-    adapter_dir = run_dir / "adapter"
-    model.save_pretrained(str(adapter_dir))
-    tok.save_pretrained(str(adapter_dir))
-    print(f"[dragonfarm] adapter saved to {adapter_dir}", flush=True)
-
-    if cancel.check():
+    if not finish(model, tok, run_dir, cancel):
         return "cancelled"
 
     metrics, samples = None, []
@@ -185,6 +208,81 @@ def train(run_dir: Path, status: Status, resume: bool) -> str:
     if metrics:
         status.update(eval_loss=metrics["eval_loss"], perplexity=metrics["perplexity"])
     return "succeeded"
+
+
+def run_prefer(cfg, run_dir, status, resume, hw, tok, model, cancel):
+    from .callbacks import ProgressCallback
+    from .data import PairCollator, load_pairs_split
+    from .evaluate_utils import write_eval_files
+    from .prefer import PreferenceTrainer, eval_pairs, sample_pair_generations
+
+    pref = cfg.get("prefer") or {}
+    method = pref.get("method", "dpo")
+    beta = float(pref.get("beta", 0.1))
+    max_len = int(cfg["train"]["max_seq_len"])
+
+    train_ds, _ = load_pairs_split(run_dir / cfg["data"]["train"], tok, max_len)
+    if len(train_ds) == 0:
+        raise RuntimeError("no trainable pairs after tokenization; check the column mapping and max_seq_len")
+    if train_ds.skipped:
+        print(f"[dragonfarm] skipped {train_ds.skipped} pair(s) whose responses were truncated away", flush=True)
+    eval_ds, eval_records = (None, [])
+    if cfg["data"].get("eval"):
+        eval_ds, eval_records = load_pairs_split(run_dir / cfg["data"]["eval"], tok, max_len)
+        if len(eval_ds) == 0:
+            eval_ds = None
+
+    targs = training_arguments(cfg, run_dir, hw, eval_ds is not None)
+    trainer = make_trainer(PreferenceTrainer, model, tok, targs, train_ds, eval_ds, PairCollator(tok.pad_token_id),
+                           [ProgressCallback(run_dir, status, cancel)],
+                           method=method, beta=beta, pad_id=tok.pad_token_id)
+    resume_from = str(latest_checkpoint(run_dir)) if resume else None
+    if resume and resume_from is None:
+        print("[dragonfarm] no checkpoint found, starting from scratch", flush=True)
+    print(f"[dragonfarm] {method} (beta={beta}) on {len(train_ds)} pairs"
+          + (f", evaluating on {len(eval_ds)}" if eval_ds is not None else ""), flush=True)
+    trainer.train(resume_from_checkpoint=resume_from)
+
+    if not finish(model, tok, run_dir, cancel):
+        return "cancelled"
+
+    metrics, samples = None, []
+    if eval_ds is not None:
+        print("[dragonfarm] evaluating", flush=True)
+        metrics = eval_pairs(model, eval_ds, tok.pad_token_id, hw.device, method, beta)
+        n = int(cfg.get("eval", {}).get("n_samples", 10))
+        if n > 0:
+            samples = sample_pair_generations(model, tok, eval_records, hw.device, n=n)
+    write_eval_files(run_dir, metrics, samples)
+    if metrics:
+        status.update(eval_loss=metrics["eval_loss"], pref_accuracy=metrics["pref_accuracy"],
+                      reward_margin=metrics["reward_margin"])
+    return "succeeded"
+
+
+STAGES = {"sft": run_sft, "prefer": run_prefer}
+
+
+def train(run_dir: Path, status: Status, resume: bool) -> str:
+    with open(run_dir / "config.json", encoding="utf-8") as f:
+        cfg = json.load(f)
+    stage = cfg.get("stage", "sft")
+    if stage not in STAGES:
+        raise RuntimeError(f"unknown stage {stage!r}; this trainer knows {sorted(STAGES)}")
+
+    from .callbacks import CancelFlag
+    from .hardware import resolve
+    from .loading import load_tokenizer
+
+    cancel = CancelFlag(run_dir)
+    hw = resolve(cfg.get("hardware"))
+    status.update(device=hw.device_str, dtype=hw.dtype_name, device_name=hw.device_name, stage=stage)
+    print(f"[dragonfarm] stage={stage} device={hw.device_str} dtype={hw.dtype_name} ({hw.device_name})", flush=True)
+
+    m = cfg["model"]
+    tok = load_tokenizer(m["id"], m.get("revision"), m.get("trust_remote_code", False))
+    model = load_policy(cfg, run_dir, hw, status)
+    return STAGES[stage](cfg, run_dir, status, resume, hw, tok, model, cancel)
 
 
 def main():

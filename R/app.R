@@ -53,7 +53,7 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), ...) {
     mod_data_server("data", state, nav_to)
     mod_mapping_server("map", state, nav_to)
     mod_model_server("model", state, nav_to)
-    mod_train_server("train", state, nav_to)
+    mod_train_server("train", state, nav_to, runs_dir)
     mod_monitor_server("monitor", state, runs_dir)
     mod_tryit_server("tryit", state, runs_dir)
 

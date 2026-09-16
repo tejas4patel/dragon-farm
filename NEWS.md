@@ -1,5 +1,35 @@
 # dragonfarm (development version)
 
+* Synthetic data closes the loop. `dragon_synthesize()` has a teacher model
+  answer your prompts to make fine-tuning data; `dragon_synthesize_pairs()`
+  samples a run's own replies, has a judge score them, and keeps the best
+  and worst as preference pairs (or pairs a teacher's reply against the
+  student's). `dragon_prompts()` pulls prompts from a run's data files.
+  `dragon_llm_anthropic()` and `dragon_llm_ellmer()` turn the Claude API or
+  any ellmer chat into a teacher; the judge variants are now wrappers over
+  them. The app's Try it panel gains an Improve card that builds pairs from
+  the selected run and loads them for the next stage.
+
+* Evaluation that can drive decisions. `dragon_evaluate()` gains `metrics`:
+  deterministic task checks (exact match, token F1, JSON validity, numeric
+  answers, length, custom functions) over every held-out row.
+  `dragon_judge()` scores a run's replies with a language model or compares
+  them pairwise with the model it started from, with position swapping so a
+  biased judge produces ties rather than wins; `dragon_judge_anthropic()`
+  talks to the Claude API directly and `dragon_judge_ellmer()` wraps any
+  ellmer chat, and any local model can judge too. `dragon_compare()` puts
+  every run's measurements side by side. The app gains task metrics and a
+  comparison table in Monitor and a Judge card in Try it.
+
+* Post-training stages. `dragon_map_pairs()` maps prompt, chosen, and
+  rejected columns, and `dragon_prefer()` runs preference optimization on
+  them with DPO or ORPO. Any function that takes a `model` also accepts a
+  finished run: its adapters are folded into the weights before the new
+  stage adds its own, so fine-tune then prefer chains naturally, locally or
+  through the cloud bundle. Runs record their `stage`, `dragon_evaluate()`
+  reports preference accuracy and reward margin, and the app's Map and Train
+  panels gain a preference-pairs mode and a "Start from" run picker.
+
 * Driver download link updated to NVIDIA's canonical URL, which CRAN's URL
   check had flagged as a redirect.
 

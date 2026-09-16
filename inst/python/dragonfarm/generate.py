@@ -1,6 +1,6 @@
 """Entry point: python -m dragonfarm.generate --request req.json --out out.json
 
-Request: {"model": id_or_path, "adapter": path_or_null, "prompts": [...],
+Request: {"model": id_or_path, "adapter": path_or_null, "base_adapters": [paths], "prompts": [...],
           "system": str_or_null, "max_new_tokens": int, "temperature": float,
           "top_p": float, "trust_remote_code": bool}
 """
@@ -25,7 +25,8 @@ def main():
     hw = resolve({"device": req.get("device", "auto"), "dtype": req.get("dtype", "auto")})
     trust = bool(req.get("trust_remote_code", False))
     tok = load_tokenizer(req["model"], trust_remote_code=trust)
-    model = load_for_inference(req["model"], hw, adapter=req.get("adapter"), trust_remote_code=trust)
+    model = load_for_inference(req["model"], hw, adapter=req.get("adapter"), trust_remote_code=trust,
+                               base_adapters=req.get("base_adapters") or [])
 
     outputs = []
     for prompt in req["prompts"]:

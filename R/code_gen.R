@@ -1,7 +1,8 @@
 #' R code that reproduces a run
 #'
 #' Every run, including ones started from the Shiny app, can be replayed as
-#' a script. The dataset path is the original source when it was a file.
+#' a script. The dataset path is the original source when it was a file. A
+#' run that continued from an earlier run refers to that run by directory.
 #'
 #' @param run A `dragon_run` or run directory.
 #' @return A single string of R code.
@@ -12,7 +13,10 @@ dragon_code <- function(run) {
   meta <- if (file.exists(run_path(run, "dataset.json"))) read_json(run_path(run, "dataset.json")) else list()
   src <- meta$source %||% "path/to/your/data.csv"
   m <- meta$mapping %||% list(prompt = "prompt", response = "response")
+  kind <- m$kind %||% "messages"
+  stage <- cfg$stage %||% "sft"
   fmt <- function(x) if (is.null(x)) "NULL" else deparse(x)
+
   lora_line <- sprintf("dragon_lora(r = %d, alpha = %s, dropout = %s, target_modules = %s)",
                        cfg$lora$r, fmt(cfg$lora$alpha), fmt(cfg$lora$dropout),
                        if (is.list(cfg$lora$target_modules)) fmt(unlist(cfg$lora$target_modules)) else fmt(cfg$lora$target_modules))
@@ -30,23 +34,44 @@ dragon_code <- function(run) {
   hw <- cfg$hardware
   hw_line <- sprintf("dragon_hardware(device = %s, dtype = %s%s)", fmt(hw$device), fmt(hw$dtype),
                      if (isTRUE(hw$load_in_4bit)) ", load_in_4bit = TRUE" else "")
-  map_line <- sprintf("dragon_map(prompt = %s, response = %s%s)", fmt(m$prompt), fmt(m$response),
-                      if (!is.null(m$system)) paste0(", system = ", fmt(m$system)) else "")
+  system_part <- if (!is.null(m$system)) paste0(", system = ", fmt(m$system)) else ""
+  map_line <- if (kind == "pairs") {
+    sprintf("dragon_map_pairs(prompt = %s, chosen = %s, rejected = %s%s)",
+            fmt(m$prompt), fmt(m$chosen), fmt(m$rejected), system_part)
+  } else {
+    sprintf("dragon_map(prompt = %s, response = %s%s)", fmt(m$prompt), fmt(m$response), system_part)
+  }
+
+  base_run <- cfg$model$base_run
+  model_lines <- if (!is.null(base_run)) {
+    c(sprintf("    # continues from the earlier stage in %s", base_run),
+      sprintf("    model = dragon_run(%s),", fmt(file.path(dirname(run$dir), base_run))))
+  } else {
+    sprintf("    model = %s,", fmt(cfg$model$id))
+  }
+  fn <- if (stage == "prefer") "dragon_prefer" else "dragon_train"
+  stage_lines <- if (stage == "prefer") {
+    c(sprintf("    method = %s,", fmt(cfg$prefer$method)), sprintf("    beta = %s,", fmt(cfg$prefer$beta)))
+  }
+
   paste(
-    "library(dragonfarm)",
-    "",
-    sprintf("run <- dragon_dataset(%s) |>", fmt(src)),
-    sprintf("  %s |>", map_line),
-    "  dragon_train(",
-    sprintf("    model = %s,", fmt(cfg$model$id)),
-    sprintf("    lora = %s,", lora_line),
-    sprintf("    args = dragon_train_args(%s),", paste(args_parts, collapse = ", ")),
-    sprintf("    hardware = %s,", hw_line),
-    "    wait = TRUE",
-    "  )",
-    "",
-    "dragon_evaluate(run)",
-    "dragon_generate(run, \"Your prompt here\")",
-    sep = "\n"
+    c(
+      "library(dragonfarm)",
+      "",
+      sprintf("run <- dragon_dataset(%s) |>", fmt(src)),
+      sprintf("  %s |>", map_line),
+      sprintf("  %s(", fn),
+      model_lines,
+      stage_lines,
+      sprintf("    lora = %s,", lora_line),
+      sprintf("    args = dragon_train_args(%s),", paste(args_parts, collapse = ", ")),
+      sprintf("    hardware = %s,", hw_line),
+      "    wait = TRUE",
+      "  )",
+      "",
+      "dragon_evaluate(run)",
+      "dragon_generate(run, \"Your prompt here\")"
+    ),
+    collapse = "\n"
   )
 }

@@ -20,6 +20,7 @@ dragon_map <- function(dataset, prompt, response, system = NULL) {
   check_dataset(dataset)
   cols <- names(dataset$data)
   dataset$mapping <- list(
+    kind = "messages",
     prompt = as_template(prompt, cols, "prompt"),
     response = as_template(response, cols, "response"),
     system = if (!is.null(system)) as_template(system, cols, "system", allow_constant = TRUE)
@@ -27,12 +28,24 @@ dragon_map <- function(dataset, prompt, response, system = NULL) {
   dataset
 }
 
-check_dataset <- function(dataset, mapped = FALSE) {
+check_dataset <- function(dataset, mapped = FALSE, kind = NULL) {
   if (!inherits(dataset, "dragon_dataset")) {
     cli::cli_abort("{.arg dataset} must be created with {.fn dragon_dataset}.")
   }
-  if (mapped && is.null(dataset$mapping)) {
-    cli::cli_abort("The dataset has no column mapping. Call {.fn dragon_map} first.")
+  if ((mapped || !is.null(kind)) && is.null(dataset$mapping)) {
+    cli::cli_abort("The dataset has no column mapping. Call {.fn dragon_map} first, or {.fn dragon_map_pairs} for preference pairs.")
+  }
+  if (!is.null(kind) && !identical(mapping_kind(dataset), kind)) {
+    if (identical(kind, "messages")) {
+      cli::cli_abort(c(
+        "This dataset is mapped as preference pairs, but this step needs prompt and response rows.",
+        "i" = "Use {.fn dragon_prefer} for pairs, or map the dataset again with {.fn dragon_map}."
+      ))
+    }
+    cli::cli_abort(c(
+      "This dataset is mapped as prompt and response rows, but preference optimization needs pairs.",
+      "i" = "Map it with {.fn dragon_map_pairs}, naming a chosen and a rejected column."
+    ))
   }
   invisible(dataset)
 }
@@ -107,7 +120,7 @@ dataset_messages <- function(dataset, idx = NULL) {
 dragon_preview <- function(dataset, n = 3) {
   check_dataset(dataset, mapped = TRUE)
   idx <- seq_len(min(n, nrow(dataset$data)))
-  rows <- dataset_messages(dataset, idx)
+  rows <- preview_rows(dataset, idx)
   for (i in seq_along(rows)) {
     cli::cli_h3("Row {idx[i]}")
     for (msg in rows[[i]]$messages) {
@@ -156,13 +169,14 @@ write_dataset_files <- function(dataset, dir) {
   train_idx <- setdiff(seq_len(n), eval_idx)
   data_dir <- file.path(dir, "data")
   dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
-  write_jsonl(dataset_messages(dataset, train_idx), file.path(data_dir, "train.jsonl"))
+  write_jsonl(dataset_rows(dataset, train_idx), file.path(data_dir, "train.jsonl"))
   has_eval <- length(eval_idx) > 0
-  if (has_eval) write_jsonl(dataset_messages(dataset, eval_idx), file.path(data_dir, "eval.jsonl"))
+  if (has_eval) write_jsonl(dataset_rows(dataset, eval_idx), file.path(data_dir, "eval.jsonl"))
   list(
     train = "data/train.jsonl",
     eval = if (has_eval) "data/eval.jsonl" else NULL,
     n_train = length(train_idx),
-    n_eval = length(eval_idx)
+    n_eval = length(eval_idx),
+    format = mapping_kind(dataset)
   )
 }

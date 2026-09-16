@@ -38,7 +38,8 @@ process_alive <- function(run, st) {
   tryCatch(ps::ps_is_running(ps::ps_handle(as.integer(pid))), error = function(e) FALSE)
 }
 
-progress_cols <- c("step", "epoch", "loss", "eval_loss", "lr", "grad_norm", "elapsed_s", "eta_s")
+progress_cols <- c("step", "epoch", "loss", "eval_loss", "lr", "grad_norm", "elapsed_s", "eta_s",
+                   "pref_acc", "reward_margin", "eval_pref_acc", "eval_reward_margin")
 
 dragon_progress_empty <- function() {
   as.data.frame(stats::setNames(replicate(length(progress_cols), numeric(), simplify = FALSE), progress_cols))
@@ -46,7 +47,9 @@ dragon_progress_empty <- function() {
 
 #' @rdname dragon_status
 #' @return `dragon_progress()`: a data frame with columns `step`, `epoch`,
-#'   `loss`, `eval_loss`, `lr`, `grad_norm`, `elapsed_s`, `eta_s`.
+#'   `loss`, `eval_loss`, `lr`, `grad_norm`, `elapsed_s`, `eta_s`, and for
+#'   preference runs `pref_acc`, `reward_margin`, `eval_pref_acc`,
+#'   `eval_reward_margin`.
 #' @export
 dragon_progress <- function(run) {
   check_run(run)
@@ -119,13 +122,20 @@ dragon_wait <- function(run, timeout = Inf, poll = 2) {
   }
   cli::cli_progress_done(id = bar)
   if (st$state == "failed") {
-    cli::cli_abort(c("Run {.strong {run$id}} failed.", "x" = st$error %||% "unknown error"))
+    # The error text comes from the trainer log and may contain braces; pass it
+    # as a value so cli does not try to interpolate it.
+    err <- st$error %||% "unknown error"
+    cli::cli_abort(c("Run {.strong {run$id}} failed.", "x" = "{err}"))
   }
   if (st$state == "cancelled") {
     cli::cli_alert_warning("Run {.strong {run$id}} was cancelled. The adapter holds the last checkpoint.")
   } else {
     msg <- "Run {.strong {run$id}} succeeded."
-    if (!is.null(st$eval_loss)) msg <- paste0(msg, " Eval loss {round(st$eval_loss, 3)}, perplexity {round(st$perplexity, 2)}.")
+    if (!is.null(st$pref_accuracy)) {
+      msg <- paste0(msg, " Preference accuracy {round(100 * st$pref_accuracy)}%, reward margin {round(st$reward_margin, 3)}.")
+    } else if (!is.null(st$eval_loss) && !is.null(st$perplexity)) {
+      msg <- paste0(msg, " Eval loss {round(st$eval_loss, 3)}, perplexity {round(st$perplexity, 2)}.")
+    }
     cli::cli_alert_success(msg)
   }
   invisible(run)

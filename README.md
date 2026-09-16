@@ -84,6 +84,80 @@ compare the tuned model against the base model. Every run started in the app
 is a normal run directory, and the Monitor panel shows the R code that
 reproduces it.
 
+## Beyond fine-tuning: preference optimization
+
+Fine-tuning teaches the model what a good reply looks like. The next stage
+teaches it which of two replies is better, from a table with a prompt, a
+chosen reply, and a rejected one. It runs on top of a fine-tuned run:
+
+```r
+sft <- dragon_dataset("tickets.csv") |>
+  dragon_map(prompt = "question", response = "answer") |>
+  dragon_train("Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+
+dpo <- dragon_dataset("preferences.csv") |>
+  dragon_map_pairs(prompt = "question", chosen = "better", rejected = "worse") |>
+  dragon_prefer(sft, method = "dpo", beta = 0.1, wait = TRUE)
+
+dragon_evaluate(dpo)      # preference accuracy and reward margin on held-out pairs
+dragon_generate(dpo, "My thermostat keeps dropping off Wi-Fi.")
+```
+
+Passing a run as the model chains the stages: the earlier adapters are
+folded into the weights before the new stage adds its own. `method = "orpo"`
+needs no reference model and can start from a base model directly. The app
+has the same path: choose "Preference pairs" in the Map panel and a run to
+start from in the Train panel.
+
+## Make the data: teachers and self-improvement
+
+Small models are only as good as their training data, and most teams do not
+have a few hundred hand-written ideal replies. Two shortcuts:
+
+```r
+# A stronger model answers your prompts; its replies become the training set.
+teacher <- dragon_llm_anthropic(system = "You are a concise, warm support agent.")
+synth <- dragon_synthesize(dragon_prompts(sft, "train"), teacher, system = "You are a concise, warm support agent.")
+sft2 <- dragon_train(synth, "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+
+# The run answers each prompt four times, a judge scores every sample, and the
+# best and worst become preference pairs. Then DPO on top of the same run.
+pairs <- dragon_synthesize_pairs(dragon_prompts(sft2, "train", n = 200), student = sft2,
+                                 judge = dragon_judge_anthropic(model = "claude-sonnet-5"))
+dpo <- dragon_prefer(pairs, sft2, wait = TRUE)
+dragon_judge(dpo, against = "base", judge = dragon_judge_anthropic())
+```
+
+That last sequence, sample, judge, train, judge again, is the loop that
+turns a fine-tune into a development cycle. The app's Try it panel has the
+same Improve step.
+
+## Did it help? Metrics, judges, and comparisons
+
+Held-out loss says a stage trained. It does not say the replies got better.
+Three tools answer that:
+
+```r
+# Deterministic checks over every held-out row
+dragon_evaluate(dpo, metrics = c("exact", "token_f1", "json_valid"))
+
+# A stronger model as judge: did DPO beat the fine-tuned run it started from?
+dragon_judge(dpo, against = "base", judge = dragon_judge_anthropic())
+#> dpo vs sft on 20 prompts: wins 65% · ties 25% · losses 10%
+
+# Or absolute scores against your own rubric, with a local judge
+dragon_judge(sft, judge = "Qwen/Qwen2.5-1.5B-Instruct",
+             rubric = "Reward concrete next steps; penalise anything over 120 words.")
+
+# Everything the package knows about every run, side by side
+dragon_compare()
+```
+
+Pairwise judging asks each question twice with the replies swapped, so a
+judge that favours whichever answer comes first yields ties, not wins.
+`dragon_judge_anthropic()` reads `ANTHROPIC_API_KEY`; `dragon_judge_ellmer()`
+accepts any `ellmer` chat for other providers.
+
 ## No GPU? Train in the cloud
 
 The run directory is the whole contract between R and the trainer, so a run

@@ -54,6 +54,14 @@
 .bubble.system { background: var(--df-amber-soft); }
 .bubble.user { background: #EEF1EF; }
 .bubble.assistant { background: var(--df-accent-soft); }
+.bubble.chosen { background: #E3F0E6; }
+.bubble.rejected { background: #F6E0E0; }
+.stage-box { margin-bottom: 8px; }
+.judge-row { display: flex; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--df-line, #E4E7E4); font-size: 0.88rem; }
+.judge-prompt { flex: 1; color: var(--df-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.judge-verdict { font-weight: 600; white-space: nowrap; }
+.judge-verdict.a { color: var(--df-ok); }
+.judge-verdict.b { color: var(--df-bad); }
 
 /* Pills */
 .pill { display: inline-block; padding: 1px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
