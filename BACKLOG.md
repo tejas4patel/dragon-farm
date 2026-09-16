@@ -51,11 +51,11 @@ function, so a trained model can be used the way it will be used.
 | D1 | `dragon_chat(backend)` in R: returns a conversation object that keeps message history; `$say()`, `$reset()`, `$history()` | done | Same message list format as training data, so transcripts can become data. |
 | D2 | Multi-turn generation in the Python worker and the server client: send the full history each turn | done | Chat templates already handle multi-turn rendering. |
 | D3 | App: Chat tab with message thread, system prompt, temperature, max tokens, backend selector, streaming replies | doing | Streaming reaches R (`on_token`); the Shiny panel shows whole replies for now. | Streaming via C2 for servers; token streaming from the local worker. |
-| D4 | Context window handling: token count per turn, warn near the model's limit, drop or summarise oldest turns | planned | Small models have 2K to 8K contexts. |
-| D5 | Side-by-side chat: same conversation sent to two backends or two runs (before and after a stage) | planned | Extends the existing base-versus-tuned comparison. |
+| D4 | Context window handling: token count per turn, warn near the model's limit, drop or summarise oldest turns | done | `dragon_chat(context_window=)`, `$context_usage()`; drops the oldest turns (an LLM-summarizing alternative was not built). |
+| D5 | Side-by-side chat: same conversation sent to two backends or two runs (before and after a stage) | done | Compare toggle in the Chat tab; feedback stays scoped to the primary conversation. |
 | D6 | Feedback in the thread: thumbs up or down, edit a reply | done | Stored per turn with the run id. |
 | D7 | Turn feedback into data: edited replies become SFT rows, up versus down on regenerated replies become preference pairs, exported as datasets for the next stage | done | `dragon_feedback()`. | Human-in-the-loop counterpart of `dragon_synthesize_pairs()`. |
-| D8 | Save and load transcripts; export a conversation as a training example | planned | |
+| D8 | Save and load transcripts; export a conversation as a training example | done | `$save()`/`dragon_chat_load()` existed; added Load transcript and Export as training example to the app. |
 
 ## E. Data and training
 

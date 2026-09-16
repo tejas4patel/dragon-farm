@@ -13,7 +13,8 @@ dragon_chat(
   temperature = 0.7,
   top_p = 0.9,
   base = FALSE,
-  runs_dir = dragon_runs_dir()
+  runs_dir = dragon_runs_dir(),
+  context_window = NULL
 )
 
 dragon_chat_load(path, x = NULL, backend = dragon_backend())
@@ -33,6 +34,14 @@ model id. Ignored by server backends, which serve a fixed model.}
 \item{runs_dir}{Where feedback from \verb{$rate()} and \verb{$edit()} is recorded
 (under \verb{feedback/}). See \code{\link[=dragon_feedback]{dragon_feedback()}}.}
 
+\item{context_window}{Approximate token budget for the conversation
+(system prompt plus history), such as a small model's 2K to 8K
+context. When the next turn would go over it, \verb{$say()} drops the
+oldest user/assistant pair and tries again until it fits, keeping the
+system prompt and the most recent turns. \code{NULL} (the default) never
+drops turns. The token count is a rough estimate (about 4 characters
+per token), not the model's own tokenizer.}
+
 \item{path}{A transcript written by \verb{$save()}.}
 }
 \value{
@@ -44,6 +53,9 @@ drops the last exchange; \verb{$regenerate()} asks again for the last reply;
 \verb{$rate("up")} or \verb{$rate("down")} records a verdict on the last reply
 and \verb{$edit(text)} replaces it with a better one, both saved as feedback
 that \code{\link[=dragon_feedback]{dragon_feedback()}} turns into training data;
+\verb{$context_usage()} reports the estimated tokens used, the window, and
+how many turns have been dropped to stay under it (\code{NULL} when
+\code{context_window} is not set);
 \verb{$save(path)} and \code{dragon_chat_load(path)} write and read a transcript;
 \verb{$as_example()} returns the conversation as one training row.
 }

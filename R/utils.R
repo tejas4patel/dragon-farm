@@ -102,6 +102,15 @@ slugify <- function(x) {
   if (!nzchar(x)) "run" else substr(x, 1, 40)
 }
 
+# A rough token-count estimate (about 4 characters per token for English),
+# used only to warn near a model's context limit and decide when to drop
+# the oldest chat turns. Deliberately not a real tokenizer count: getting
+# one would mean loading the model's tokenizer in Python for every turn.
+estimate_tokens <- function(text) {
+  if (is.null(text) || !nzchar(text)) return(0L)
+  as.integer(ceiling(nchar(text) / 4))
+}
+
 hf_token_present <- function() {
   nzchar(Sys.getenv("HF_TOKEN")) || nzchar(Sys.getenv("HUGGING_FACE_HUB_TOKEN")) ||
     file.exists(file.path(Sys.getenv("HF_HOME", file.path(path.expand("~"), ".cache", "huggingface")), "token")) ||

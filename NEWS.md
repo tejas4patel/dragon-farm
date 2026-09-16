@@ -1,5 +1,20 @@
 # dragonfarm (development version)
 
+* Chat gets context limits, a second backend to compare with, and transcript
+  round-tripping in the app. `dragon_chat(context_window=)` tracks an
+  approximate token budget and automatically drops the oldest turns to stay
+  under it; `$context_usage()` reports tokens used, the window, and how many
+  turns were dropped. The Chat tab shows a warning banner near the limit, a
+  "Compare with a second backend" toggle sends the same message to a second
+  backend or run side by side (feedback stays scoped to the primary
+  conversation), and Load transcript / Export as training example round out
+  Save transcript.
+* Fixed a bug in the Chat tab (introduced while building the above) where
+  Shiny's default "suspend when hidden" behaviour left the conversation
+  panes permanently blank the first time the tab was opened, because they
+  sit behind a `renderUI()` rather than being part of the tab's static
+  markup; the affected outputs now opt out of that suspension.
+
 * `dragon_synthesize()` gets a quality pass and a judge filter. It now
   drops replies that are too short or too long, look garbled or
   wrong-script, repeat an earlier prompt, or repeat (or nearly repeat) an

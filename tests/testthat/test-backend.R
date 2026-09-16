@@ -100,6 +100,35 @@ test_that("dragon_chat keeps context across turns, streams, resets, saves, and l
   expect_error(dragon_chat(NULL, backend = fake_backend()), "what should answer")
 })
 
+test_that("context_window drops the oldest turns once the estimated budget is exceeded", {
+  # 10 words: 49 chars -> 13 estimated tokens. The fake backend's reply
+  # ("turn N: " + the text) is 57 chars -> 15 tokens, so one turn costs 28.
+  long <- paste(rep("word", 10), collapse = " ")
+  chat <- dragon_chat("any/model", backend = fake_backend(), max_new_tokens = 10, context_window = 64)
+  expect_null(dragon_chat("any/model", backend = fake_backend())$context_usage())   # no window: nothing to report
+  chat$say(long)   # 1 turn, 28 tokens: fits under the 54-token budget, nothing dropped yet
+  chat$say(long)   # 2 turns, 56 tokens: still fits (41 <= 54 when checked before this turn)
+  chat$say(long)   # over budget (69 > 54): the oldest turn is dropped before this one is added
+  chat$say(long)   # over budget again: another turn dropped
+  expect_equal(chat$dropped_turns, 2)
+  expect_length(chat$history(), 4)   # only the last two turns remain
+
+  usage <- chat$context_usage()
+  expect_equal(usage$tokens, 56)
+  expect_equal(usage$window, 64L)
+  expect_equal(usage$ratio, 56 / 64)
+  expect_true(usage$near_limit)
+  expect_equal(usage$dropped_turns, 2)
+
+  path <- tempfile(fileext = ".json")
+  chat$save(path)
+  reloaded <- dragon_chat_load(path, "any/model", backend = fake_backend())
+  expect_equal(reloaded$context_window, 64L)
+  expect_equal(reloaded$context_usage()$window, 64L)
+
+  expect_error(dragon_chat("any/model", backend = fake_backend(), context_window = 10), "context_window")
+})
+
 test_that("server backends do not need a local model", {
   chat <- dragon_chat(backend = dragon_backend_ollama("m"))
   expect_null(chat$target)
@@ -129,5 +158,92 @@ test_that("the chat module sends turns through the chosen backend", {
     expect_length(history(), 0)
     session$setInputs(send = 1)
     expect_length(history(), 0)   # empty text is ignored
+  })
+})
+
+test_that("compare mode sends the same turn to a second backend and keeps two histories", {
+  skip_if_not_installed("httr2")
+  # Scoped here, at the test_that() level, rather than inside testServer()'s
+  # own evaluation frame, so it is reliably torn down when this test ends
+  # and cannot leak into a later test's (unmocked) httr2 calls.
+  httr2::local_mocked_responses(function(req) {
+    body <- req$body$data
+    last <- body$messages[[length(body$messages)]]$content
+    prefix <- if (grepl("first", req$url, fixed = TRUE)) "a-says" else "b-says"
+    httr2::response_json(200, body = list(choices = list(list(message = list(role = "assistant", content = paste0(prefix, ": ", last))))))
+  })
+  runs <- tempfile("runs-")
+  dir.create(runs)
+  state <- shiny::reactiveValues(run = NULL)
+  shiny::testServer(dragonfarm:::mod_chat_server, args = list(state = state, runs_dir = runs), {
+    session$setInputs(source = "server", server_url = "https://first/v1", server_model = "m1",
+                      source_b = "server", server_url_b = "https://second/v1", server_model_b = "m2",
+                      compare = TRUE, system = "", temperature = 0, max_new_tokens = 64, text = "hello")
+    session$setInputs(send = 1)
+    expect_length(history(), 2)
+    expect_equal(history()[[2]]$content, "a-says: hello")
+    expect_length(history_b(), 2)
+    expect_equal(history_b()[[2]]$content, "b-says: hello")
+
+    title_b <- as.character(output$title_b$html)
+    expect_match(title_b, "m2")   # the second card's title mentions its model
+    thread_b <- as.character(output$thread_b$html)
+    expect_match(thread_b, "b-says: hello", fixed = TRUE)
+    expect_false(grepl("fb-btn", thread_b))   # the comparison thread has no feedback buttons
+
+    # turning compare off stops driving the second backend
+    session$setInputs(compare = FALSE, text = "again")
+    session$setInputs(send = 2)
+    expect_length(history(), 4)
+    expect_length(history_b(), 2)   # unchanged
+  })
+})
+
+test_that("context_window_input respects the token floor", {
+  runs <- tempfile("runs-")
+  dir.create(runs)
+  state <- shiny::reactiveValues(run = NULL)
+  shiny::testServer(dragonfarm:::mod_chat_server, args = list(state = state, runs_dir = runs), {
+    expect_null(context_window_input())
+    session$setInputs(context_window = 40)
+    expect_null(context_window_input())   # below the 64 floor, treated as no limit
+    session$setInputs(context_window = 200)
+    expect_equal(context_window_input(), 200L)
+  })
+})
+
+test_that("a saved transcript loads back into the thread, and the current one exports as a training example", {
+  runs <- tempfile("runs-")
+  dir.create(runs)
+  state <- shiny::reactiveValues(run = NULL)
+  shiny::testServer(dragonfarm:::mod_chat_server, args = list(state = state, runs_dir = runs), {
+    path <- tempfile(fileext = ".json")
+    dragonfarm:::write_json(list(
+      format = "dragonfarm-chat", version = 1L, saved_at = "now", label = "m",
+      system = "Be nice.", settings = list(temperature = 0.3, max_new_tokens = 99, context_window = 256),
+      messages = list(list(role = "user", content = "hi"), list(role = "assistant", content = "hello"))
+    ), path)
+    session$setInputs(load = data.frame(name = "t.json", datapath = path, stringsAsFactors = FALSE))
+    expect_length(history(), 2)
+    expect_equal(history()[[2]]$content, "hello")
+
+    bad <- tempfile(fileext = ".json")
+    dragonfarm:::write_json(list(hello = "world"), bad)
+    session$setInputs(load = data.frame(name = "bad.json", datapath = bad, stringsAsFactors = FALSE))
+    expect_length(history(), 2)   # rejected; unchanged
+
+    session$setInputs(system = "Be nice.")
+    out <- tempfile(fileext = ".jsonl")
+    export_example_content(out)
+    rows <- dragonfarm:::read_jsonl(out)
+    expect_length(rows, 1)
+    expect_equal(vapply(rows[[1]]$messages, `[[`, character(1), "role"), c("system", "user", "assistant"))
+    expect_equal(rows[[1]]$messages[[1]]$content, "Be nice.")
+    reloaded <- dragon_conversations(out)
+    expect_equal(nrow(reloaded$data), 1)
+
+    history(list())
+    empty <- tempfile(fileext = ".jsonl")
+    expect_error(export_example_content(empty))   # nothing to export yet
   })
 })

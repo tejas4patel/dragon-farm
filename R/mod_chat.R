@@ -1,43 +1,62 @@
+# Backend picker, reused for the primary conversation and (in compare
+# mode) a second one to answer the same messages side by side.
+chat_backend_inputs <- function(ns, suffix, title) {
+  bslib::card(
+    bslib::card_header(title),
+    shiny::selectInput(ns(paste0("source", suffix)), "Backend", width = "100%",
+      choices = c("A run on this machine" = "run", "Ollama on this machine" = "ollama", "OpenAI-compatible server" = "server")),
+    shiny::conditionalPanel(
+      condition = sprintf("input['%s'] == 'run'", ns(paste0("source", suffix))),
+      shiny::selectInput(ns(paste0("run", suffix)), "Run", choices = character(), width = "100%"),
+      shiny::checkboxInput(ns(paste0("base", suffix)), "Talk to what it started from instead", value = FALSE)
+    ),
+    shiny::conditionalPanel(
+      condition = sprintf("input['%s'] == 'ollama'", ns(paste0("source", suffix))),
+      shiny::textInput(ns(paste0("ollama_model", suffix)), "Ollama model name", placeholder = "dragonfarm-20260914-support", width = "100%"),
+      shiny::textInput(ns(paste0("ollama_url", suffix)), "Ollama URL", value = "http://localhost:11434", width = "100%")
+    ),
+    shiny::conditionalPanel(
+      condition = sprintf("input['%s'] == 'server'", ns(paste0("source", suffix))),
+      shiny::textInput(ns(paste0("server_url", suffix)), "Server URL (ending in /v1)", placeholder = "https://host/v1", width = "100%"),
+      shiny::textInput(ns(paste0("server_model", suffix)), "Model name on the server", width = "100%"),
+      shiny::passwordInput(ns(paste0("server_key", suffix)), "API key (optional)", width = "100%")
+    )
+  )
+}
+
 mod_chat_ui <- function(id) {
   ns <- shiny::NS(id)
   bslib::layout_columns(
     col_widths = c(4, 8),
-    bslib::card(
-      bslib::card_header("Who answers"),
-      shiny::selectInput(ns("source"), "Backend", width = "100%",
-        choices = c("A run on this machine" = "run", "Ollama on this machine" = "ollama", "OpenAI-compatible server" = "server")),
-      shiny::conditionalPanel(
-        condition = sprintf("input['%s'] == 'run'", ns("source")),
-        shiny::selectInput(ns("run"), "Run", choices = character(), width = "100%"),
-        shiny::checkboxInput(ns("base"), "Talk to what it started from instead", value = FALSE)
+    shiny::div(
+      chat_backend_inputs(ns, "", "Who answers"),
+      bslib::card(
+        bslib::card_header("Settings"),
+        shiny::textAreaInput(ns("system"), "System prompt (optional)", rows = 3, width = "100%",
+                             placeholder = "You are a concise support agent for a smart-home company."),
+        bslib::layout_columns(
+          col_widths = c(6, 6),
+          shiny::numericInput(ns("temperature"), "Temperature", value = 0.7, min = 0, max = 2, step = 0.1),
+          shiny::numericInput(ns("max_new_tokens"), "Max new tokens", value = 256, min = 1, step = 16)
+        ),
+        shiny::numericInput(ns("context_window"), "Context window (tokens, optional)", value = NA, min = 64, step = 64),
+        shiny::p(class = "hint", "Leave blank for no limit. When set, the oldest turns are dropped automatically to stay under it."),
+        shiny::checkboxInput(ns("compare"), "Compare with a second backend", value = FALSE)
       ),
-      shiny::conditionalPanel(
-        condition = sprintf("input['%s'] == 'ollama'", ns("source")),
-        shiny::textInput(ns("ollama_model"), "Ollama model name", placeholder = "dragonfarm-20260914-support", width = "100%"),
-        shiny::textInput(ns("ollama_url"), "Ollama URL", value = "http://localhost:11434", width = "100%")
-      ),
-      shiny::conditionalPanel(
-        condition = sprintf("input['%s'] == 'server'", ns("source")),
-        shiny::textInput(ns("server_url"), "Server URL (ending in /v1)", placeholder = "https://host/v1", width = "100%"),
-        shiny::textInput(ns("server_model"), "Model name on the server", width = "100%"),
-        shiny::passwordInput(ns("server_key"), "API key (optional)", width = "100%")
-      ),
-      shiny::textAreaInput(ns("system"), "System prompt (optional)", rows = 3, width = "100%",
-                           placeholder = "You are a concise support agent for a smart-home company."),
-      bslib::layout_columns(
-        col_widths = c(6, 6),
-        shiny::numericInput(ns("temperature"), "Temperature", value = 0.7, min = 0, max = 2, step = 0.1),
-        shiny::numericInput(ns("max_new_tokens"), "Max new tokens", value = 256, min = 1, step = 16)
-      ),
+      shiny::conditionalPanel(condition = sprintf("input['%s']", ns("compare")), chat_backend_inputs(ns, "_b", "Second backend")),
       shiny::div(class = "cloud-actions",
         shiny::actionButton(ns("new"), "New conversation", class = "btn-outline-secondary"),
         shiny::downloadButton(ns("save"), "Save transcript", class = "btn-outline-primary")
       ),
+      shiny::div(class = "cloud-actions", style = "margin-top: 8px;",
+        shiny::downloadButton(ns("export_example"), "Export as training example", class = "btn-outline-secondary")
+      ),
+      shiny::fileInput(ns("load"), "Load transcript", accept = ".json", width = "100%"),
       shiny::p(class = "hint", "The whole conversation is sent on every turn, so the model keeps context. The local worker keeps the model loaded between turns.")
     ),
-    bslib::card(
-      bslib::card_header(shiny::uiOutput(ns("title"), inline = TRUE)),
-      shiny::div(class = "chat-thread", shiny::uiOutput(ns("thread"))),
+    shiny::div(
+      shiny::uiOutput(ns("context_banner")),
+      shiny::uiOutput(ns("panes")),
       shiny::div(class = "chat-compose",
         shiny::textAreaInput(ns("text"), NULL, rows = 2, width = "100%", placeholder = "Type a message"),
         shiny::actionButton(ns("send"), "Send", class = "btn-primary")
@@ -62,47 +81,85 @@ mod_chat_server <- function(id, state, runs_dir) {
     )
     shiny::observe({
       df <- runs()
-      selected <- shiny::isolate(input$run)
-      if (!is.null(state$run) && state$run$id %in% df$id && (is.null(selected) || !nzchar(selected))) selected <- state$run$id
       labels <- if (nrow(df)) sprintf("%s  [%s]", df$id, df$stage) else character()
-      shiny::updateSelectInput(session, "run", choices = stats::setNames(df$id, labels),
-                               selected = if (!is.null(selected) && selected %in% df$id) selected else df$id[1])
+      for (suffix in c("run", "run_b")) {
+        selected <- shiny::isolate(input[[suffix]])
+        if (suffix == "run" && !is.null(state$run) && state$run$id %in% df$id && (is.null(selected) || !nzchar(selected))) selected <- state$run$id
+        shiny::updateSelectInput(session, suffix, choices = stats::setNames(df$id, labels),
+                                 selected = if (!is.null(selected) && selected %in% df$id) selected else df$id[1])
+      }
     })
 
     # The conversation is rebuilt when the backend or settings change; the
-    # history is kept in a plain list so it survives that.
+    # history is kept in a plain list so it survives that. A second,
+    # independent history exists only when "compare" is on.
     history <- shiny::reactiveVal(list())
     chat_obj <- shiny::reactiveVal(NULL)
+    context_info <- shiny::reactiveVal(NULL)
+    history_b <- shiny::reactiveVal(list())
+    chat_obj_b <- shiny::reactiveVal(NULL)
 
-    backend <- shiny::reactive({
-      switch(input$source %||% "run",
-        ollama = if (nzchar(trimws(input$ollama_model %||% ""))) dragon_backend_ollama(trimws(input$ollama_model), url = input$ollama_url %||% "http://localhost:11434"),
-        server = if (nzchar(trimws(input$server_url %||% "")) && nzchar(trimws(input$server_model %||% "")))
-                   dragon_backend_server(trimws(input$server_url), trimws(input$server_model), api_key = input$server_key %||% ""),
+    backend_for <- function(suffix) {
+      src <- input[[paste0("source", suffix)]] %||% "run"
+      switch(src,
+        ollama = {
+          m <- trimws(input[[paste0("ollama_model", suffix)]] %||% "")
+          if (nzchar(m)) dragon_backend_ollama(m, url = input[[paste0("ollama_url", suffix)]] %||% "http://localhost:11434")
+        },
+        server = {
+          u <- trimws(input[[paste0("server_url", suffix)]] %||% "")
+          mo <- trimws(input[[paste0("server_model", suffix)]] %||% "")
+          if (nzchar(u) && nzchar(mo)) dragon_backend_server(u, mo, api_key = input[[paste0("server_key", suffix)]] %||% "")
+        },
         dragon_backend_local()
       )
-    })
+    }
+    backend <- shiny::reactive(backend_for(""))
+    backend_b <- shiny::reactive(backend_for("_b"))
 
-    build_chat <- function() {
-      b <- backend()
-      if (is.null(b)) return(NULL)
+    context_window_input <- function() {
+      cw <- input$context_window
+      if (is.null(cw) || is.na(cw) || cw < 64) return(NULL)
+      as.integer(cw)
+    }
+
+    build_chat_for <- function(suffix, bk, hist) {
+      if (is.null(bk)) return(NULL)
       x <- NULL
-      if (!is_server_backend(b)) {
-        shiny::req(input$run)
-        x <- dragon_run(file.path(runs_dir, input$run))
+      if (!is_server_backend(bk)) {
+        run_id <- input[[paste0("run", suffix)]]
+        if (is.null(run_id) || !nzchar(run_id)) return(NULL)
+        x <- dragon_run(file.path(runs_dir, run_id))
       }
       sys <- if (nzchar(trimws(input$system %||% ""))) input$system
-      ch <- dragon_chat(x, system = sys, backend = b, max_new_tokens = input$max_new_tokens %||% 256,
-                        temperature = input$temperature %||% 0.7, base = isTRUE(input$base), runs_dir = runs_dir)
-      ch$messages <- history()
+      ch <- dragon_chat(x, system = sys, backend = bk, max_new_tokens = input$max_new_tokens %||% 256,
+                        temperature = input$temperature %||% 0.7, base = isTRUE(input[[paste0("base", suffix)]]),
+                        runs_dir = runs_dir, context_window = context_window_input())
+      ch$messages <- hist
       ch
     }
+    build_chat <- function() build_chat_for("", backend(), history())
+    build_chat_b <- function() build_chat_for("_b", backend_b(), history_b())
 
     output$title <- shiny::renderUI({
       b <- backend()
       if (is.null(b)) return("Conversation")
       what <- if (is_server_backend(b)) b$model else input$run %||% ""
       shiny::span("Conversation with ", shiny::code(what), shiny::span(class = "text-muted small", paste0("  via ", backend_label(b))))
+    })
+    output$title_b <- shiny::renderUI({
+      b <- backend_b()
+      if (is.null(b)) return("Second conversation")
+      what <- if (is_server_backend(b)) b$model else input$run_b %||% ""
+      shiny::span("Also with ", shiny::code(what), shiny::span(class = "text-muted small", paste0("  via ", backend_label(b))))
+    })
+
+    output$context_banner <- shiny::renderUI({
+      info <- context_info()
+      if (is.null(info) || !isTRUE(info$near_limit)) return(NULL)
+      shiny::div(class = "alert alert-warning context-banner",
+        sprintf("Using about %d of %d tokens (%.0f%%)%s.", info$tokens, info$window, 100 * info$ratio,
+                if (info$dropped_turns > 0) sprintf(", %d turn%s dropped to stay under the limit", info$dropped_turns, if (info$dropped_turns != 1) "s" else "") else ""))
     })
 
     shiny::observeEvent(input$send, {
@@ -125,14 +182,56 @@ mod_chat_server <- function(id, state, runs_dir) {
       }
       history(ch$history())
       chat_obj(ch)
+      context_info(ch$context_usage())
+
+      if (isTRUE(input$compare)) {
+        chb <- tryCatch(build_chat_b(), error = function(e) { notify_error(e); NULL })
+        if (!is.null(chb)) {
+          history_b(c(history_b(), list(list(role = "user", content = text))))
+          shiny::withProgress(message = "Thinking (second backend)", value = 0.5, {
+            reply_b <- tryCatch(chb$say(text), error = function(e) { notify_error(e); NULL })
+          })
+          if (is.null(reply_b)) {
+            hb <- history_b()
+            history_b(hb[seq_len(length(hb) - 1)])
+          } else {
+            history_b(chb$history())
+            chat_obj_b(chb)
+          }
+        }
+      }
     })
 
     shiny::observeEvent(input$new, {
       history(list())
       chat_obj(NULL)
+      context_info(NULL)
+      history_b(list())
+      chat_obj_b(NULL)
     })
 
-    # Per-reply verdicts shown as badges; the record itself goes to feedback.jsonl.
+    shiny::observeEvent(input$load, {
+      f <- input$load
+      if (is.null(f)) return()
+      rec <- tryCatch(read_json(f$datapath), error = function(e) NULL)
+      if (is.null(rec) || !identical(rec$format, "dragonfarm-chat")) {
+        shiny::showNotification("That file is not a dragonfarm chat transcript.", type = "warning")
+        return()
+      }
+      msgs <- rec$messages %||% list()
+      history(msgs)
+      chat_obj(NULL)
+      context_info(NULL)
+      if (!is.null(rec$system)) shiny::updateTextAreaInput(session, "system", value = rec$system)
+      if (!is.null(rec$settings$temperature)) shiny::updateNumericInput(session, "temperature", value = rec$settings$temperature)
+      if (!is.null(rec$settings$max_new_tokens)) shiny::updateNumericInput(session, "max_new_tokens", value = rec$settings$max_new_tokens)
+      if (!is.null(rec$settings$context_window)) shiny::updateNumericInput(session, "context_window", value = rec$settings$context_window)
+      shiny::showNotification(sprintf("Loaded %d message%s from %s.", length(msgs), if (length(msgs) != 1) "s" else "", f$name), type = "message")
+    })
+
+    # Per-reply verdicts shown as badges; the record itself goes to
+    # feedback.jsonl. Feedback and editing apply to the primary
+    # conversation; the second, comparison thread is read-only.
     verdicts <- shiny::reactiveVal(list())
 
     fb_button <- function(label, action, i, title) {
@@ -143,14 +242,12 @@ mod_chat_server <- function(id, state, runs_dir) {
       )
     }
 
-    output$thread <- shiny::renderUI({
-      h <- history()
-      v <- verdicts()
+    render_bubbles <- function(h, editable, v = list()) {
       if (!length(h)) return(shiny::p(class = "hint", "Nothing yet. Say something below."))
       shiny::tagList(lapply(seq_along(h), function(i) {
         m <- h[[i]]
         controls <- NULL
-        if (m$role == "assistant") {
+        if (editable && m$role == "assistant") {
           badge <- v[[as.character(i)]]
           controls <- shiny::div(class = "fb-row",
             fb_button("\U0001F44D", "up", i, "Good reply"),
@@ -166,7 +263,24 @@ mod_chat_server <- function(id, state, runs_dir) {
           controls
         )
       }))
+    }
+    output$thread <- shiny::renderUI(render_bubbles(history(), editable = TRUE, v = verdicts()))
+    output$thread_b <- shiny::renderUI(render_bubbles(history_b(), editable = FALSE))
+
+    output$panes <- shiny::renderUI({
+      primary <- bslib::card(bslib::card_header(shiny::uiOutput(ns("title"), inline = TRUE)),
+                             shiny::div(class = "chat-thread", shiny::uiOutput(ns("thread"))))
+      if (!isTRUE(input$compare)) return(primary)
+      bslib::layout_columns(col_widths = c(6, 6), primary,
+        bslib::card(bslib::card_header(shiny::uiOutput(ns("title_b"), inline = TRUE)),
+                   shiny::div(class = "chat-thread", shiny::uiOutput(ns("thread_b")))))
     })
+    shiny::outputOptions(output, "panes", suspendWhenHidden = FALSE)
+    shiny::outputOptions(output, "context_banner", suspendWhenHidden = FALSE)
+    shiny::outputOptions(output, "title", suspendWhenHidden = FALSE)
+    shiny::outputOptions(output, "title_b", suspendWhenHidden = FALSE)
+    shiny::outputOptions(output, "thread", suspendWhenHidden = FALSE)
+    shiny::outputOptions(output, "thread_b", suspendWhenHidden = FALSE)
 
     label_now <- function() {
       b <- backend()
@@ -204,6 +318,7 @@ mod_chat_server <- function(id, state, runs_dir) {
           if (ok) {
             history(ch$history())
             chat_obj(ch)
+            context_info(ch$context_usage())
             v <- verdicts(); v[[as.character(i)]] <- NULL; verdicts(v)
           }
         }
@@ -235,6 +350,19 @@ mod_chat_server <- function(id, state, runs_dir) {
         }
       },
       contentType = "application/json"
+    )
+
+    export_example_content <- function(file) {
+      h <- history()
+      shiny::req(length(h) > 0)
+      sys <- if (nzchar(trimws(input$system %||% ""))) input$system
+      msgs <- if (!is.null(sys)) c(list(list(role = "system", content = sys)), h) else h
+      write_conversations(list(msgs), file)
+    }
+    output$export_example <- shiny::downloadHandler(
+      filename = function() sprintf("dragonfarm-example-%s.jsonl", format(Sys.time(), "%Y%m%d-%H%M%S")),
+      content = export_example_content,
+      contentType = "application/jsonl"
     )
   })
 }
