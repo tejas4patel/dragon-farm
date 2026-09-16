@@ -157,6 +157,28 @@ That last sequence, sample, judge, train, judge again, is the loop that
 turns a fine-tune into a development cycle. The app's Try it panel has the
 same Improve step.
 
+## Talk to it, anywhere it runs
+
+Training machines are rarely the right inference machines. Generation goes
+through a backend you choose:
+
+```r
+chat <- dragon_chat(run, system = "You are a concise support agent.")
+chat$say("My thermostat keeps dropping off Wi-Fi.")
+chat$say("I tried that. What else?")        # the model remembers the first exchange
+
+backend <- dragon_serve_ollama(run)          # merge, register with Ollama, done
+options(dragonfarm.backend = backend)        # every call now uses Ollama
+dragon_generate(run, "Hello")
+
+vllm <- dragon_backend_server("https://my-pod.example.com/v1", model = "me/support-0.5b")
+dragon_chat(backend = vllm)$say("Hello")
+```
+
+The default backend is a local worker that keeps the last two models loaded,
+so judge and synthesis loops stop paying a model load per call. The app's
+Chat panel offers the same choice of backend.
+
 ## The whole loop in one call
 
 ```r

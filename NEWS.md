@@ -1,3 +1,18 @@
+# dragonfarm (development version)
+
+* Inference backends. `dragon_generate()` and everything built on it now
+  route through a `backend`: `dragon_backend_local()` is a Python worker
+  that keeps the last two models loaded, so repeated calls no longer reload
+  the model; `dragon_backend_server()` talks to any OpenAI-compatible chat
+  endpoint (vLLM, llama.cpp, LM Studio, hosted services), and
+  `dragon_backend_ollama()` to Ollama. `dragon_serve_ollama()` merges a run
+  and registers it with Ollama in one call. `dragon_worker_stop()` frees the
+  worker's memory. Set a session default with `options(dragonfarm.backend)`.
+* `dragon_chat()`: a conversation object with memory, streaming through
+  `on_token` where the backend supports it, save and load of transcripts,
+  and export of a conversation as a training example. The app gains a Chat
+  panel with a backend selector and a system prompt.
+
 # dragonfarm 0.2.0
 
 * Pipelines. `dragon_pipeline()` chains stages built from `dragon_step_*()`

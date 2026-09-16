@@ -7,21 +7,21 @@ and issues. Status: `doing`, `next`, `planned`, `idea`, `waiting`.
 
 | Id | Item | Status | Notes |
 |---|---|---|---|
-| A1 | R CMD check + GPU integration suite on `post-training` (GRPO and pipeline tests included) | doing | Gate for committing steps 5 and 6. |
-| A2 | Commit steps 5 and 6 (`dragon_reinforce()`, `dragon_pipeline()`) to `post-training` | next | After A1 passes. |
-| A3 | Browser check of the new Pipeline tab | next | Module logic is unit-tested; the rendered panel is not yet seen. |
-| A4 | Restart the review app on port 3939 from the branch | next | The running instance predates steps 3 to 6. |
+| A1 | R CMD check + GPU integration suite on `post-training` (GRPO and pipeline tests included) | done | Gate for committing steps 5 and 6. |
+| A2 | Commit steps 5 and 6 (`dragon_reinforce()`, `dragon_pipeline()`) to `post-training` | done | After A1 passes. |
+| A3 | Browser check of the new Pipeline tab | done | Module logic is unit-tested; the rendered panel is not yet seen. |
+| A4 | Restart the review app on port 3939 from the branch | done | The running instance predates steps 3 to 6. |
 
 ## B. Release 0.2.0
 
 | Id | Item | Status | Notes |
 |---|---|---|---|
-| B1 | Merge `post-training` into `main` | next | Six commits ahead; all stages, eval, synthesis, pipelines. |
-| B2 | Retitle NEWS "development version" to 0.2.0, bump DESCRIPTION | next | |
-| B3 | Full tarball with vignettes, `R CMD check --as-cran`, win-builder devel + release | next | Pandoc is installed; same flow as 0.1.1. |
+| B1 | Merge `post-training` into `main` | done | Six commits ahead; all stages, eval, synthesis, pipelines. |
+| B2 | Retitle NEWS "development version" to 0.2.0, bump DESCRIPTION | done | |
+| B3 | Full tarball with vignettes, `R CMD check --as-cran`, win-builder devel + release | done | The check now also flags the dragonfarm.dev URL as unreachable until DNS exists (G2). | Pandoc is installed; same flow as 0.1.1. |
 | B4 | Vignette for the post-training loop (train, synthesize, prefer, judge, compare) | planned | The quickstart covers fine-tuning only. |
 | B5 | Vignette for reinforcement learning with rewards | planned | Include when GRPO helps and when it does not. |
-| B6 | Tag v0.2.0 on GitHub; R-universe rebuilds on its own | next | |
+| B6 | Tag v0.2.0 on GitHub; R-universe rebuilds on its own | done | |
 | B7 | CRAN: submit 0.2.0 after 0.1.1 resolves | waiting | If the reviewer asks for changes to 0.1.1, answer with 0.2.0 rather than a 0.1.2. |
 
 ## C. Inference hosts
@@ -32,11 +32,11 @@ decouples where a model runs from where it trained.
 
 | Id | Item | Status | Notes |
 |---|---|---|---|
-| C1 | `dragon_backend_local()` with a persistent worker that keeps the model loaded across calls | planned | Removes the per-call model load in judge, synthesize, and Try it. |
-| C2 | `dragon_backend_server(url, model)`: client for any OpenAI-compatible chat endpoint | planned | Covers vLLM, llama.cpp server, Ollama, LM Studio, HF Inference Endpoints, RunPod and Modal vLLM templates. Streaming support for the chat UI (C8). |
-| C3 | `dragon_serve_ollama(run)`: merge, register with Ollama by importing safetensors, return a backend | planned | No GGUF step needed for Llama, Qwen2, Gemma families. Fastest local CPU inference. |
+| C1 | `dragon_backend_local()` with a persistent worker that keeps the model loaded across calls | doing | Removes the per-call model load in judge, synthesize, and Try it. |
+| C2 | `dragon_backend_server(url, model)`: client for any OpenAI-compatible chat endpoint | doing | Covers vLLM, llama.cpp server, Ollama, LM Studio, HF Inference Endpoints, RunPod and Modal vLLM templates. Streaming support for the chat UI (C8). |
+| C3 | `dragon_serve_ollama(run)`: merge, register with Ollama by importing safetensors, return a backend | doing | Written; untested against a real Ollama (not installed here). | No GGUF step needed for Llama, Qwen2, Gemma families. Fastest local CPU inference. |
 | C4 | `dragon_publish(run, repo)`: push merged model or adapter to the Hugging Face Hub | planned | Hand-off to any hosted inference. Needs `HF_TOKEN`. |
-| C5 | `backend` argument on `dragon_generate()`, judge and teacher wrappers, `dragon_synthesize_pairs()`, `dragon_judge()`; session default via `options(dragonfarm.backend)` | planned | Local stays the default. |
+| C5 | `backend` argument on `dragon_generate()`, judge and teacher wrappers, `dragon_synthesize_pairs()`, `dragon_judge()`; session default via `options(dragonfarm.backend)` | doing | Local stays the default. |
 | C6 | Try it panel: "Serve with" selector (this machine, Ollama, URL) plus Serve and Publish buttons | planned | Buttons before selector, since a remote host must have the model first. |
 | C7 | `dragon_deploy()` helpers for RunPod and Modal vLLM endpoints | idea | Both have configs on this machine; wraps publish (C4) plus a template launch and returns a backend. |
 | C8 | Chat panel: multi-turn conversation with any backend, with context | planned | See section D. |
@@ -48,9 +48,9 @@ function, so a trained model can be used the way it will be used.
 
 | Id | Item | Status | Notes |
 |---|---|---|---|
-| D1 | `dragon_chat(backend)` in R: returns a conversation object that keeps message history; `$say()`, `$reset()`, `$history()` | planned | Same message list format as training data, so transcripts can become data. |
-| D2 | Multi-turn generation in the Python worker and the server client: send the full history each turn | planned | Chat templates already handle multi-turn rendering. |
-| D3 | App: Chat tab with message thread, system prompt, temperature, max tokens, backend selector, streaming replies | planned | Streaming via C2 for servers; token streaming from the local worker. |
+| D1 | `dragon_chat(backend)` in R: returns a conversation object that keeps message history; `$say()`, `$reset()`, `$history()` | doing | Same message list format as training data, so transcripts can become data. |
+| D2 | Multi-turn generation in the Python worker and the server client: send the full history each turn | doing | Chat templates already handle multi-turn rendering. |
+| D3 | App: Chat tab with message thread, system prompt, temperature, max tokens, backend selector, streaming replies | doing | Streaming reaches R (`on_token`); the Shiny panel shows whole replies for now. | Streaming via C2 for servers; token streaming from the local worker. |
 | D4 | Context window handling: token count per turn, warn near the model's limit, drop or summarise oldest turns | planned | Small models have 2K to 8K contexts. |
 | D5 | Side-by-side chat: same conversation sent to two backends or two runs (before and after a stage) | planned | Extends the existing base-versus-tuned comparison. |
 | D6 | Feedback in the thread: thumbs up or down, edit a reply | planned | Stored per turn with the run id. |
@@ -87,7 +87,7 @@ function, so a trained model can be used the way it will be used.
 | Id | Item | Status | Notes |
 |---|---|---|---|
 | G1 | Decide the dragonfarm.dev layout: root as product site with R docs on `r.dragonfarm.dev`, or root as R docs | waiting | Decides what DNS points at. |
-| G2 | DNS at Spaceship: A records to GitHub Pages addresses, CNAME for www | waiting | GitHub Pages already has the custom domain set. Paused on request. |
+| G2 | DNS at Spaceship: A records to GitHub Pages addresses, CNAME for www | waiting | GitHub Pages already has the custom domain set. Paused on request. Until it resolves, CRAN's URL check flags the DESCRIPTION link. |
 | G3 | Move pkgdown to a subdomain if G1 chooses the product-site layout | planned | |
 | G4 | Product site (Cloudflare Pages or GitHub Pages): landing, R and Python quickstarts, cloud-GPU buttons, docs links | planned | |
 | G5 | Python package `dragonfarm` on PyPI: extract `inst/python/dragonfarm`, add CLI (`train`, `check`, `generate`, `pack`) and a Python API over the run directory | planned | Name is free on PyPI and conda-forge. |

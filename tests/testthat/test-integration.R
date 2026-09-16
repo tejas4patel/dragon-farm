@@ -289,3 +289,35 @@ test_that("a pipeline chains fine-tune, self-made pairs, DPO, judge, and metrics
   rec <- dragon_pipeline_status(p$id, runs_dir = runs)
   expect_equal(rec$status, "succeeded")
 })
+
+
+test_that("the local worker keeps the model loaded and chat keeps context", {
+  skip_if_not(identical(Sys.getenv("DRAGONFARM_INTEGRATION"), "true"), "set DRAGONFARM_INTEGRATION=true")
+  skip_on_cran()
+
+  dragon_worker_stop()
+  model <- "HuggingFaceTB/SmolLM2-135M-Instruct"
+  t1 <- system.time(a <- dragon_generate(model, "Say hi.", max_new_tokens = 8, temperature = 0))[["elapsed"]]
+  t2 <- system.time(b <- dragon_generate(model, c("Say hi.", "Say bye."), max_new_tokens = 8, temperature = 0))[["elapsed"]]
+  expect_length(a, 1)
+  expect_length(b, 2)
+  expect_lt(t2, t1)                  # second call skips the model load
+  expect_true(dragonfarm:::worker_alive())
+
+  chat <- dragon_chat(model, system = "Answer in one short sentence.", temperature = 0, max_new_tokens = 24)
+  first <- chat$say("My name is Tejas.")
+  second <- chat$say("What is my name?")
+  expect_true(nzchar(first) && nzchar(second))
+  expect_length(chat$history(), 4)
+
+  pieces <- character()
+  streamed <- chat$say("Count to three.", on_token = function(p) pieces <<- c(pieces, p))
+  expect_gt(length(pieces), 0)
+  expect_equal(trimws(paste(pieces, collapse = "")), streamed)
+
+  dragon_worker_stop()
+  expect_false(dragonfarm:::worker_alive())
+  one <- dragon_generate(model, "Hi", max_new_tokens = 4, temperature = 0, backend = dragon_backend_local(keep_loaded = FALSE))
+  expect_length(one, 1)
+  expect_false(dragonfarm:::worker_alive())
+})

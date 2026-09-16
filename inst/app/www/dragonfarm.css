@@ -57,6 +57,11 @@
 .bubble.chosen { background: #E3F0E6; }
 .bubble.rejected { background: #F6E0E0; }
 .bubble.reference { background: #EFE7DA; }
+.chat-thread { max-height: 60vh; overflow-y: auto; padding: 4px 2px; }
+.chat-thread .bubble { max-width: 85%; }
+.chat-thread .bubble.user { margin-left: auto; }
+.chat-compose { display: flex; gap: 8px; align-items: flex-end; margin-top: 8px; }
+.chat-compose .form-group { flex: 1; margin-bottom: 0; }
 .pipeline { padding: 8px 0; border-bottom: 1px solid var(--df-line, #E4E7E4); }
 .pipeline-head { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
 .pipeline-steps { margin: 0; padding-left: 20px; font-size: 0.88rem; }

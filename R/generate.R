@@ -1,7 +1,9 @@
 #' Generate replies from a fine-tuned model
 #'
-#' Loads the model in a short-lived Python process, so each call pays a few
-#' seconds of model-loading time. Pass several prompts at once to amortize it.
+#' Runs through the session's inference backend: by default a local Python
+#' worker that keeps the last models loaded, so only the first call pays the
+#' load. Pass a server backend to generate from Ollama or any
+#' OpenAI-compatible endpoint instead. See [dragon_backend].
 #'
 #' @param x A `dragon_run`, a run directory, an adapter directory, a merged
 #'   model directory, or a Hugging Face model id.
@@ -13,31 +15,27 @@
 #' @param base Ignore this run's adapter and generate from what it started
 #'   with: the base model, or the earlier run it continued from. Useful for
 #'   before-and-after comparisons.
+#' @param backend Where to run inference. See [dragon_backend]. Server
+#'   backends serve a fixed model and ignore `x`.
 #' @return A character vector, one reply per prompt.
 #' @export
 dragon_generate <- function(x, prompt, system = NULL, max_new_tokens = 256,
-                            temperature = 0.7, top_p = 0.9, base = FALSE) {
+                            temperature = 0.7, top_p = 0.9, base = FALSE, backend = dragon_backend()) {
   if (!is.character(prompt) || !length(prompt)) cli::cli_abort("{.arg prompt} must be a character vector.")
-  target <- resolve_target(x)
-  req <- list(
-    model = target$model,
-    adapter = if (!base) target$adapter,
-    base_adapters = as.list(target$base_adapters %||% character()),
-    prompts = as.list(prompt),
-    system = system,
-    max_new_tokens = as.integer(max_new_tokens),
-    temperature = temperature,
-    top_p = top_p,
-    trust_remote_code = isTRUE(target$trust_remote_code)
-  )
-  req_file <- tempfile("dragon-req-", fileext = ".json")
-  out_file <- tempfile("dragon-out-", fileext = ".json")
-  on.exit(unlink(c(req_file, out_file)))
-  write_json(req, req_file)
-  res <- run_python("dragonfarm.generate", c("--request", req_file, "--out", out_file))
-  if (res$status != 0) python_failure_message(res, "Generation")
-  out <- read_json(out_file)
-  vapply(out$outputs, as.character, character(1))
+  if (!inherits(backend, "dragon_backend")) cli::cli_abort("{.arg backend} must be a {.cls dragon_backend}.")
+  target <- NULL
+  if (!is_server_backend(backend)) {
+    target <- resolve_target(x)
+    if (isTRUE(base)) target$adapter <- NULL
+  }
+  conversations <- lapply(prompt, function(p) {
+    msgs <- list()
+    if (!is.null(system)) msgs <- c(msgs, list(list(role = "system", content = system)))
+    c(msgs, list(list(role = "user", content = p)))
+  })
+  out <- backend_generate(backend, target, conversations, max_new_tokens = as.integer(max_new_tokens),
+                          temperature = temperature, top_p = top_p)
+  vapply(out, function(o) as.character(o %||% ""), character(1))
 }
 
 # Work out base model id and adapter path from whatever the user passed.

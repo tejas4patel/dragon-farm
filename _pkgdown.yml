@@ -52,6 +52,12 @@ reference:
   - dragon_judge
   - dragon_llm_anthropic
   - dragon_compare
+- title: Inference and chat
+  contents:
+  - dragon_backend
+  - dragon_serve_ollama
+  - dragon_worker_stop
+  - dragon_chat
 - title: After training
   contents:
   - dragon_generate

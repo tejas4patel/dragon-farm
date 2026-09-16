@@ -4,7 +4,7 @@
 
 # Any of the ways a model can be named, as function(prompts) -> replies.
 as_llm <- function(x, role = c("judge", "teacher", "student"), temperature = 0,
-                   max_new_tokens = 400, system = NULL) {
+                   max_new_tokens = 400, system = NULL, backend = dragon_backend()) {
   role <- match.arg(role)
   if (is.null(x)) {
     hints <- switch(role,
@@ -27,13 +27,13 @@ as_llm <- function(x, role = c("judge", "teacher", "student"), temperature = 0,
   if (inherits(x, "Chat")) return(dragon_llm_ellmer(x, system = system))
   if (inherits(x, "dragon_run")) {
     run <- x
-    fn <- function(prompts) dragon_generate(run, prompts, system = system, temperature = temperature, max_new_tokens = max_new_tokens)
+    fn <- function(prompts) dragon_generate(run, prompts, system = system, temperature = temperature, max_new_tokens = max_new_tokens, backend = backend)
     attr(fn, "label") <- paste0("run:", run$id)
     return(fn)
   }
   if (is.character(x) && length(x) == 1 && nzchar(x)) {
     model <- x
-    fn <- function(prompts) dragon_generate(model, prompts, system = system, temperature = temperature, max_new_tokens = max_new_tokens)
+    fn <- function(prompts) dragon_generate(model, prompts, system = system, temperature = temperature, max_new_tokens = max_new_tokens, backend = backend)
     attr(fn, "label") <- paste0("local:", model)
     return(fn)
   }
