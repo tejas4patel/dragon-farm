@@ -65,6 +65,11 @@ print.dragon_dataset <- function(x, ...) {
     cli::cli_text("Mapping: {.emph none yet}. Call {.fn dragon_map}.")
   } else {
     m <- x$mapping
+    if (identical(m$kind, "conversations")) {
+      cli::cli_text("Whole conversations: {nrow(x$data)}, {round(mean(x$data$turns), 1)} turns on average. The final assistant turn is the target.")
+      if (!is.null(x$split)) cli::cli_text("Split: {length(x$split$eval_idx)} evaluation row{?s} (seed {x$split$seed})")
+      return(invisible(x))
+    }
     cli::cli_text("Prompt: {.val {escape_newlines(m$prompt)}}")
     if (identical(m$kind, "pairs")) {
       cli::cli_text("Chosen: {.val {escape_newlines(m$chosen)}}")

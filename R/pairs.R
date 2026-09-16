@@ -63,6 +63,7 @@ dataset_rows <- function(dataset, idx = NULL) {
   switch(mapping_kind(dataset) %||% "messages",
     pairs = dataset_pairs(dataset, idx),
     prompts = dataset_prompts(dataset, idx),
+    conversations = dataset_conversations(dataset, idx),
     dataset_messages(dataset, idx)
   )
 }

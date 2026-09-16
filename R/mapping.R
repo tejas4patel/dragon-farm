@@ -35,11 +35,13 @@ check_dataset <- function(dataset, mapped = FALSE, kind = NULL) {
   if ((mapped || !is.null(kind)) && is.null(dataset$mapping)) {
     cli::cli_abort("The dataset has no column mapping. Call {.fn dragon_map} first, or {.fn dragon_map_pairs} for preference pairs.")
   }
-  if (!is.null(kind) && !identical(mapping_kind(dataset), kind)) {
-    mappers <- c(messages = "dragon_map", pairs = "dragon_map_pairs", prompts = "dragon_map_prompts")
-    stages <- c(messages = "dragon_train", pairs = "dragon_prefer", prompts = "dragon_reinforce")
-    labels <- c(messages = "prompt and response rows", pairs = "preference pairs", prompts = "RL prompts")
-    have <- mapping_kind(dataset)
+  have <- mapping_kind(dataset)
+  # Whole conversations train the same way as prompt/response rows.
+  if (identical(kind, "messages") && identical(have, "conversations")) kind <- "conversations"
+  if (!is.null(kind) && !identical(have, kind)) {
+    mappers <- c(messages = "dragon_map", pairs = "dragon_map_pairs", prompts = "dragon_map_prompts", conversations = "dragon_conversations")
+    stages <- c(messages = "dragon_train", pairs = "dragon_prefer", prompts = "dragon_reinforce", conversations = "dragon_train")
+    labels <- c(messages = "prompt and response rows", pairs = "preference pairs", prompts = "RL prompts", conversations = "conversations")
     cli::cli_abort(c(
       "This dataset is mapped as {labels[[have]]}, but this step needs {labels[[kind]]}.",
       "i" = "Use {.fn {stages[[have]]}} with this mapping, or map the dataset again with {.fn {mappers[[kind]]}}."
@@ -175,6 +177,7 @@ write_dataset_files <- function(dataset, dir) {
     eval = if (has_eval) "data/eval.jsonl" else NULL,
     n_train = length(train_idx),
     n_eval = length(eval_idx),
-    format = mapping_kind(dataset)
+    # Conversations are written as the same {"messages": [...]} rows the trainer already reads.
+    format = if (identical(mapping_kind(dataset), "conversations")) "messages" else mapping_kind(dataset)
   )
 }

@@ -35,7 +35,9 @@ dragon_code <- function(run) {
   hw_line <- sprintf("dragon_hardware(device = %s, dtype = %s%s)", fmt(hw$device), fmt(hw$dtype),
                      if (isTRUE(hw$load_in_4bit)) ", load_in_4bit = TRUE" else "")
   system_part <- if (!is.null(m$system)) paste0(", system = ", fmt(m$system)) else ""
-  map_line <- if (kind == "pairs") {
+  map_line <- if (kind == "conversations") {
+    ""
+  } else if (kind == "pairs") {
     sprintf("dragon_map_pairs(prompt = %s, chosen = %s, rejected = %s%s)",
             fmt(m$prompt), fmt(m$chosen), fmt(m$rejected), system_part)
   } else if (kind == "prompts") {
@@ -65,12 +67,16 @@ dragon_code <- function(run) {
               fmt(rl$group_size), fmt(rl$beta), fmt(rl$temperature), fmt(rl$max_new_tokens)))
   }
 
+  data_lines <- if (kind == "conversations") {
+    sprintf("run <- dragon_conversations(%s) |>", fmt(src))
+  } else {
+    c(sprintf("run <- dragon_dataset(%s) |>", fmt(src)), sprintf("  %s |>", map_line))
+  }
   paste(
     c(
       "library(dragonfarm)",
       "",
-      sprintf("run <- dragon_dataset(%s) |>", fmt(src)),
-      sprintf("  %s |>", map_line),
+      data_lines,
       sprintf("  %s(", fn),
       model_lines,
       stage_lines,

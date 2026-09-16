@@ -19,8 +19,8 @@ and issues. Status: `doing`, `next`, `planned`, `idea`, `waiting`.
 | B1 | Merge `post-training` into `main` | done | Six commits ahead; all stages, eval, synthesis, pipelines. |
 | B2 | Retitle NEWS "development version" to 0.2.0, bump DESCRIPTION | done | |
 | B3 | Full tarball with vignettes, `R CMD check --as-cran`, win-builder devel + release | done | The check now also flags the dragonfarm.dev URL as unreachable until DNS exists (G2). | Pandoc is installed; same flow as 0.1.1. |
-| B4 | Vignette for the post-training loop (train, synthesize, prefer, judge, compare) | planned | The quickstart covers fine-tuning only. |
-| B5 | Vignette for reinforcement learning with rewards | planned | Include when GRPO helps and when it does not. |
+| B4 | Vignette for the post-training loop (train, synthesize, prefer, judge, compare) | done | The quickstart covers fine-tuning only. |
+| B5 | Vignette for reinforcement learning with rewards | done | Include when GRPO helps and when it does not. |
 | B6 | Tag v0.2.0 on GitHub; R-universe rebuilds on its own | done | |
 | B7 | CRAN: submit 0.2.0 after 0.1.1 resolves | waiting | If the reviewer asks for changes to 0.1.1, answer with 0.2.0 rather than a 0.1.2. |
 
@@ -32,11 +32,11 @@ decouples where a model runs from where it trained.
 
 | Id | Item | Status | Notes |
 |---|---|---|---|
-| C1 | `dragon_backend_local()` with a persistent worker that keeps the model loaded across calls | doing | Removes the per-call model load in judge, synthesize, and Try it. |
-| C2 | `dragon_backend_server(url, model)`: client for any OpenAI-compatible chat endpoint | doing | Covers vLLM, llama.cpp server, Ollama, LM Studio, HF Inference Endpoints, RunPod and Modal vLLM templates. Streaming support for the chat UI (C8). |
+| C1 | `dragon_backend_local()` with a persistent worker that keeps the model loaded across calls | done | Removes the per-call model load in judge, synthesize, and Try it. |
+| C2 | `dragon_backend_server(url, model)`: client for any OpenAI-compatible chat endpoint | done | Covers vLLM, llama.cpp server, Ollama, LM Studio, HF Inference Endpoints, RunPod and Modal vLLM templates. Streaming support for the chat UI (C8). |
 | C3 | `dragon_serve_ollama(run)`: merge, register with Ollama by importing safetensors, return a backend | doing | Written; untested against a real Ollama (not installed here). | No GGUF step needed for Llama, Qwen2, Gemma families. Fastest local CPU inference. |
 | C4 | `dragon_publish(run, repo)`: push merged model or adapter to the Hugging Face Hub | planned | Hand-off to any hosted inference. Needs `HF_TOKEN`. |
-| C5 | `backend` argument on `dragon_generate()`, judge and teacher wrappers, `dragon_synthesize_pairs()`, `dragon_judge()`; session default via `options(dragonfarm.backend)` | doing | Local stays the default. |
+| C5 | `backend` argument on `dragon_generate()`, judge and teacher wrappers, `dragon_synthesize_pairs()`, `dragon_judge()`; session default via `options(dragonfarm.backend)` | done | Local stays the default. |
 | C6 | Try it panel: "Serve with" selector (this machine, Ollama, URL) plus Serve and Publish buttons | planned | Buttons before selector, since a remote host must have the model first. |
 | C7 | `dragon_deploy()` helpers for RunPod and Modal vLLM endpoints | idea | Both have configs on this machine; wraps publish (C4) plus a template launch and returns a backend. |
 | C8 | Chat panel: multi-turn conversation with any backend, with context | planned | See section D. |
@@ -48,20 +48,20 @@ function, so a trained model can be used the way it will be used.
 
 | Id | Item | Status | Notes |
 |---|---|---|---|
-| D1 | `dragon_chat(backend)` in R: returns a conversation object that keeps message history; `$say()`, `$reset()`, `$history()` | doing | Same message list format as training data, so transcripts can become data. |
-| D2 | Multi-turn generation in the Python worker and the server client: send the full history each turn | doing | Chat templates already handle multi-turn rendering. |
+| D1 | `dragon_chat(backend)` in R: returns a conversation object that keeps message history; `$say()`, `$reset()`, `$history()` | done | Same message list format as training data, so transcripts can become data. |
+| D2 | Multi-turn generation in the Python worker and the server client: send the full history each turn | done | Chat templates already handle multi-turn rendering. |
 | D3 | App: Chat tab with message thread, system prompt, temperature, max tokens, backend selector, streaming replies | doing | Streaming reaches R (`on_token`); the Shiny panel shows whole replies for now. | Streaming via C2 for servers; token streaming from the local worker. |
 | D4 | Context window handling: token count per turn, warn near the model's limit, drop or summarise oldest turns | planned | Small models have 2K to 8K contexts. |
 | D5 | Side-by-side chat: same conversation sent to two backends or two runs (before and after a stage) | planned | Extends the existing base-versus-tuned comparison. |
-| D6 | Feedback in the thread: thumbs up or down, edit a reply | planned | Stored per turn with the run id. |
-| D7 | Turn feedback into data: edited replies become SFT rows, up versus down on regenerated replies become preference pairs, exported as datasets for the next stage | planned | Human-in-the-loop counterpart of `dragon_synthesize_pairs()`. |
+| D6 | Feedback in the thread: thumbs up or down, edit a reply | done | Stored per turn with the run id. |
+| D7 | Turn feedback into data: edited replies become SFT rows, up versus down on regenerated replies become preference pairs, exported as datasets for the next stage | done | `dragon_feedback()`. | Human-in-the-loop counterpart of `dragon_synthesize_pairs()`. |
 | D8 | Save and load transcripts; export a conversation as a training example | planned | |
 
 ## E. Data and training
 
 | Id | Item | Status | Notes |
 |---|---|---|---|
-| E1 | Multi-turn conversations as training data: a `messages` column holding whole conversations | planned | Today rows are one prompt and one reply. |
+| E1 | Multi-turn conversations as training data: a `messages` column holding whole conversations | done | `dragon_conversations()`. | Today rows are one prompt and one reply. |
 | E2 | Data quality pass in `dragon_synthesize()`: dedupe, drop near-duplicates, length and language filters | planned | |
 | E3 | Teacher-distilled SFT from the model's own prompts plus a judge filter (keep only replies the judge scores above a threshold) | planned | Combines synthesize and judge. |
 | E4 | `dragon_reinforce()`: tests as rewards (run a command or Python test against the completion) | idea | Common for code tasks; a `"command"` reward type. |

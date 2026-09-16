@@ -12,7 +12,8 @@ dragon_chat(
   max_new_tokens = 256,
   temperature = 0.7,
   top_p = 0.9,
-  base = FALSE
+  base = FALSE,
+  runs_dir = dragon_runs_dir()
 )
 
 dragon_chat_load(path, x = NULL, backend = dragon_backend())
@@ -29,13 +30,20 @@ model id. Ignored by server backends, which serve a fixed model.}
 
 \item{base}{Talk to what the run started from instead of the run.}
 
+\item{runs_dir}{Where feedback from \verb{$rate()} and \verb{$edit()} is recorded
+(under \verb{feedback/}). See \code{\link[=dragon_feedback]{dragon_feedback()}}.}
+
 \item{path}{A transcript written by \verb{$save()}.}
 }
 \value{
 A \code{dragon_chat} object with methods:
 \verb{$say(text, on_token = NULL)} sends a user turn and returns the reply
 (streaming pieces to \code{on_token} when the backend supports it);
-\verb{$history()} returns the messages; \verb{$reset()} clears them;
+\verb{$history()} returns the messages; \verb{$reset()} clears them; \verb{$undo()}
+drops the last exchange; \verb{$regenerate()} asks again for the last reply;
+\verb{$rate("up")} or \verb{$rate("down")} records a verdict on the last reply
+and \verb{$edit(text)} replaces it with a better one, both saved as feedback
+that \code{\link[=dragon_feedback]{dragon_feedback()}} turns into training data;
 \verb{$save(path)} and \code{dragon_chat_load(path)} write and read a transcript;
 \verb{$as_example()} returns the conversation as one training row.
 }

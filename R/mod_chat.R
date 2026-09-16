@@ -93,7 +93,7 @@ mod_chat_server <- function(id, state, runs_dir) {
       }
       sys <- if (nzchar(trimws(input$system %||% ""))) input$system
       ch <- dragon_chat(x, system = sys, backend = b, max_new_tokens = input$max_new_tokens %||% 256,
-                        temperature = input$temperature %||% 0.7, base = isTRUE(input$base))
+                        temperature = input$temperature %||% 0.7, base = isTRUE(input$base), runs_dir = runs_dir)
       ch$messages <- history()
       ch
     }
@@ -132,15 +132,96 @@ mod_chat_server <- function(id, state, runs_dir) {
       chat_obj(NULL)
     })
 
+    # Per-reply verdicts shown as badges; the record itself goes to feedback.jsonl.
+    verdicts <- shiny::reactiveVal(list())
+
+    fb_button <- function(label, action, i, title) {
+      shiny::tags$button(
+        type = "button", class = "btn btn-sm btn-outline-secondary fb-btn", title = title,
+        onclick = sprintf("Shiny.setInputValue('%s', {action: '%s', i: %d, nonce: Math.random()}, {priority: 'event'})", ns("fb"), action, i),
+        label
+      )
+    }
+
     output$thread <- shiny::renderUI({
       h <- history()
+      v <- verdicts()
       if (!length(h)) return(shiny::p(class = "hint", "Nothing yet. Say something below."))
-      shiny::tagList(lapply(h, function(m) {
+      shiny::tagList(lapply(seq_along(h), function(i) {
+        m <- h[[i]]
+        controls <- NULL
+        if (m$role == "assistant") {
+          badge <- v[[as.character(i)]]
+          controls <- shiny::div(class = "fb-row",
+            fb_button("\U0001F44D", "up", i, "Good reply"),
+            fb_button("\U0001F44E", "down", i, "Bad reply"),
+            fb_button("Edit", "edit", i, "Replace with a better reply"),
+            if (i == length(h)) fb_button("Regenerate", "regen", i, "Ask again"),
+            if (!is.null(badge)) shiny::span(class = paste("fb-badge", badge), switch(badge, up = "liked", down = "disliked", edited = "edited"))
+          )
+        }
         shiny::div(class = paste("bubble", m$role),
           shiny::span(class = "role", if (m$role == "assistant") "model" else "you"),
-          shiny::div(class = "content", m$content)
+          shiny::div(class = "content", m$content),
+          controls
         )
       }))
+    })
+
+    label_now <- function() {
+      b <- backend()
+      if (!is.null(b) && is_server_backend(b)) b$model else input$run %||% "run"
+    }
+
+    shiny::observeEvent(input$fb, {
+      ev <- input$fb
+      h <- history()
+      i <- as.integer(ev$i)
+      if (is.na(i) || i > length(h) || !identical(h[[i]]$role, "assistant")) return()
+      sys <- if (nzchar(trimws(input$system %||% ""))) input$system
+      context <- h[seq_len(i - 1)]
+      switch(ev$action,
+        up = , down = {
+          record_feedback(runs_dir, label_now(), sys, context, h[[i]]$content, rating = if (ev$action == "up") 1 else -1, source = "app")
+          v <- verdicts(); v[[as.character(i)]] <- ev$action; verdicts(v)
+          shiny::showNotification("Thanks, recorded. dragon_feedback() turns these into training data.", type = "message", duration = 4)
+        },
+        edit = {
+          shiny::showModal(shiny::modalDialog(
+            title = "Replace the model's reply",
+            shiny::textAreaInput(ns("edit_text"), NULL, value = h[[i]]$content, rows = 8, width = "100%"),
+            footer = shiny::tagList(shiny::modalButton("Cancel"), shiny::actionButton(ns("edit_save"), "Save as the better reply", class = "btn-primary")),
+            size = "l", easyClose = TRUE
+          ))
+          session$userData$edit_index <- i
+        },
+        regen = {
+          ch <- tryCatch(build_chat(), error = function(e) { notify_error(e); NULL })
+          if (is.null(ch)) return()
+          shiny::withProgress(message = "Asking again", value = 0.5, {
+            ok <- tryCatch({ ch$regenerate(); TRUE }, error = function(e) { notify_error(e); FALSE })
+          })
+          if (ok) {
+            history(ch$history())
+            chat_obj(ch)
+            v <- verdicts(); v[[as.character(i)]] <- NULL; verdicts(v)
+          }
+        }
+      )
+    })
+
+    shiny::observeEvent(input$edit_save, {
+      i <- session$userData$edit_index
+      h <- history()
+      text <- trimws(input$edit_text %||% "")
+      if (is.null(i) || !nzchar(text) || i > length(h)) { shiny::removeModal(); return() }
+      sys <- if (nzchar(trimws(input$system %||% ""))) input$system
+      record_feedback(runs_dir, label_now(), sys, h[seq_len(i - 1)], h[[i]]$content, edited = text, source = "app")
+      h[[i]]$content <- text
+      history(h)
+      v <- verdicts(); v[[as.character(i)]] <- "edited"; verdicts(v)
+      shiny::removeModal()
+      shiny::showNotification("Saved. The edited reply is now part of this conversation and of the feedback data.", type = "message", duration = 5)
     })
 
     output$save <- shiny::downloadHandler(

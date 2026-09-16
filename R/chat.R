@@ -12,10 +12,16 @@
 #' @param backend Where to run inference. See [dragon_backend].
 #' @param max_new_tokens,temperature,top_p Generation settings.
 #' @param base Talk to what the run started from instead of the run.
+#' @param runs_dir Where feedback from `$rate()` and `$edit()` is recorded
+#'   (under `feedback/`). See [dragon_feedback()].
 #' @return A `dragon_chat` object with methods:
 #'   `$say(text, on_token = NULL)` sends a user turn and returns the reply
 #'   (streaming pieces to `on_token` when the backend supports it);
-#'   `$history()` returns the messages; `$reset()` clears them;
+#'   `$history()` returns the messages; `$reset()` clears them; `$undo()`
+#'   drops the last exchange; `$regenerate()` asks again for the last reply;
+#'   `$rate("up")` or `$rate("down")` records a verdict on the last reply
+#'   and `$edit(text)` replaces it with a better one, both saved as feedback
+#'   that [dragon_feedback()] turns into training data;
 #'   `$save(path)` and `dragon_chat_load(path)` write and read a transcript;
 #'   `$as_example()` returns the conversation as one training row.
 #' @export
@@ -28,7 +34,7 @@
 #' chat$save("good-conversation.json")
 #' }
 dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max_new_tokens = 256,
-                        temperature = 0.7, top_p = 0.9, base = FALSE) {
+                        temperature = 0.7, top_p = 0.9, base = FALSE, runs_dir = dragon_runs_dir()) {
   target <- if (is_server_backend(backend)) NULL else {
     if (is.null(x)) cli::cli_abort("Say what should answer: a run, adapter, model directory, or model id.")
     t <- resolve_target(x)
@@ -41,7 +47,35 @@ dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max
   self$system <- system
   self$settings <- list(max_new_tokens = as.integer(max_new_tokens), temperature = temperature, top_p = top_p)
   self$messages <- list()
+  self$runs_dir <- runs_dir
   self$label <- if (!is.null(target)) (if (!is.null(x) && inherits(x, "dragon_run")) x$id else basename(target$model)) else backend$model
+
+  last_reply_index <- function() {
+    n <- length(self$messages)
+    if (n < 2 || !identical(self$messages[[n]]$role, "assistant")) cli::cli_abort("Nothing to rate yet: the last turn is not a model reply.")
+    n
+  }
+  self$rate <- function(rating) {
+    r <- if (identical(rating, "up") || identical(rating, 1) || identical(rating, 1L)) 1 else
+         if (identical(rating, "down") || identical(rating, -1) || identical(rating, -1L)) -1 else
+         cli::cli_abort("{.arg rating} must be \"up\" or \"down\" (1 or -1).")
+    n <- last_reply_index()
+    record_feedback(self$runs_dir, self$label, self$system, self$messages[seq_len(n - 1)], self$messages[[n]]$content, rating = r)
+    invisible(self)
+  }
+  self$edit <- function(text) {
+    check_string(text, "text")
+    n <- last_reply_index()
+    record_feedback(self$runs_dir, self$label, self$system, self$messages[seq_len(n - 1)], self$messages[[n]]$content, edited = text)
+    self$messages[[n]]$content <- text
+    invisible(self)
+  }
+  self$regenerate <- function(on_token = NULL) {
+    n <- last_reply_index()
+    last_user <- self$messages[[n - 1]]$content
+    self$messages <- self$messages[seq_len(n - 2)]
+    self$say(last_user, on_token = on_token)
+  }
 
   self$say <- function(text, on_token = NULL) {
     check_string(text, "text")

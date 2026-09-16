@@ -16,6 +16,7 @@ reference:
   - dragon_map
   - dragon_map_pairs
   - dragon_map_prompts
+  - dragon_conversations
   - dragon_synthesize
   - dragon_synthesize_pairs
   - dragon_prompts
@@ -58,6 +59,7 @@ reference:
   - dragon_serve_ollama
   - dragon_worker_stop
   - dragon_chat
+  - dragon_feedback
 - title: After training
   contents:
   - dragon_generate
@@ -83,4 +85,6 @@ articles:
   navbar: ~
   contents:
   - quickstart
+  - post-training-loop
+  - reinforcement-learning
   - shiny-app

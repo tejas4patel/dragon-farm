@@ -1,0 +1,156 @@
+---
+title: "Reinforcement learning with rewards you can check"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reinforcement learning with rewards you can check}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+`dragon_reinforce()` trains a model with Group Relative Policy Optimization
+(GRPO), the method behind the recent reasoning models, in its plain on-policy
+form. For every prompt the model writes several answers, each is scored by
+rewards you define, and the model is nudged towards the answers that beat
+their group's average. A KL penalty against the model it started from keeps
+it from drifting.
+
+## When it helps, and when it does not
+
+Reinforcement learning on a small model works when the reward is
+**verifiable**: something a function can check without opinion.
+
+* A number that must match: arithmetic, unit conversion, extracted totals.
+* A format that must hold: valid JSON with given keys, a ticket id at the
+  start, a required section.
+* A budget: at most 300 characters, at least three bullet points.
+* A test that passes.
+
+It works poorly as a substitute for preference data on goals such as "be
+more helpful" or "sound friendlier". A reward that is really a model's
+opinion is noisy, and a small policy will find the noise. For those goals
+use `dragon_prefer()` with judge-ranked pairs instead; see the post-training
+loop vignette.
+
+## Data: prompts and references
+
+Rows carry a prompt and, optionally, a reference answer for rewards that
+compare against one. Every other column travels along as `fields` for custom
+rewards.
+
+```{r}
+library(dragonfarm)
+
+a <- sample(10:999, 400, replace = TRUE)
+b <- sample(10:999, 400, replace = TRUE)
+math <- data.frame(
+  question = sprintf("What is %d + %d? Reply with just the number.", a, b),
+  answer = as.character(a + b)
+)
+prompts <- dragon_map_prompts(dragon_dataset(math), prompt = "question", reference = "answer")
+dragon_preview(prompts, n = 1)
+```
+
+## Rewards
+
+`dragon_reward()` builds one reward; a list of them is summed by weight.
+
+```{r}
+rewards <- list(
+  dragon_reward("numeric"),                            # last number equals the reference
+  dragon_reward("length", max_chars = 12, weight = 0.3) # keep it terse
+)
+```
+
+The built-ins: `"exact"`, `"contains"`, `"numeric"`, `"regex"` (with
+`pattern`), `"json"` (with optional `keys`, partial credit per key),
+`"length"` (with `min_chars` and `max_chars`), and `"keyword"` (with `words`
+and `mode`). For anything else, `"custom"` points at a Python file:
+
+```{r}
+writeLines(c(
+  "def reward(prompt, completion, reference, row):",
+  "    # 1.0 when the reply mentions the product named in the row",
+  "    return 1.0 if row.get('product', '') and row['product'] in completion else 0.0"
+), "product_reward.py")
+mention <- dragon_reward("custom", file = "product_reward.py", name = "mentions_product")
+```
+
+The file is copied into the run, so the run stays self-contained and travels
+with the cloud bundle.
+
+## Train
+
+Start from a fine-tuned run when you have one; the RL stage folds its
+adapters in before adding its own.
+
+```{r}
+rl <- dragon_reinforce(
+  prompts, sft,                    # or a model id such as "Qwen/Qwen2.5-0.5B-Instruct"
+  rewards = rewards,
+  group_size = 6,                  # answers sampled per prompt
+  beta = 0.04,                     # KL penalty towards the starting model
+  temperature = 1.0,               # sampling temperature; must be above 0
+  max_new_tokens = 16,
+  args = dragon_train_args(learning_rate = 1e-5, epochs = 1, batch_size = 4, grad_accum = 1, save_steps = 20),
+  wait = TRUE
+)
+```
+
+A step samples `batch_size * group_size` completions, scores them, and takes
+one optimizer step. Sampling dominates the cost, so short `max_new_tokens`
+and modest `group_size` keep steps fast. Progress rows carry `reward`,
+`reward_std`, `kl`, and `completion_len`, plus one column per reward:
+
+```{r}
+dragon_progress(rl)[, c("step", "reward", "reward_numeric", "reward_length", "kl", "completion_len")]
+```
+
+The Monitor panel plots mean reward on a second axis next to the loss.
+
+## Read the result
+
+```{r}
+dragon_evaluate(rl)   # mean held-out reward, per reward
+dragon_generate(rl, "What is 417 + 285? Reply with just the number.", temperature = 0)
+dragon_compare(sft, rl)
+```
+
+`reward` in the comparison table is the mean total reward on held-out
+prompts. Compare it with the same rewards computed on the starting model to
+see what the stage bought: `dragon_evaluate()` on the starting run does not
+know these rewards, so the quickest check is `dragon_generate()` on both with
+`base = TRUE` on the RL run and a few prompts.
+
+## Settings that matter
+
+* **Reward variance is the signal.** If every sample in a group gets the
+  same reward, that group contributes nothing. Prompts that are always
+  solved or never solved waste samples; keep the data at a difficulty where
+  the model sometimes succeeds.
+* **`beta`** trades speed of change for stability. Raise it if replies
+  degrade in ways the rewards do not see; lower it if nothing moves.
+* **`temperature`** needs to be high enough that the group varies. 0.8 to
+  1.2 is typical.
+* **Learning rate** is small, 1e-6 to 2e-5. RL updates are noisier than
+  supervised ones.
+* **Length rewards** guard against the two failure modes of a length-blind
+  reward: rambling until a right answer appears, or collapsing to a single
+  token.
+
+## Chaining with the other stages
+
+Reinforcement learning is a stage like the others. A typical order is
+fine-tune, then preference optimization for style, then RL for a
+verifiable target, and each starts from the previous run. In a pipeline:
+
+```{r}
+dragon_pipeline("Qwen/Qwen2.5-0.5B-Instruct", list(
+  dragon_step_train(tickets),
+  dragon_step_reinforce(prompts, rewards = rewards, group_size = 6, max_new_tokens = 16),
+  dragon_step_evaluate()
+))
+```
