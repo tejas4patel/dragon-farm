@@ -41,6 +41,8 @@ reference:
   contents:
   - dragon_run
   - dragon_runs
+  - dragon_archived_runs
+  - dragon_archive_run
   - dragon_runs_dir
   - dragon_status
   - dragon_progress

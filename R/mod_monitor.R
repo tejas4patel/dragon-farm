@@ -5,10 +5,23 @@ mod_monitor_ui <- function(id) {
       col_widths = c(4, 8),
       bslib::card(
         bslib::card_header("Runs"),
+        shiny::checkboxInput(ns("show_archived"), "Show archived", value = FALSE),
         shiny::selectInput(ns("run"), NULL, choices = character(), width = "100%"),
         shiny::uiOutput(ns("facts")),
-        shiny::actionButton(ns("cancel"), "Cancel run", class = "btn-outline-danger"),
-        shiny::actionButton(ns("resume"), "Resume from checkpoint", class = "btn-outline-secondary"),
+        shiny::conditionalPanel(
+          condition = sprintf("!input['%s']", ns("show_archived")),
+          shiny::actionButton(ns("cancel"), "Cancel run", class = "btn-outline-danger"),
+          shiny::actionButton(ns("resume"), "Resume from checkpoint", class = "btn-outline-secondary"),
+          shiny::div(class = "cloud-actions", style = "margin-top: 8px;",
+            shiny::actionButton(ns("archive"), "Archive", class = "btn-outline-secondary"),
+            shiny::actionButton(ns("delete"), "Delete", class = "btn-outline-danger")
+          )
+        ),
+        shiny::conditionalPanel(
+          condition = sprintf("input['%s']", ns("show_archived")),
+          shiny::p(class = "hint", "Archived runs keep every file but drop out of the lists above. Restore one to see its details and use it again."),
+          shiny::actionButton(ns("restore"), "Restore", class = "btn-outline-secondary")
+        ),
         shiny::hr(),
         shiny::fileInput(ns("import"), "Import cloud results (dragonfarm-results-*.zip)", accept = ".zip", width = "100%"),
         shiny::uiOutput(ns("import_hint"))
@@ -51,21 +64,31 @@ mod_monitor_ui <- function(id) {
 
 mod_monitor_server <- function(id, state, runs_dir) {
   shiny::moduleServer(id, function(input, output, session) {
-    runs <- shiny::reactivePoll(3000, session,
+    ns <- session$ns
+    active_runs <- shiny::reactivePoll(3000, session,
       checkFunc = function() {
         dirs <- list.dirs(runs_dir, recursive = FALSE)
         paste(dirs, file.info(file.path(dirs, "status.json"))$mtime, collapse = "|")
       },
       valueFunc = function() dragon_runs(runs_dir)
     )
+    archived_runs_poll <- shiny::reactivePoll(3000, session,
+      checkFunc = function() {
+        dirs <- list.dirs(file.path(runs_dir, "archived"), recursive = FALSE)
+        paste(dirs, file.info(file.path(dirs, "status.json"))$mtime, collapse = "|")
+      },
+      valueFunc = function() dragon_archived_runs(runs_dir)
+    )
+    runs <- shiny::reactive(if (isTRUE(input$show_archived)) archived_runs_poll() else active_runs())
 
     shiny::observe({
       df <- runs()
+      archived <- isTRUE(input$show_archived)
       selected <- shiny::isolate(input$run)
-      if (!is.null(state$run) && state$run$id %in% df$id && !identical(selected, state$run$id)) {
+      if (!archived && !is.null(state$run) && state$run$id %in% df$id && !identical(selected, state$run$id)) {
         selected <- state$run$id
       }
-      labels <- if (nrow(df)) sprintf("%s  [%s]", df$id, df$state) else character()
+      labels <- if (nrow(df)) sprintf("%s  [%s]", df$id, if (archived) "archived" else df$state) else character()
       shiny::updateSelectInput(session, "run", choices = stats::setNames(df$id, labels),
                                selected = if (!is.null(selected) && selected %in% df$id) selected else df$id[1])
     })
@@ -202,6 +225,48 @@ mod_monitor_server <- function(id, state, runs_dir) {
       if (!is.null(res)) {
         state$run <- res
         shiny::showNotification(sprintf("Resumed %s.", res$id), type = "message")
+      }
+    })
+
+    forget_if_current <- function(id) {
+      if (!is.null(state$run) && identical(state$run$id, id)) state$run <- NULL
+    }
+
+    shiny::observeEvent(input$archive, {
+      r <- run()
+      ok <- tryCatch({ dragon_archive_run(r, runs_dir = runs_dir); TRUE }, error = function(e) { notify_error(e); FALSE })
+      if (ok) {
+        forget_if_current(r$id)
+        shiny::showNotification(sprintf("Archived %s.", r$id), type = "message")
+      }
+    })
+
+    shiny::observeEvent(input$delete, {
+      id <- input$run
+      shiny::showModal(shiny::modalDialog(
+        title = "Delete this run?",
+        sprintf("This permanently deletes %s and everything in it: the adapter, checkpoints, samples, and logs. This cannot be undone.", id),
+        footer = shiny::tagList(shiny::modalButton("Cancel"), shiny::actionButton(ns("delete_confirm"), "Delete permanently", class = "btn-danger")),
+        easyClose = TRUE
+      ))
+    })
+    shiny::observeEvent(input$delete_confirm, {
+      r <- run()
+      ok <- tryCatch({ dragon_delete_run(r, runs_dir = runs_dir); TRUE }, error = function(e) { notify_error(e); FALSE })
+      shiny::removeModal()
+      if (ok) {
+        forget_if_current(r$id)
+        shiny::showNotification(sprintf("Deleted %s.", r$id), type = "message")
+      }
+    })
+
+    shiny::observeEvent(input$restore, {
+      id <- input$run
+      ok <- tryCatch({ dragon_unarchive_run(id, runs_dir = runs_dir); TRUE }, error = function(e) { notify_error(e); FALSE })
+      if (ok) {
+        shiny::updateCheckboxInput(session, "show_archived", value = FALSE)
+        shiny::updateSelectInput(session, "run", selected = id)
+        shiny::showNotification(sprintf("Restored %s.", id), type = "message")
       }
     })
 

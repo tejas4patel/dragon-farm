@@ -53,13 +53,32 @@ make_run_id <- function(name) {
 #' @return A data frame with one row per run, newest first.
 #' @export
 dragon_runs <- function(runs_dir = dragon_runs_dir()) {
+  runs_table(list_run_dirs(runs_dir))
+}
+
+#' Archived runs
+#'
+#' Runs that [dragon_archive_run()] moved out of the way. Same columns as
+#' [dragon_runs()].
+#'
+#' @param runs_dir Where runs live.
+#' @return A data frame, one row per archived run.
+#' @export
+dragon_archived_runs <- function(runs_dir = dragon_runs_dir()) {
+  runs_table(list_run_dirs(file.path(runs_dir, "archived")))
+}
+
+list_run_dirs <- function(runs_dir) {
+  if (!dir.exists(runs_dir)) return(character())
+  dirs <- list.dirs(runs_dir, recursive = FALSE, full.names = TRUE)
+  dirs[file.exists(file.path(dirs, "config.json"))]
+}
+
+runs_table <- function(dirs) {
   empty <- data.frame(
     id = character(), dir = character(), state = character(), stage = character(), method = character(),
     model = character(), created_at = character(), eval_loss = numeric(), stringsAsFactors = FALSE
   )
-  if (!dir.exists(runs_dir)) return(empty)
-  dirs <- list.dirs(runs_dir, recursive = FALSE, full.names = TRUE)
-  dirs <- dirs[file.exists(file.path(dirs, "config.json"))]
   if (!length(dirs)) return(empty)
   rows <- lapply(dirs, function(d) {
     cfg <- tryCatch(read_json(file.path(d, "config.json")), error = function(e) NULL)
@@ -77,6 +96,102 @@ dragon_runs <- function(runs_dir = dragon_runs_dir()) {
   })
   out <- do.call(rbind, rows)
   out[order(out$created_at, decreasing = TRUE), , drop = FALSE]
+}
+
+# Other runs whose config records this one as base_run (chaining), so
+# removing it would orphan them.
+run_children <- function(id, runs_dir) {
+  df <- dragon_runs(runs_dir)
+  if (!nrow(df)) return(character())
+  hits <- vapply(df$dir, function(d) {
+    cfg <- tryCatch(read_json(file.path(d, "config.json")), error = function(e) NULL)
+    identical(cfg$model$base_run, id)
+  }, logical(1))
+  df$id[hits]
+}
+
+# Shared guardrails for archive/delete: not currently active, and no other
+# run continues from it (unless force = TRUE).
+resolve_run_for_removal <- function(run, runs_dir, force) {
+  if (is.character(run) && length(run) == 1 && !dir.exists(run)) {
+    id <- run
+    dir <- file.path(runs_dir, id)
+  } else {
+    r <- dragon_run(run)
+    id <- r$id
+    dir <- r$dir
+    runs_dir <- dirname(dir)
+  }
+  if (!dir.exists(dir)) cli::cli_abort("No run at {.path {dir}}.")
+  st <- tryCatch(read_json(file.path(dir, "status.json")), error = function(e) list(state = "unknown"))
+  if (st$state %in% c("queued", "running")) {
+    cli::cli_abort(c("{.strong {id}} is {st$state}.", "i" = "Cancel it first with {.fn dragon_cancel}."))
+  }
+  if (!isTRUE(force)) {
+    kids <- run_children(id, runs_dir)
+    if (length(kids)) {
+      cli::cli_abort(c(
+        "Other runs continue from {.strong {id}}: {.val {kids}}.",
+        "i" = "Removing it would orphan them. Pass {.arg force = TRUE} to do it anyway."
+      ))
+    }
+  }
+  list(id = id, dir = dir, runs_dir = runs_dir)
+}
+
+#' Archive, restore, or delete a run
+#'
+#' Archiving moves a run's directory under `archived/` in `runs_dir`. It
+#' disappears from [dragon_runs()] and the app's Runs list, but every file
+#' is kept; [dragon_unarchive_run()] moves it back exactly as it was.
+#' Deleting removes the run directory for good. Both refuse a run that is
+#' queued or running (cancel it first) and a run that another run
+#' continues from, unless `force = TRUE`.
+#'
+#' @param run A `dragon_run`, run directory, or run id (with `runs_dir`).
+#' @param id An archived run's id, for [dragon_unarchive_run()].
+#' @param runs_dir Where runs live. Needed only when `run`/`id` is a bare id.
+#' @param force Archive or delete even if another run continues from this one.
+#' @return The run id, invisibly.
+#' @export
+#' @examples
+#' \dontrun{
+#' dragon_archive_run(run)
+#' dragon_archived_runs()
+#' dragon_unarchive_run(run$id)
+#' dragon_delete_run("20260101-000000-old-experiment")
+#' }
+dragon_archive_run <- function(run, runs_dir = dragon_runs_dir(), force = FALSE) {
+  info <- resolve_run_for_removal(run, runs_dir, force)
+  dest_dir <- file.path(info$runs_dir, "archived")
+  dir.create(dest_dir, recursive = TRUE, showWarnings = FALSE)
+  dest <- file.path(dest_dir, info$id)
+  if (dir.exists(dest)) cli::cli_abort("An archived run named {.val {info$id}} already exists.")
+  if (!file.rename(info$dir, dest)) cli::cli_abort("Could not move {.path {info$dir}} to {.path {dest}}.")
+  cli::cli_alert_success("Archived {.strong {info$id}}.")
+  invisible(info$id)
+}
+
+#' @rdname dragon_archive_run
+#' @export
+dragon_unarchive_run <- function(id, runs_dir = dragon_runs_dir()) {
+  check_string(id, "id")
+  src <- file.path(runs_dir, "archived", id)
+  if (!dir.exists(src)) cli::cli_abort("No archived run named {.val {id}}.")
+  dest <- file.path(runs_dir, id)
+  if (dir.exists(dest)) cli::cli_abort("A run named {.val {id}} already exists; rename or delete it first.")
+  if (!file.rename(src, dest)) cli::cli_abort("Could not move {.path {src}} to {.path {dest}}.")
+  cli::cli_alert_success("Restored {.strong {id}}.")
+  invisible(id)
+}
+
+#' @rdname dragon_archive_run
+#' @export
+dragon_delete_run <- function(run, runs_dir = dragon_runs_dir(), force = FALSE) {
+  info <- resolve_run_for_removal(run, runs_dir, force)
+  unlink(info$dir, recursive = TRUE, force = TRUE)
+  cli::cli_alert_success("Deleted {.strong {info$id}}.")
+  invisible(info$id)
 }
 
 #' @export

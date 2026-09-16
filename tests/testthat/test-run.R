@@ -51,6 +51,64 @@ test_that("not a run directory errors", {
   expect_error(dragon_run(tempfile()), "not a run directory")
 })
 
+test_that("archiving hides a run from dragon_runs() and unarchiving restores it", {
+  base <- tempfile("runs-")
+  dir.create(base)
+  dir <- file.path(base, "20260913-101500-smollm2")
+  dir.create(dir)
+  file.copy(list.files(fixture_path("run1"), full.names = TRUE), dir, recursive = TRUE)
+  run <- dragon_run(dir)
+
+  dragon_archive_run(run)
+  expect_equal(nrow(dragon_runs(base)), 0)
+  archived <- dragon_archived_runs(base)
+  expect_equal(archived$id, "20260913-101500-smollm2")
+  expect_false(dir.exists(dir))
+  expect_true(dir.exists(file.path(base, "archived", "20260913-101500-smollm2")))
+
+  dragon_unarchive_run("20260913-101500-smollm2", runs_dir = base)
+  expect_equal(nrow(dragon_runs(base)), 1)
+  expect_equal(nrow(dragon_archived_runs(base)), 0)
+  expect_true(dir.exists(dir))
+
+  expect_error(dragon_unarchive_run("nope", runs_dir = base), "No archived run")
+  dragon_archive_run(run$id, runs_dir = base)
+  expect_error(dragon_archive_run(run$id, runs_dir = base), "No run at")   # already archived; nothing left to archive
+  dir.create(dir)
+  file.copy(list.files(fixture_path("run1"), full.names = TRUE), dir, recursive = TRUE)
+  expect_error(dragon_unarchive_run("20260913-101500-smollm2", runs_dir = base), "already exists")
+})
+
+test_that("archiving and deleting refuse an active run or one with children, unless forced", {
+  base <- tempfile("runs-")
+  dir.create(base)
+  parent_dir <- file.path(base, "20260913-101500-smollm2")
+  dir.create(parent_dir)
+  file.copy(list.files(fixture_path("run1"), full.names = TRUE), parent_dir, recursive = TRUE)
+
+  child_dir <- file.path(base, "20260914-000000-child")
+  dir.create(child_dir)
+  file.copy(list.files(fixture_path("run1"), full.names = TRUE), child_dir, recursive = TRUE)
+  cfg <- dragonfarm:::read_json(file.path(child_dir, "config.json"))
+  cfg$model$base_run <- "20260913-101500-smollm2"
+  dragonfarm:::write_json(cfg, file.path(child_dir, "config.json"))
+
+  expect_error(dragon_archive_run("20260913-101500-smollm2", runs_dir = base), "Other runs continue from")
+  expect_error(dragon_delete_run("20260913-101500-smollm2", runs_dir = base), "Other runs continue from")
+  dragon_archive_run("20260913-101500-smollm2", runs_dir = base, force = TRUE)
+  expect_false(dir.exists(parent_dir))
+  expect_true(dir.exists(file.path(base, "archived", "20260913-101500-smollm2")))
+
+  dragonfarm:::write_json(list(state = "running", pid = 999999L), file.path(child_dir, "status.json"))
+  expect_error(dragon_delete_run("20260914-000000-child", runs_dir = base), "is running")
+  dragonfarm:::write_json(list(state = "succeeded"), file.path(child_dir, "status.json"))
+  dragon_delete_run("20260914-000000-child", runs_dir = base)
+  expect_false(dir.exists(child_dir))
+  expect_equal(nrow(dragon_runs(base)), 0)
+
+  expect_error(dragon_delete_run("nope", runs_dir = base), "No run at")
+})
+
 test_that("cancelling a finished run is a no-op", {
   run <- dragon_run(copy_fixture_run())
   expect_message(dragon_cancel(run), "already succeeded")
