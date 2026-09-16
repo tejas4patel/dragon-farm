@@ -58,6 +58,7 @@
 </h1></div>
 <p>Fine-tune small language models with LoRA from R, by code or by drag and drop.</p>
 <p><code>dragonfarm</code> takes a table of prompts and replies, teaches a 100M to 3B parameter model to answer in your format and your domain, and gives you back an adapter or a merged model that loads with plain Hugging Face <code>transformers</code>. Training runs in a background Python process that the package sets up for you.</p>
+<p>Documentation: <a href="https://dragonfarm.dev" class="uri">https://dragonfarm.dev</a></p>
 <div class="section level2">
 <h2 id="install">Install<a class="anchor" aria-label="anchor" href="#install"></a>
 </h2>
@@ -66,7 +67,7 @@
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"tejas4patel/dragon-farm"</span><span class="op">)</span></span></code></pre></div>
 <p>Then check the machine. The first call builds a Python environment with torch and transformers, which downloads 2 to 3 GB and takes a few minutes.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tejas4patel/dragon-farm" class="external-link">dragonfarm</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dragonfarm.dev">dragonfarm</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/dragon_check.html">dragon_check</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -91,7 +92,7 @@
 <h2 id="the-five-line-version">The five-line version<a class="anchor" aria-label="anchor" href="#the-five-line-version"></a>
 </h2>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tejas4patel/dragon-farm" class="external-link">dragonfarm</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dragonfarm.dev">dragonfarm</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="fu"><a href="reference/dragon_example_data.html">dragon_example_data</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_map.html">dragon_map</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"{subject}\n\n{body}"</span>, response <span class="op">=</span> <span class="st">"reply"</span><span class="op">)</span> <span class="op">|&gt;</span></span>

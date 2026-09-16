@@ -29,9 +29,9 @@ ds <- dragon_dataset(dragon_example_data())
 ds
 ```
 
-[`dragon_map()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_map.md)
-says which columns form the user turn and the assistant turn. Each
-argument is a column name or a template that combines columns.
+[`dragon_map()`](https://dragonfarm.dev/reference/dragon_map.md) says
+which columns form the user turn and the assistant turn. Each argument
+is a column name or a template that combines columns.
 
 ``` r
 

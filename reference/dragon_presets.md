@@ -3,7 +3,7 @@
 A table of small instruction-tuned models that work well with LoRA on a
 single consumer GPU or, for the smallest, a CPU. Any Hugging Face causal
 language model id can be passed to
-[`dragon_train()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_train.md);
+[`dragon_train()`](https://dragonfarm.dev/reference/dragon_train.md);
 these are just good starting points.
 
 ## Usage

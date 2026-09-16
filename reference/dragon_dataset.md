@@ -1,7 +1,7 @@
 # Create a dataset for fine-tuning
 
 Reads a file or wraps a data frame. Use
-[`dragon_map()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_map.md)
+[`dragon_map()`](https://dragonfarm.dev/reference/dragon_map.md)
 afterwards to say which columns hold the prompt and the response.
 
 ## Usage

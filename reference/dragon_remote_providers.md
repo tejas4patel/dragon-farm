@@ -1,11 +1,11 @@
 # Cloud GPU providers
 
 Machines without a GPU can still fine-tune:
-[`dragon_bundle()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_bundle.md)
+[`dragon_bundle()`](https://dragonfarm.dev/reference/dragon_bundle.md)
 packages a run as a zip,
-[`dragon_remote()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_remote.md)
+[`dragon_remote()`](https://dragonfarm.dev/reference/dragon_remote.md)
 opens one of these providers with the dragon-farm notebook, and
-[`dragon_import()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_import.md)
+[`dragon_import()`](https://dragonfarm.dev/reference/dragon_import.md)
 brings the trained adapter back. Google Colab and Kaggle have free GPU
 tiers. Lightning AI gives free monthly credits. RunPod is pay per hour.
 
@@ -18,7 +18,7 @@ dragon_remote_providers()
 ## Value
 
 A data frame with one row per provider: `provider` (the id to pass to
-[`dragon_remote()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_remote.md)),
+[`dragon_remote()`](https://dragonfarm.dev/reference/dragon_remote.md)),
 `name`, `cost`, and `opens` (what the link opens).
 
 ## Examples

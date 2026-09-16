@@ -9,6 +9,8 @@ back an adapter or a merged model that loads with plain Hugging Face
 `transformers`. Training runs in a background Python process that the
 package sets up for you.
 
+Documentation: <https://dragonfarm.dev>
+
 ## Install
 
 ``` r
@@ -46,8 +48,7 @@ dragon_check()
 - **No GPU:** training runs on the CPU. Fine for the 135M and 360M
   models, slow beyond that.
 
-Run
-[`dragon_check()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_check.md)
+Run [`dragon_check()`](https://dragonfarm.dev/reference/dragon_check.md)
 after installing. It reports the device it will train on, and if that is
 the CPU on a machine with an NVIDIA GPU it says why (no driver, a driver
 too old for the installed torch, or a CPU-only torch build) and prints
@@ -67,7 +68,7 @@ dragon_generate(run, "My thermostat keeps dropping off Wi-Fi.")
 dragon_merge(run, "models/support-0.5b")
 ```
 
-[`dragon_train()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_train.md)
+[`dragon_train()`](https://dragonfarm.dev/reference/dragon_train.md)
 returns immediately by default. Runs live on disk, so you can close R
 and come back:
 
@@ -99,15 +100,14 @@ code that reproduces it.
 The run directory is the whole contract between R and the trainer, so a
 run can be trained on any machine with a GPU and its results copied
 back.
-[`dragon_bundle()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_bundle.md)
+[`dragon_bundle()`](https://dragonfarm.dev/reference/dragon_bundle.md)
 zips the run,
-[`dragon_remote()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_remote.md)
+[`dragon_remote()`](https://dragonfarm.dev/reference/dragon_remote.md)
 opens a provider with the dragon-farm notebook and prints the steps, and
-[`dragon_import()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_import.md)
+[`dragon_import()`](https://dragonfarm.dev/reference/dragon_import.md)
 puts the trained adapter into place. Nothing else changes:
-[`dragon_generate()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_generate.md)
-and
-[`dragon_merge()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_merge.md)
+[`dragon_generate()`](https://dragonfarm.dev/reference/dragon_generate.md)
+and [`dragon_merge()`](https://dragonfarm.dev/reference/dragon_merge.md)
 work on the imported run as if it had trained locally.
 
 ``` r
@@ -131,7 +131,7 @@ dragon_import(run, "~/Downloads/dragonfarm-results-<id>.zip")
 The app has the same path: the Train panel’s “No GPU here?” section
 prepares the bundle and gives you the download and the provider link,
 and the Monitor panel imports the results zip.
-[`dragon_check()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_check.md)
+[`dragon_check()`](https://dragonfarm.dev/reference/dragon_check.md)
 points here when it finds no GPU, and a run that failed locally for lack
 of memory can be sent to the cloud as is with `dragon_remote(run, ...)`.
 
@@ -146,7 +146,7 @@ of memory can be sent to the cloud as is with `dragon_remote(run, ...)`.
 | `adapter/` | Python | The LoRA adapter, loadable with `peft`. |
 | `checkpoints/` | Python | The last two checkpoints, for resume. |
 | `eval.json`, `samples.json` | Python | Held-out loss and sample generations. |
-| `merged/` | Python | After [`dragon_merge()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_merge.md): a standalone model. |
+| `merged/` | Python | After [`dragon_merge()`](https://dragonfarm.dev/reference/dragon_merge.md): a standalone model. |
 
 ## Models that work well
 
@@ -160,7 +160,7 @@ of memory can be sent to the cloud as is with `dragon_remote(run, ...)`.
 | `Qwen/Qwen2.5-1.5B-Instruct` | 1.5B | Apache 2.0 | no | 7 GB |
 | `HuggingFaceTB/SmolLM2-1.7B-Instruct` | 1.7B | Apache 2.0 | no | 8 GB |
 
-[`dragon_presets()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_presets.md)
+[`dragon_presets()`](https://dragonfarm.dev/reference/dragon_presets.md)
 returns this table. Any other causal language model on the Hugging Face
 Hub works too. For gated models, accept the license on the Hub and set
 `HF_TOKEN` in the R session.
@@ -191,11 +191,11 @@ The Python side has its own tests:
 
 | Variable | Effect |
 |----|----|
-| `DRAGONFARM_PYTHON` | Use this interpreter instead of the one reticulate builds. It must already have the packages from [`dragon_python_requirements()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_python_requirements.md). |
+| `DRAGONFARM_PYTHON` | Use this interpreter instead of the one reticulate builds. It must already have the packages from [`dragon_python_requirements()`](https://dragonfarm.dev/reference/dragon_python_requirements.md). |
 | `DRAGONFARM_TORCH_INDEX` | Windows only. `auto` (default) selects the CUDA wheel index matching your NVIDIA driver on first Python use. Set to `""` to use PyPI’s CPU build, or to another index URL. |
 | `DRAGONFARM_RUNS_DIR` | Where runs are stored. Default `dragonfarm_runs`. |
 | `HF_TOKEN` | Hugging Face token for gated models. |
-| `LLAMA_CPP_DIR` | A llama.cpp checkout, for [`dragon_export_gguf()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_export_gguf.md). |
+| `LLAMA_CPP_DIR` | A llama.cpp checkout, for [`dragon_export_gguf()`](https://dragonfarm.dev/reference/dragon_export_gguf.md). |
 
 ## License
 

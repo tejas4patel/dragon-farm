@@ -20,7 +20,7 @@ dragon_export_gguf(
 - merged_dir:
 
   A merged model directory from
-  [`dragon_merge()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_merge.md).
+  [`dragon_merge()`](https://dragonfarm.dev/reference/dragon_merge.md).
 
 - out_file:
 

@@ -1,7 +1,7 @@
 # Hold out rows for evaluation
 
 If you do not call this,
-[`dragon_train()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_train.md)
+[`dragon_train()`](https://dragonfarm.dev/reference/dragon_train.md)
 holds out 5 percent of rows (and none when the dataset has fewer than 20
 rows).
 

@@ -25,7 +25,7 @@ dragon_remote(
 - provider:
 
   One of `"colab"`, `"kaggle"`, `"lightning"`, `"runpod"`. See
-  [`dragon_remote_providers()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_remote_providers.md).
+  [`dragon_remote_providers()`](https://dragonfarm.dev/reference/dragon_remote_providers.md).
 
 - open:
 

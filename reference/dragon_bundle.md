@@ -1,7 +1,7 @@
 # Package a run for a cloud GPU
 
 Writes a run directory exactly as
-[`dragon_train()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_train.md)
+[`dragon_train()`](https://dragonfarm.dev/reference/dragon_train.md)
 would, but instead of launching the trainer it zips everything a GPU
 machine needs: the data in chat format, the configuration, the trainer's
 Python code, and a notebook that runs it. Nothing is trained locally and
@@ -29,24 +29,24 @@ dragon_bundle(
 - dataset:
 
   A mapped `dragon_dataset` (see
-  [`dragon_map()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_map.md)).
+  [`dragon_map()`](https://dragonfarm.dev/reference/dragon_map.md)).
 
 - model:
 
   A Hugging Face model id such as
   `"HuggingFaceTB/SmolLM2-135M-Instruct"`, or a local model directory.
   See
-  [`dragon_presets()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_presets.md).
+  [`dragon_presets()`](https://dragonfarm.dev/reference/dragon_presets.md).
 
 - lora:
 
   LoRA settings from
-  [`dragon_lora()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_lora.md).
+  [`dragon_lora()`](https://dragonfarm.dev/reference/dragon_lora.md).
 
 - args:
 
   Training settings from
-  [`dragon_train_args()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_train_args.md).
+  [`dragon_train_args()`](https://dragonfarm.dev/reference/dragon_train_args.md).
 
 - name:
 
@@ -60,7 +60,7 @@ dragon_bundle(
 - runs_dir:
 
   Parent directory for runs. See
-  [`dragon_runs_dir()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_runs_dir.md).
+  [`dragon_runs_dir()`](https://dragonfarm.dev/reference/dragon_runs_dir.md).
 
 - n_samples:
 
@@ -82,9 +82,9 @@ A `dragon_run` whose state is `"bundled"`.
 ## Details
 
 Continue with
-[`dragon_remote()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_remote.md)
+[`dragon_remote()`](https://dragonfarm.dev/reference/dragon_remote.md)
 to open a provider and see the steps, and
-[`dragon_import()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_import.md)
+[`dragon_import()`](https://dragonfarm.dev/reference/dragon_import.md)
 to bring the results back into this run directory.
 
 ## Examples

@@ -3,7 +3,7 @@
 Writes a run directory, then launches the trainer as a background Python
 process. Returns immediately unless `wait = TRUE`. The run survives the
 R session; reopen it later with
-[`dragon_run()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_run.md).
+[`dragon_run()`](https://dragonfarm.dev/reference/dragon_run.md).
 
 ## Usage
 
@@ -29,29 +29,29 @@ dragon_train(
 - dataset:
 
   A mapped `dragon_dataset` (see
-  [`dragon_map()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_map.md)).
+  [`dragon_map()`](https://dragonfarm.dev/reference/dragon_map.md)).
 
 - model:
 
   A Hugging Face model id such as
   `"HuggingFaceTB/SmolLM2-135M-Instruct"`, or a local model directory.
   See
-  [`dragon_presets()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_presets.md).
+  [`dragon_presets()`](https://dragonfarm.dev/reference/dragon_presets.md).
 
 - lora:
 
   LoRA settings from
-  [`dragon_lora()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_lora.md).
+  [`dragon_lora()`](https://dragonfarm.dev/reference/dragon_lora.md).
 
 - args:
 
   Training settings from
-  [`dragon_train_args()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_train_args.md).
+  [`dragon_train_args()`](https://dragonfarm.dev/reference/dragon_train_args.md).
 
 - hardware:
 
   Hardware settings from
-  [`dragon_hardware()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_hardware.md).
+  [`dragon_hardware()`](https://dragonfarm.dev/reference/dragon_hardware.md).
 
 - name:
 
@@ -65,7 +65,7 @@ dragon_train(
 - runs_dir:
 
   Parent directory for runs. See
-  [`dragon_runs_dir()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_runs_dir.md).
+  [`dragon_runs_dir()`](https://dragonfarm.dev/reference/dragon_runs_dir.md).
 
 - n_samples:
 

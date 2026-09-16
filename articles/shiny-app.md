@@ -25,9 +25,9 @@ them.
 
 **3 Model.** Pick a preset or type a Hugging Face model id. “Detect
 hardware” runs the same check as
-[`dragon_check()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_check.md)
-and reports whether the chosen model fits in GPU memory and whether it
-needs a token.
+[`dragon_check()`](https://dragonfarm.dev/reference/dragon_check.md) and
+reports whether the chosen model fits in GPU memory and whether it needs
+a token.
 
 **4 Train.** Epochs, learning rate, rank, sequence length, and batch
 size are on the front. Everything else is under Advanced. The panel
@@ -65,6 +65,6 @@ The Map panel uses the `sortable` package for the drag-and-drop buckets.
 Progress in the Monitor panel comes from polling `progress.jsonl` and
 `status.json` once a second with `reactivePoll()`, so it works over a
 remote connection and survives a browser refresh. The Try it panel calls
-[`dragon_generate()`](https://tejas4patel.github.io/dragon-farm/reference/dragon_generate.md),
+[`dragon_generate()`](https://dragonfarm.dev/reference/dragon_generate.md),
 which loads the model in a short-lived process, so each request takes a
 few seconds.
