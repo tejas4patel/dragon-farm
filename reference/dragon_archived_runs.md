@@ -1,0 +1,22 @@
+# Archived runs
+
+Runs that
+[`dragon_archive_run()`](https://dragonfarm.dev/reference/dragon_archive_run.md)
+moved out of the way. Same columns as
+[`dragon_runs()`](https://dragonfarm.dev/reference/dragon_runs.md).
+
+## Usage
+
+``` r
+dragon_archived_runs(runs_dir = dragon_runs_dir())
+```
+
+## Arguments
+
+- runs_dir:
+
+  Where runs live.
+
+## Value
+
+A data frame, one row per archived run.

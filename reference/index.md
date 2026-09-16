@@ -66,6 +66,12 @@
   Reopen an existing run
 - [`dragon_runs()`](https://dragonfarm.dev/reference/dragon_runs.md) :
   List runs
+- [`dragon_archived_runs()`](https://dragonfarm.dev/reference/dragon_archived_runs.md)
+  : Archived runs
+- [`dragon_archive_run()`](https://dragonfarm.dev/reference/dragon_archive_run.md)
+  [`dragon_unarchive_run()`](https://dragonfarm.dev/reference/dragon_archive_run.md)
+  [`dragon_delete_run()`](https://dragonfarm.dev/reference/dragon_archive_run.md)
+  : Archive, restore, or delete a run
 - [`dragon_runs_dir()`](https://dragonfarm.dev/reference/dragon_runs_dir.md)
   : Directory where runs are stored
 - [`dragon_status()`](https://dragonfarm.dev/reference/dragon_status.md)

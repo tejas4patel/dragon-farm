@@ -2,6 +2,20 @@
 
 ## dragonfarm (development version)
 
+- Runs can be archived, restored, and deleted.
+  [`dragon_archive_run()`](https://dragonfarm.dev/reference/dragon_archive_run.md)
+  moves a run’s directory under `archived/` (every file kept; it just
+  drops out of
+  [`dragon_runs()`](https://dragonfarm.dev/reference/dragon_runs.md) and
+  the app);
+  [`dragon_unarchive_run()`](https://dragonfarm.dev/reference/dragon_archive_run.md)
+  brings it back;
+  [`dragon_delete_run()`](https://dragonfarm.dev/reference/dragon_archive_run.md)
+  removes it for good. Both refuse a run that is queued or running, or
+  one that another run continues from, unless `force = TRUE`. The
+  Monitor panel gets Archive and Delete buttons (Delete asks for
+  confirmation first), a “Show archived” toggle, and Restore.
+
 - Chat gets context limits, a second backend to compare with, and
   transcript round-tripping in the app. `dragon_chat(context_window=)`
   tracks an approximate token budget and automatically drops the oldest
