@@ -71,7 +71,9 @@ row per logged step. <code>dragon_logs()</code> returns the tail of the trainer 
     <p><code>dragon_status()</code>: a list with at least <code>state</code>, one of
 <code>"queued"</code>, <code>"running"</code>, <code>"succeeded"</code>, <code>"failed"</code>, <code>"cancelled"</code>.</p>
 <p><code>dragon_progress()</code>: a data frame with columns <code>step</code>, <code>epoch</code>,
-<code>loss</code>, <code>eval_loss</code>, <code>lr</code>, <code>grad_norm</code>, <code>elapsed_s</code>, <code>eta_s</code>.</p>
+<code>loss</code>, <code>eval_loss</code>, <code>lr</code>, <code>grad_norm</code>, <code>elapsed_s</code>, <code>eta_s</code>, and for
+preference runs <code>pref_acc</code>, <code>reward_margin</code>, <code>eval_pref_acc</code>,
+<code>eval_reward_margin</code>.</p>
 <p><code>dragon_logs()</code>: a character vector.</p>
     </div>
 

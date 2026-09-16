@@ -30,6 +30,7 @@ dragon_logs(run, n = 50)
 `"running"`, `"succeeded"`, `"failed"`, `"cancelled"`.
 
 `dragon_progress()`: a data frame with columns `step`, `epoch`, `loss`,
-`eval_loss`, `lr`, `grad_norm`, `elapsed_s`, `eta_s`.
+`eval_loss`, `lr`, `grad_norm`, `elapsed_s`, `eta_s`, and for preference
+runs `pref_acc`, `reward_margin`, `eval_pref_acc`, `eval_reward_margin`.
 
 `dragon_logs()`: a character vector.

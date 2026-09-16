@@ -50,7 +50,7 @@ the saved adapter when <code>recompute = TRUE</code> or nothing was saved.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">dragon_evaluate</span><span class="op">(</span><span class="va">run</span>, n_samples <span class="op">=</span> <span class="fl">10</span>, recompute <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">dragon_evaluate</span><span class="op">(</span><span class="va">run</span>, n_samples <span class="op">=</span> <span class="fl">10</span>, recompute <span class="op">=</span> <span class="cn">FALSE</span>, metrics <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -62,17 +62,30 @@ the saved adapter when <code>recompute = TRUE</code> or nothing was saved.</p>
 
 
 <dt id="arg-n-samples">n_samples<a class="anchor" aria-label="anchor" href="#arg-n-samples"></a></dt>
-<dd><p>Number of held-out prompts to generate replies for.</p></dd>
+<dd><p>Number of held-out prompts to generate replies for. <code>Inf</code>
+generates for every held-out row.</p></dd>
 
 
 <dt id="arg-recompute">recompute<a class="anchor" aria-label="anchor" href="#arg-recompute"></a></dt>
 <dd><p>Reload the model and evaluate again.</p></dd>
 
+
+<dt id="arg-metrics">metrics<a class="anchor" aria-label="anchor" href="#arg-metrics"></a></dt>
+<dd><p>Task metrics to compute on the generated replies: <code>TRUE</code> for
+every built-in metric, a character vector of names from
+<code><a href="dragon_metrics.html">dragon_metrics()</a></code>, or a named list of functions. Metrics need a reply
+for every held-out row, so replies are generated for all of them when
+fewer are on disk. Results are saved to <code>metrics.json</code> in the run and
+show up in <code><a href="dragon_compare.html">dragon_compare()</a></code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list with <code>eval_loss</code>, <code>perplexity</code>, <code>eval_tokens</code>, and a
-<code>samples</code> data frame with columns <code>prompt</code>, <code>reference</code>, <code>generated</code>.</p>
+<code>samples</code> data frame with columns <code>prompt</code>, <code>reference</code>, <code>generated</code>.
+Preference runs report <code>pref_accuracy</code> (how often the model scores the
+chosen reply above the rejected one), <code>reward_margin</code>, and <code>eval_pairs</code>
+instead of perplexity, and their samples also carry <code>rejected</code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

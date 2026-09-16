@@ -1,7 +1,8 @@
 # R code that reproduces a run
 
 Every run, including ones started from the Shiny app, can be replayed as
-a script. The dataset path is the original source when it was a file.
+a script. The dataset path is the original source when it was a file. A
+run that continued from an earlier run refers to that run by directory.
 
 ## Usage
 

@@ -117,10 +117,65 @@
 <p>Six panels, left to right: drop a file, drag its columns into Prompt and Response slots, pick a model, set a few numbers, watch the loss curve, and compare the tuned model against the base model. Every run started in the app is a normal run directory, and the Monitor panel shows the R code that reproduces it.</p>
 </div>
 <div class="section level2">
+<h2 id="beyond-fine-tuning-preference-optimization">Beyond fine-tuning: preference optimization<a class="anchor" aria-label="anchor" href="#beyond-fine-tuning-preference-optimization"></a>
+</h2>
+<p>Fine-tuning teaches the model what a good reply looks like. The next stage teaches it which of two replies is better, from a table with a prompt, a chosen reply, and a rejected one. It runs on top of a fine-tuned run:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sft</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="st">"tickets.csv"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/dragon_map.html">dragon_map</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"question"</span>, response <span class="op">=</span> <span class="st">"answer"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/dragon_train.html">dragon_train</a></span><span class="op">(</span><span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span>, wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">dpo</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="st">"preferences.csv"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/dragon_map_pairs.html">dragon_map_pairs</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"question"</span>, chosen <span class="op">=</span> <span class="st">"better"</span>, rejected <span class="op">=</span> <span class="st">"worse"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/dragon_prefer.html">dragon_prefer</a></span><span class="op">(</span><span class="va">sft</span>, method <span class="op">=</span> <span class="st">"dpo"</span>, beta <span class="op">=</span> <span class="fl">0.1</span>, wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/dragon_evaluate.html">dragon_evaluate</a></span><span class="op">(</span><span class="va">dpo</span><span class="op">)</span>      <span class="co"># preference accuracy and reward margin on held-out pairs</span></span>
+<span><span class="fu"><a href="reference/dragon_generate.html">dragon_generate</a></span><span class="op">(</span><span class="va">dpo</span>, <span class="st">"My thermostat keeps dropping off Wi-Fi."</span><span class="op">)</span></span></code></pre></div>
+<p>Passing a run as the model chains the stages: the earlier adapters are folded into the weights before the new stage adds its own. <code>method = "orpo"</code> needs no reference model and can start from a base model directly. The app has the same path: choose “Preference pairs” in the Map panel and a run to start from in the Train panel.</p>
+</div>
+<div class="section level2">
+<h2 id="make-the-data-teachers-and-self-improvement">Make the data: teachers and self-improvement<a class="anchor" aria-label="anchor" href="#make-the-data-teachers-and-self-improvement"></a>
+</h2>
+<p>Small models are only as good as their training data, and most teams do not have a few hundred hand-written ideal replies. Two shortcuts:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># A stronger model answers your prompts; its replies become the training set.</span></span>
+<span><span class="va">teacher</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_llm_anthropic.html">dragon_llm_anthropic</a></span><span class="op">(</span>system <span class="op">=</span> <span class="st">"You are a concise, warm support agent."</span><span class="op">)</span></span>
+<span><span class="va">synth</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_synthesize.html">dragon_synthesize</a></span><span class="op">(</span><span class="fu"><a href="reference/dragon_prompts.html">dragon_prompts</a></span><span class="op">(</span><span class="va">sft</span>, <span class="st">"train"</span><span class="op">)</span>, <span class="va">teacher</span>, system <span class="op">=</span> <span class="st">"You are a concise, warm support agent."</span><span class="op">)</span></span>
+<span><span class="va">sft2</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_train.html">dragon_train</a></span><span class="op">(</span><span class="va">synth</span>, <span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span>, wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The run answers each prompt four times, a judge scores every sample, and the</span></span>
+<span><span class="co"># best and worst become preference pairs. Then DPO on top of the same run.</span></span>
+<span><span class="va">pairs</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_synthesize_pairs.html">dragon_synthesize_pairs</a></span><span class="op">(</span><span class="fu"><a href="reference/dragon_prompts.html">dragon_prompts</a></span><span class="op">(</span><span class="va">sft2</span>, <span class="st">"train"</span>, n <span class="op">=</span> <span class="fl">200</span><span class="op">)</span>, student <span class="op">=</span> <span class="va">sft2</span>,</span>
+<span>                                 judge <span class="op">=</span> <span class="fu"><a href="reference/dragon_llm_anthropic.html">dragon_judge_anthropic</a></span><span class="op">(</span>model <span class="op">=</span> <span class="st">"claude-sonnet-5"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">dpo</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_prefer.html">dragon_prefer</a></span><span class="op">(</span><span class="va">pairs</span>, <span class="va">sft2</span>, wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/dragon_judge.html">dragon_judge</a></span><span class="op">(</span><span class="va">dpo</span>, against <span class="op">=</span> <span class="st">"base"</span>, judge <span class="op">=</span> <span class="fu"><a href="reference/dragon_llm_anthropic.html">dragon_judge_anthropic</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>That last sequence, sample, judge, train, judge again, is the loop that turns a fine-tune into a development cycle. The app’s Try it panel has the same Improve step.</p>
+</div>
+<div class="section level2">
+<h2 id="did-it-help-metrics-judges-and-comparisons">Did it help? Metrics, judges, and comparisons<a class="anchor" aria-label="anchor" href="#did-it-help-metrics-judges-and-comparisons"></a>
+</h2>
+<p>Held-out loss says a stage trained. It does not say the replies got better. Three tools answer that:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Deterministic checks over every held-out row</span></span>
+<span><span class="fu"><a href="reference/dragon_evaluate.html">dragon_evaluate</a></span><span class="op">(</span><span class="va">dpo</span>, metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exact"</span>, <span class="st">"token_f1"</span>, <span class="st">"json_valid"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># A stronger model as judge: did DPO beat the fine-tuned run it started from?</span></span>
+<span><span class="fu"><a href="reference/dragon_judge.html">dragon_judge</a></span><span class="op">(</span><span class="va">dpo</span>, against <span class="op">=</span> <span class="st">"base"</span>, judge <span class="op">=</span> <span class="fu"><a href="reference/dragon_llm_anthropic.html">dragon_judge_anthropic</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; dpo vs sft on 20 prompts: wins 65% · ties 25% · losses 10%</span></span>
+<span></span>
+<span><span class="co"># Or absolute scores against your own rubric, with a local judge</span></span>
+<span><span class="fu"><a href="reference/dragon_judge.html">dragon_judge</a></span><span class="op">(</span><span class="va">sft</span>, judge <span class="op">=</span> <span class="st">"Qwen/Qwen2.5-1.5B-Instruct"</span>,</span>
+<span>             rubric <span class="op">=</span> <span class="st">"Reward concrete next steps; penalise anything over 120 words."</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Everything the package knows about every run, side by side</span></span>
+<span><span class="fu"><a href="reference/dragon_compare.html">dragon_compare</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>Pairwise judging asks each question twice with the replies swapped, so a judge that favours whichever answer comes first yields ties, not wins. <code><a href="reference/dragon_llm_anthropic.html">dragon_judge_anthropic()</a></code> reads <code>ANTHROPIC_API_KEY</code>; <code><a href="reference/dragon_llm_anthropic.html">dragon_judge_ellmer()</a></code> accepts any <code>ellmer</code> chat for other providers.</p>
+</div>
+<div class="section level2">
 <h2 id="no-gpu-train-in-the-cloud">No GPU? Train in the cloud<a class="anchor" aria-label="anchor" href="#no-gpu-train-in-the-cloud"></a>
 </h2>
 <p>The run directory is the whole contract between R and the trainer, so a run can be trained on any machine with a GPU and its results copied back. <code><a href="reference/dragon_bundle.html">dragon_bundle()</a></code> zips the run, <code><a href="reference/dragon_remote.html">dragon_remote()</a></code> opens a provider with the dragon-farm notebook and prints the steps, and <code><a href="reference/dragon_import.html">dragon_import()</a></code> puts the trained adapter into place. Nothing else changes: <code><a href="reference/dragon_generate.html">dragon_generate()</a></code> and <code><a href="reference/dragon_merge.html">dragon_merge()</a></code> work on the imported run as if it had trained locally.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="fu"><a href="reference/dragon_example_data.html">dragon_example_data</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_map.html">dragon_map</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"{subject}\n\n{body}"</span>, response <span class="op">=</span> <span class="st">"reply"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_bundle.html">dragon_bundle</a></span><span class="op">(</span><span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span><span class="op">)</span></span>
@@ -306,7 +361,7 @@
 <div class="section level2">
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a>
 </h2>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span><span class="op">)</span>                                  <span class="co"># unit tests, no Python needed</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>DRAGONFARM_INTEGRATION <span class="op">=</span> <span class="st">"true"</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span>filter <span class="op">=</span> <span class="st">"integration"</span><span class="op">)</span>            <span class="co"># trains SmolLM2-135M for 6 steps</span></span></code></pre></div>

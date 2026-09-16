@@ -47,7 +47,8 @@ dragon_generate(
 
 - base:
 
-  Ignore the adapter and generate from the base model. Useful for
+  Ignore this run's adapter and generate from what it started with: the
+  base model, or the earlier run it continued from. Useful for
   before-and-after comparisons.
 
 ## Value

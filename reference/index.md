@@ -15,6 +15,14 @@
   : Create a dataset for fine-tuning
 - [`dragon_map()`](https://dragonfarm.dev/reference/dragon_map.md) : Map
   dataset columns to prompt, response, and system text
+- [`dragon_map_pairs()`](https://dragonfarm.dev/reference/dragon_map_pairs.md)
+  : Map columns for preference optimization
+- [`dragon_synthesize()`](https://dragonfarm.dev/reference/dragon_synthesize.md)
+  : Write fine-tuning data with a teacher model
+- [`dragon_synthesize_pairs()`](https://dragonfarm.dev/reference/dragon_synthesize_pairs.md)
+  : Build preference pairs from a model's own samples
+- [`dragon_prompts()`](https://dragonfarm.dev/reference/dragon_prompts.md)
+  : Prompts from a run's data files
 - [`dragon_preview()`](https://dragonfarm.dev/reference/dragon_preview.md)
   : Preview mapped rows as chat turns
 - [`dragon_split()`](https://dragonfarm.dev/reference/dragon_split.md) :
@@ -31,10 +39,12 @@
 - [`dragon_hardware()`](https://dragonfarm.dev/reference/dragon_hardware.md)
   : Hardware settings
 
-## Training
+## Training stages
 
 - [`dragon_train()`](https://dragonfarm.dev/reference/dragon_train.md) :
   Fine-tune a model with LoRA
+- [`dragon_prefer()`](https://dragonfarm.dev/reference/dragon_prefer.md)
+  : Preference optimization with DPO or ORPO
 - [`dragon_resume()`](https://dragonfarm.dev/reference/dragon_resume.md)
   : Resume a run from its latest checkpoint
 - [`dragon_wait()`](https://dragonfarm.dev/reference/dragon_wait.md) :
@@ -57,10 +67,25 @@
 - [`dragon_code()`](https://dragonfarm.dev/reference/dragon_code.md) : R
   code that reproduces a run
 
-## After training
+## Evaluation
 
 - [`dragon_evaluate()`](https://dragonfarm.dev/reference/dragon_evaluate.md)
   : Evaluate a finished run
+- [`dragon_metrics()`](https://dragonfarm.dev/reference/dragon_metrics.md)
+  [`dragon_metric_regex()`](https://dragonfarm.dev/reference/dragon_metrics.md)
+  : Task metrics for generated replies
+- [`dragon_judge()`](https://dragonfarm.dev/reference/dragon_judge.md) :
+  Judge a run's replies with a language model
+- [`dragon_llm_anthropic()`](https://dragonfarm.dev/reference/dragon_llm_anthropic.md)
+  [`dragon_judge_anthropic()`](https://dragonfarm.dev/reference/dragon_llm_anthropic.md)
+  [`dragon_llm_ellmer()`](https://dragonfarm.dev/reference/dragon_llm_anthropic.md)
+  [`dragon_judge_ellmer()`](https://dragonfarm.dev/reference/dragon_llm_anthropic.md)
+  : Language models as functions: the Claude API and ellmer
+- [`dragon_compare()`](https://dragonfarm.dev/reference/dragon_compare.md)
+  : Compare runs side by side
+
+## After training
+
 - [`dragon_generate()`](https://dragonfarm.dev/reference/dragon_generate.md)
   : Generate replies from a fine-tuned model
 - [`dragon_merge()`](https://dragonfarm.dev/reference/dragon_merge.md) :

@@ -20,7 +20,9 @@ dragon_bundle(
   runs_dir = dragon_runs_dir(),
   n_samples = 10,
   revision = NULL,
-  trust_remote_code = FALSE
+  trust_remote_code = FALSE,
+  method = NULL,
+  beta = 0.1
 )
 ```
 
@@ -34,9 +36,14 @@ dragon_bundle(
 - model:
 
   A Hugging Face model id such as
-  `"HuggingFaceTB/SmolLM2-135M-Instruct"`, or a local model directory.
-  See
-  [`dragon_presets()`](https://dragonfarm.dev/reference/dragon_presets.md).
+  `"HuggingFaceTB/SmolLM2-135M-Instruct"`, a local model directory, or a
+  finished `dragon_run` to continue from. In the last case the earlier
+  run's adapters are folded into the weights before this run adds its
+  own, so stages chain: fine-tune, then
+  [`dragon_prefer()`](https://dragonfarm.dev/reference/dragon_prefer.md),
+  and so on. See
+  [`dragon_presets()`](https://dragonfarm.dev/reference/dragon_presets.md)
+  for model ids.
 
 - lora:
 
@@ -74,6 +81,18 @@ dragon_bundle(
 - trust_remote_code:
 
   Allow the model repository to run custom code.
+
+- method:
+
+  For a dataset mapped with
+  [`dragon_map_pairs()`](https://dragonfarm.dev/reference/dragon_map_pairs.md),
+  the preference method, `"dpo"` or `"orpo"`. Defaults to `"dpo"`.
+  Ignored for prompt and response data.
+
+- beta:
+
+  Preference strength for `method`. See
+  [`dragon_prefer()`](https://dragonfarm.dev/reference/dragon_prefer.md).
 
 ## Value
 

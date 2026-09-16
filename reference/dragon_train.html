@@ -76,8 +76,11 @@ session; reopen it later with <code><a href="dragon_run.html">dragon_run()</a></
 
 <dt id="arg-model">model<a class="anchor" aria-label="anchor" href="#arg-model"></a></dt>
 <dd><p>A Hugging Face model id such as
-<code>"HuggingFaceTB/SmolLM2-135M-Instruct"</code>, or a local model directory.
-See <code><a href="dragon_presets.html">dragon_presets()</a></code>.</p></dd>
+<code>"HuggingFaceTB/SmolLM2-135M-Instruct"</code>, a local model directory, or a
+finished <code>dragon_run</code> to continue from. In the last case the earlier
+run's adapters are folded into the weights before this run adds its own,
+so stages chain: fine-tune, then <code><a href="dragon_prefer.html">dragon_prefer()</a></code>, and so on. See
+<code><a href="dragon_presets.html">dragon_presets()</a></code> for model ids.</p></dd>
 
 
 <dt id="arg-lora">lora<a class="anchor" aria-label="anchor" href="#arg-lora"></a></dt>

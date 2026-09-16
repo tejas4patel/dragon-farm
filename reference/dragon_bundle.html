@@ -63,7 +63,9 @@ that runs it. Nothing is trained locally and Python is not needed.</p>
 <span>  runs_dir <span class="op">=</span> <span class="fu"><a href="dragon_runs_dir.html">dragon_runs_dir</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  n_samples <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  revision <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  trust_remote_code <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  trust_remote_code <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  method <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  beta <span class="op">=</span> <span class="fl">0.1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -77,8 +79,11 @@ that runs it. Nothing is trained locally and Python is not needed.</p>
 
 <dt id="arg-model">model<a class="anchor" aria-label="anchor" href="#arg-model"></a></dt>
 <dd><p>A Hugging Face model id such as
-<code>"HuggingFaceTB/SmolLM2-135M-Instruct"</code>, or a local model directory.
-See <code><a href="dragon_presets.html">dragon_presets()</a></code>.</p></dd>
+<code>"HuggingFaceTB/SmolLM2-135M-Instruct"</code>, a local model directory, or a
+finished <code>dragon_run</code> to continue from. In the last case the earlier
+run's adapters are folded into the weights before this run adds its own,
+so stages chain: fine-tune, then <code><a href="dragon_prefer.html">dragon_prefer()</a></code>, and so on. See
+<code><a href="dragon_presets.html">dragon_presets()</a></code> for model ids.</p></dd>
 
 
 <dt id="arg-lora">lora<a class="anchor" aria-label="anchor" href="#arg-lora"></a></dt>
@@ -113,6 +118,16 @@ at the end of training.</p></dd>
 
 <dt id="arg-trust-remote-code">trust_remote_code<a class="anchor" aria-label="anchor" href="#arg-trust-remote-code"></a></dt>
 <dd><p>Allow the model repository to run custom code.</p></dd>
+
+
+<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
+<dd><p>For a dataset mapped with <code><a href="dragon_map_pairs.html">dragon_map_pairs()</a></code>, the
+preference method, <code>"dpo"</code> or <code>"orpo"</code>. Defaults to <code>"dpo"</code>. Ignored for
+prompt and response data.</p></dd>
+
+
+<dt id="arg-beta">beta<a class="anchor" aria-label="anchor" href="#arg-beta"></a></dt>
+<dd><p>Preference strength for <code>method</code>. See <code><a href="dragon_prefer.html">dragon_prefer()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -34,9 +34,14 @@ dragon_train(
 - model:
 
   A Hugging Face model id such as
-  `"HuggingFaceTB/SmolLM2-135M-Instruct"`, or a local model directory.
-  See
-  [`dragon_presets()`](https://dragonfarm.dev/reference/dragon_presets.md).
+  `"HuggingFaceTB/SmolLM2-135M-Instruct"`, a local model directory, or a
+  finished `dragon_run` to continue from. In the last case the earlier
+  run's adapters are folded into the weights before this run adds its
+  own, so stages chain: fine-tune, then
+  [`dragon_prefer()`](https://dragonfarm.dev/reference/dragon_prefer.md),
+  and so on. See
+  [`dragon_presets()`](https://dragonfarm.dev/reference/dragon_presets.md)
+  for model ids.
 
 - lora:
 
