@@ -10,8 +10,10 @@
 <url><loc>https://dragonfarm.dev/index.html</loc></url>
 <url><loc>https://dragonfarm.dev/news/index.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_app.html</loc></url>
+<url><loc>https://dragonfarm.dev/reference/dragon_backend.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_bundle.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_cancel.html</loc></url>
+<url><loc>https://dragonfarm.dev/reference/dragon_chat.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_check.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_code.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_compare.html</loc></url>
@@ -45,6 +47,7 @@
 <url><loc>https://dragonfarm.dev/reference/dragon_run.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_runs.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_runs_dir.html</loc></url>
+<url><loc>https://dragonfarm.dev/reference/dragon_serve_ollama.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_split.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_status.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_step.html</loc></url>
@@ -53,6 +56,7 @@
 <url><loc>https://dragonfarm.dev/reference/dragon_train.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_train_args.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/dragon_wait.html</loc></url>
+<url><loc>https://dragonfarm.dev/reference/dragon_worker_stop.html</loc></url>
 <url><loc>https://dragonfarm.dev/reference/index.html</loc></url>
 </urlset>
 

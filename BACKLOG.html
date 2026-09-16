@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">dragonfarm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,20 +48,20 @@
 <th>Notes</th>
 </tr></thead><tbody><tr><td>A1</td>
 <td>R CMD check + GPU integration suite on <code>post-training</code> (GRPO and pipeline tests included)</td>
-<td>doing</td>
+<td>done</td>
 <td>Gate for committing steps 5 and 6.</td>
 </tr><tr><td>A2</td>
 <td>Commit steps 5 and 6 (<code><a href="reference/dragon_reinforce.html">dragon_reinforce()</a></code>, <code><a href="reference/dragon_pipeline.html">dragon_pipeline()</a></code>) to <code>post-training</code>
 </td>
-<td>next</td>
+<td>done</td>
 <td>After A1 passes.</td>
 </tr><tr><td>A3</td>
 <td>Browser check of the new Pipeline tab</td>
-<td>next</td>
+<td>done</td>
 <td>Module logic is unit-tested; the rendered panel is not yet seen.</td>
 </tr><tr><td>A4</td>
 <td>Restart the review app on port 3939 from the branch</td>
-<td>next</td>
+<td>done</td>
 <td>The running instance predates steps 3 to 6.</td>
 </tr></tbody></table></div>
 <div class="section level2">
@@ -73,16 +73,16 @@
 </tr></thead><tbody><tr><td>B1</td>
 <td>Merge <code>post-training</code> into <code>main</code>
 </td>
-<td>next</td>
+<td>done</td>
 <td>Six commits ahead; all stages, eval, synthesis, pipelines.</td>
 </tr><tr><td>B2</td>
 <td>Retitle NEWS “development version” to 0.2.0, bump DESCRIPTION</td>
-<td>next</td>
+<td>done</td>
 <td></td>
 </tr><tr><td>B3</td>
 <td>Full tarball with vignettes, <code>R CMD check --as-cran</code>, win-builder devel + release</td>
-<td>next</td>
-<td>Pandoc is installed; same flow as 0.1.1.</td>
+<td>done</td>
+<td>The check now also flags the dragonfarm.dev URL as unreachable until DNS exists (G2).</td>
 </tr><tr><td>B4</td>
 <td>Vignette for the post-training loop (train, synthesize, prefer, judge, compare)</td>
 <td>planned</td>
@@ -93,7 +93,7 @@
 <td>Include when GRPO helps and when it does not.</td>
 </tr><tr><td>B6</td>
 <td>Tag v0.2.0 on GitHub; R-universe rebuilds on its own</td>
-<td>next</td>
+<td>done</td>
 <td></td>
 </tr><tr><td>B7</td>
 <td>CRAN: submit 0.2.0 after 0.1.1 resolves</td>
@@ -109,19 +109,19 @@
 <th>Notes</th>
 </tr></thead><tbody><tr><td>C1</td>
 <td>
-<code>dragon_backend_local()</code> with a persistent worker that keeps the model loaded across calls</td>
-<td>planned</td>
+<code><a href="reference/dragon_backend.html">dragon_backend_local()</a></code> with a persistent worker that keeps the model loaded across calls</td>
+<td>doing</td>
 <td>Removes the per-call model load in judge, synthesize, and Try it.</td>
 </tr><tr><td>C2</td>
 <td>
 <code>dragon_backend_server(url, model)</code>: client for any OpenAI-compatible chat endpoint</td>
-<td>planned</td>
+<td>doing</td>
 <td>Covers vLLM, llama.cpp server, Ollama, LM Studio, HF Inference Endpoints, RunPod and Modal vLLM templates. Streaming support for the chat UI (C8).</td>
 </tr><tr><td>C3</td>
 <td>
 <code>dragon_serve_ollama(run)</code>: merge, register with Ollama by importing safetensors, return a backend</td>
-<td>planned</td>
-<td>No GGUF step needed for Llama, Qwen2, Gemma families. Fastest local CPU inference.</td>
+<td>doing</td>
+<td>Written; untested against a real Ollama (not installed here).</td>
 </tr><tr><td>C4</td>
 <td>
 <code>dragon_publish(run, repo)</code>: push merged model or adapter to the Hugging Face Hub</td>
@@ -131,7 +131,7 @@
 <td>
 <code>backend</code> argument on <code><a href="reference/dragon_generate.html">dragon_generate()</a></code>, judge and teacher wrappers, <code><a href="reference/dragon_synthesize_pairs.html">dragon_synthesize_pairs()</a></code>, <code><a href="reference/dragon_judge.html">dragon_judge()</a></code>; session default via <code>options(dragonfarm.backend)</code>
 </td>
-<td>planned</td>
+<td>doing</td>
 <td>Local stays the default.</td>
 </tr><tr><td>C6</td>
 <td>Try it panel: “Serve with” selector (this machine, Ollama, URL) plus Serve and Publish buttons</td>
@@ -158,16 +158,16 @@
 <td>
 <code>dragon_chat(backend)</code> in R: returns a conversation object that keeps message history; <code>$say()</code>, <code>$reset()</code>, <code>$history()</code>
 </td>
-<td>planned</td>
+<td>doing</td>
 <td>Same message list format as training data, so transcripts can become data.</td>
 </tr><tr><td>D2</td>
 <td>Multi-turn generation in the Python worker and the server client: send the full history each turn</td>
-<td>planned</td>
+<td>doing</td>
 <td>Chat templates already handle multi-turn rendering.</td>
 </tr><tr><td>D3</td>
 <td>App: Chat tab with message thread, system prompt, temperature, max tokens, backend selector, streaming replies</td>
-<td>planned</td>
-<td>Streaming via C2 for servers; token streaming from the local worker.</td>
+<td>doing</td>
+<td>Streaming reaches R (<code>on_token</code>); the Shiny panel shows whole replies for now.</td>
 </tr><tr><td>D4</td>
 <td>Context window handling: token count per turn, warn near the model’s limit, drop or summarise oldest turns</td>
 <td>planned</td>
@@ -278,7 +278,7 @@
 </tr><tr><td>G2</td>
 <td>DNS at Spaceship: A records to GitHub Pages addresses, CNAME for www</td>
 <td>waiting</td>
-<td>GitHub Pages already has the custom domain set. Paused on request.</td>
+<td>GitHub Pages already has the custom domain set. Paused on request. Until it resolves, CRAN’s URL check flags the DESCRIPTION link.</td>
 </tr><tr><td>G3</td>
 <td>Move pkgdown to a subdomain if G1 chooses the product-site layout</td>
 <td>planned</td>

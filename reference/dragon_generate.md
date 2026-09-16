@@ -1,8 +1,10 @@
 # Generate replies from a fine-tuned model
 
-Loads the model in a short-lived Python process, so each call pays a few
-seconds of model-loading time. Pass several prompts at once to amortize
-it.
+Runs through the session's inference backend: by default a local Python
+worker that keeps the last models loaded, so only the first call pays
+the load. Pass a server backend to generate from Ollama or any
+OpenAI-compatible endpoint instead. See
+[dragon_backend](https://dragonfarm.dev/reference/dragon_backend.md).
 
 ## Usage
 
@@ -14,7 +16,8 @@ dragon_generate(
   max_new_tokens = 256,
   temperature = 0.7,
   top_p = 0.9,
-  base = FALSE
+  base = FALSE,
+  backend = dragon_backend()
 )
 ```
 
@@ -50,6 +53,12 @@ dragon_generate(
   Ignore this run's adapter and generate from what it started with: the
   base model, or the earlier run it continued from. Useful for
   before-and-after comparisons.
+
+- backend:
+
+  Where to run inference. See
+  [dragon_backend](https://dragonfarm.dev/reference/dragon_backend.md).
+  Server backends serve a fixed model and ignore `x`.
 
 ## Value
 

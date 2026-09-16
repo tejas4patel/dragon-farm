@@ -90,6 +90,21 @@
 - [`dragon_compare()`](https://dragonfarm.dev/reference/dragon_compare.md)
   : Compare runs side by side
 
+## Inference and chat
+
+- [`dragon_backend_local()`](https://dragonfarm.dev/reference/dragon_backend.md)
+  [`dragon_backend_server()`](https://dragonfarm.dev/reference/dragon_backend.md)
+  [`dragon_backend_ollama()`](https://dragonfarm.dev/reference/dragon_backend.md)
+  [`dragon_backend()`](https://dragonfarm.dev/reference/dragon_backend.md)
+  : Inference backends
+- [`dragon_serve_ollama()`](https://dragonfarm.dev/reference/dragon_serve_ollama.md)
+  : Serve a run's model with Ollama
+- [`dragon_worker_stop()`](https://dragonfarm.dev/reference/dragon_worker_stop.md)
+  : Stop the local inference worker
+- [`dragon_chat()`](https://dragonfarm.dev/reference/dragon_chat.md)
+  [`dragon_chat_load()`](https://dragonfarm.dev/reference/dragon_chat.md)
+  : Talk to a model, with memory of the conversation
+
 ## After training
 
 - [`dragon_generate()`](https://dragonfarm.dev/reference/dragon_generate.md)
