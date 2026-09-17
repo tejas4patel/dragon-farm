@@ -419,6 +419,7 @@
 <h2 id="how-it-works">How it works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
 </h2>
 <p>R never imports torch. It writes a run directory and launches <code>python -m dragonfarm.train</code> as a subprocess with <code>processx</code>. The trainer is Hugging Face <code>transformers</code> with <code>peft</code> for LoRA and a prompt-masking collator so only the reply tokens contribute to the loss. Progress comes back through files, which is what lets the Shiny app poll it and lets a run outlive the R session.</p>
+<p>The Python side (<a href="inst/python"><code>inst/python</code></a>) is also its own installable package (<code>pip install ./inst/python</code>, soon <code>pip install dragonfarm</code> once it’s on PyPI): a <code>dragonfarm</code> command (<code>check</code>, <code>train</code>, <code>generate</code>, <code>pack</code>) and a <code>dragonfarm.api</code> module for reading a run directory from plain Python, no R required. A run started from R can be inspected or continued from Python and back, since both read and write the exact same files.</p>
 </div>
 <div class="section level2">
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a>

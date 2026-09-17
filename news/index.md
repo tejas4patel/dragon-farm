@@ -2,6 +2,14 @@
 
 ## dragonfarm (development version)
 
+- The Python side (`inst/python`) is now also its own installable
+  package: `pip install ./inst/python` (or a built wheel) gives a
+  `dragonfarm` command (`check`, `train`, `generate`, `pack`) and a
+  `dragonfarm.api` module (`Run`, `runs()`) for reading a run directory
+  from plain Python, with no R involved. A run started from R can be
+  inspected or continued from Python and back, since both read and write
+  the same files. Not yet published to PyPI.
+
 - Runs can be archived, restored, and deleted.
   [`dragon_archive_run()`](https://dragonfarm.dev/reference/dragon_archive_run.md)
   moves a run’s directory under `archived/` (every file kept; it just

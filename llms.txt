@@ -345,6 +345,14 @@ prompt-masking collator so only the reply tokens contribute to the loss.
 Progress comes back through files, which is what lets the Shiny app poll
 it and lets a run outlive the R session.
 
+The Python side ([`inst/python`](https://dragonfarm.dev/inst/python)) is
+also its own installable package (`pip install ./inst/python`, soon
+`pip install dragonfarm` once it’s on PyPI): a `dragonfarm` command
+(`check`, `train`, `generate`, `pack`) and a `dragonfarm.api` module for
+reading a run directory from plain Python, no R required. A run started
+from R can be inspected or continued from Python and back, since both
+read and write the exact same files.
+
 ## Development
 
 ``` r
