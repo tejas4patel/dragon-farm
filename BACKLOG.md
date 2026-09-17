@@ -80,7 +80,7 @@ function, so a trained model can be used the way it will be used.
 | F5 | Live test of `dragon_llm_anthropic()` and `dragon_judge_anthropic()` with a real key | next | Only request shapes and fakes tested so far. |
 | F6 | Live test of `dragon_llm_ellmer()` against one provider | planned | API calls verified against ellmer 0.5, no live call yet. |
 | F7 | Persistent generation worker also serves the Try it panel (folds into C1) | planned | |
-| F8 | Windows: investigate the occasional process-start failure (exit status -1073741502) under heavy load | idea | Seen twice when a second heavy process started during training. |
+| F8 | Windows: investigate the occasional process-start failure (exit status -1073741502) under heavy load | doing | The most common trigger identified: the local inference worker (from an earlier Try it or Chat call) still holding the GPU when a new training run starts. `launch_trainer()` now stops it first. Root cause (STATUS_DLL_INIT_FAILED racing on concurrent CUDA init) not confirmed, and the flake was never reliably reproducible to begin with. |
 
 ## G. Product and distribution
 

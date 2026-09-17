@@ -164,6 +164,15 @@ launch_trainer <- function(run_dir, resume = FALSE) {
   log <- file.path(run_dir, "log.txt")
   args <- c("-m", "dragonfarm.train", "--run-dir", run_dir)
   if (resume) args <- c(args, "--resume")
+  # Two heavy Python/CUDA processes starting at the same moment have crashed
+  # a fresh trainer process on Windows (STATUS_DLL_INIT_FAILED, exit
+  # -1073741502) the local inference worker being the usual culprit, since
+  # it can be sitting there from an earlier Try it or Chat call. Freeing it
+  # first also gives the trainer the GPU memory it was holding.
+  if (worker_alive()) {
+    cli::cli_alert_info("Stopping the local inference worker before training starts, to avoid two heavy processes racing for the GPU.")
+    dragon_worker_stop()
+  }
   p <- processx::process$new(
     py, args,
     stdout = log, stderr = "2>&1",

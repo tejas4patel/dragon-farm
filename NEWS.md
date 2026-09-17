@@ -1,5 +1,12 @@
 # dragonfarm (development version)
 
+* Starting a training run now stops the local inference worker first, if
+  one is loaded from an earlier Try it or Chat call. Two heavy Python/CUDA
+  processes starting at the same moment has occasionally crashed a fresh
+  trainer on Windows; freeing the worker's GPU memory first is the most
+  likely trigger and costs nothing, since the worker restarts automatically
+  on the next generation call.
+
 * The Python side (`inst/python`) is now also its own installable package:
   `pip install ./inst/python` (or a built wheel) gives a `dragonfarm`
   command (`check`, `train`, `generate`, `pack`) and a `dragonfarm.api`
