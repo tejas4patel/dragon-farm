@@ -64,7 +64,7 @@ function, so a trained model can be used the way it will be used.
 | E1 | Multi-turn conversations as training data: a `messages` column holding whole conversations | done | `dragon_conversations()`. | Today rows are one prompt and one reply. |
 | E2 | Data quality pass in `dragon_synthesize()`: dedupe, drop near-duplicates, length and language filters | done | |
 | E3 | Teacher-distilled SFT from the model's own prompts plus a judge filter (keep only replies the judge scores above a threshold) | done | Folded into `dragon_synthesize(judge=, min_score=)` rather than a separate function. |
-| E4 | `dragon_reinforce()`: tests as rewards (run a command or Python test against the completion) | idea | Common for code tasks; a `"command"` reward type. |
+| E4 | `dragon_reinforce()`: tests as rewards (run a command or Python test against the completion) | done | `dragon_reward("command", ...)`; runs the command directly (no shell), completion via stdin or a temp file, scores by exit code or a number in stdout. |
 | E5 | `dragon_reinforce()`: optional length normalisation and reward clipping options exposed | idea | |
 | E6 | Resume for GRPO restores the optimizer state, not just the adapter and step | idea | |
 | E7 | Full-parameter fine-tuning for models under 500M | idea | Deliberately out of scope so far. |
@@ -79,7 +79,7 @@ function, so a trained model can be used the way it will be used.
 | F4 | Verify the Kaggle one-click notebook link | done | Confirmed live 2026-09-17: kaggle.com/kernels/welcome?src=<github blob url> opens a fresh Kaggle notebook pre-loaded with dragonfarm_remote.ipynb before sign-in; the same URL shape for Colab also confirmed working. |
 | F5 | Live test of `dragon_llm_anthropic()` and `dragon_judge_anthropic()` with a real key | next | Only request shapes and fakes tested so far. |
 | F6 | Live test of `dragon_llm_ellmer()` against one provider | planned | API calls verified against ellmer 0.5, no live call yet. |
-| F7 | Persistent generation worker also serves the Try it panel (folds into C1) | planned | |
+| F7 | Persistent generation worker also serves the Try it panel (folds into C1) | done | Already true since C1 landed: `dragon_generate()` defaults to `dragon_backend()`, which defaults to `dragon_backend_local()` (the persistent worker) when no session option is set, and Try it never passes a `backend=` override. Just never marked done at the time. |
 | F8 | Windows: investigate the occasional process-start failure (exit status -1073741502) under heavy load | doing | The most common trigger identified: the local inference worker (from an earlier Try it or Chat call) still holding the GPU when a new training run starts. `launch_trainer()` now stops it first. Root cause (STATUS_DLL_INIT_FAILED racing on concurrent CUDA init) not confirmed, and the flake was never reliably reproducible to begin with. |
 
 ## G. Product and distribution

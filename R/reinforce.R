@@ -74,6 +74,15 @@ prompt_as_messages <- function(row) {
 #'   (partial credit per key).
 #' * `"length"`: 1 within `min_chars` to `max_chars`, falling to 0 beyond.
 #' * `"keyword"`: any (or all) of `words` appear.
+#' * `"command"`: runs `command` and scores the completion by its exit code
+#'   or its stdout. Common for code tasks: `command` a test suite or a
+#'   linter. Never runs through a shell, so the completion's own text
+#'   cannot inject anything into the command line: with `input = "stdin"`
+#'   (the default) the completion is piped to the command's stdin; with
+#'   `input = "file"` it is written to a temp file whose path replaces
+#'   every `"{completion_file}"` token in `command`. This reward runs on
+#'   whichever machine trains the run, so a cloud notebook needs `command`
+#'   to be available there too.
 #' * `"custom"`: a Python `file` defining `reward(prompt, completion,
 #'   reference, row)` that returns a number. The file is copied into the run
 #'   so the run stays self-contained.
@@ -87,6 +96,15 @@ prompt_as_messages <- function(row) {
 #' @param min_chars,max_chars Bounds, for `"length"`. Give at least one.
 #' @param words Words to look for, for `"keyword"`.
 #' @param mode `"any"` or `"all"` of `words`.
+#' @param command A character vector: the command and its arguments (run
+#'   directly, not through a shell), for `"command"`.
+#' @param input `"stdin"` or `"file"`, for `"command"`.
+#' @param score_from `"exit_code"` (0 means 1.0, anything else 0.0) or
+#'   `"stdout"` (the last number the command prints, rescaled from
+#'   `min_score`/`max_score` and clamped to `0` to `1`), for `"command"`.
+#' @param min_score,max_score Range that a `"stdout"` score is rescaled
+#'   from, for `"command"`.
+#' @param timeout Seconds before a `"command"` reward gives up and scores 0.
 #' @param file Python file, for `"custom"`.
 #' @param fn Name of the function inside `file`.
 #' @return A `dragon_reward` object.
@@ -96,9 +114,14 @@ prompt_as_messages <- function(row) {
 #' dragon_reward("regex", pattern = "^T-\\d{4}", weight = 2)
 #' dragon_reward("length", max_chars = 400, weight = 0.5)
 #' dragon_reward("json", keys = c("id", "status"))
-dragon_reward <- function(type = c("exact", "contains", "numeric", "regex", "json", "length", "keyword", "custom"),
+#' \dontrun{
+#' dragon_reward("command", command = c("pytest", "-q", "--tb=no"), input = "file")
+#' }
+dragon_reward <- function(type = c("exact", "contains", "numeric", "regex", "json", "length", "keyword", "command", "custom"),
                           weight = 1, name = NULL, pattern = NULL, case_sensitive = FALSE, keys = NULL,
                           min_chars = NULL, max_chars = NULL, words = NULL, mode = c("any", "all"),
+                          command = NULL, input = c("stdin", "file"), score_from = c("exit_code", "stdout"),
+                          min_score = 0, max_score = 1, timeout = 30,
                           file = NULL, fn = "reward") {
   type <- match.arg(type)
   check_number(weight, "weight", min = 0)
@@ -123,6 +146,20 @@ dragon_reward <- function(type = c("exact", "contains", "numeric", "regex", "jso
       if (!is.character(words) || !length(words)) cli::cli_abort("A {.val keyword} reward needs {.arg words}.")
       spec$words <- as.list(words)
       spec$mode <- match.arg(mode)
+    },
+    command = {
+      if (!is.character(command) || !length(command) || anyNA(command)) cli::cli_abort("A {.val command} reward needs {.arg command}, a character vector.")
+      spec$command <- as.list(command)
+      spec$input <- match.arg(input)
+      spec$score_from <- match.arg(score_from)
+      if (identical(spec$score_from, "stdout")) {
+        check_number(min_score, "min_score")
+        check_number(max_score, "max_score")
+        spec$min <- min_score
+        spec$max <- max_score
+      }
+      check_number(timeout, "timeout", min = 0)
+      spec$timeout <- timeout
     },
     custom = {
       check_string(file, "file")
@@ -253,6 +290,15 @@ reward_code <- function(spec) {
   if (!is.null(spec$max_chars)) parts <- c(parts, sprintf("max_chars = %s", fmt(spec$max_chars)))
   if (!is.null(spec$words)) parts <- c(parts, sprintf("words = %s", fmt(unlist(spec$words))))
   if (!is.null(spec$mode) && !identical(spec$mode, "any")) parts <- c(parts, sprintf("mode = %s", fmt(spec$mode)))
+  # [[ ]] rather than $: R's $ partial-matches unset "min"/"max" against
+  # "min_chars"/"max_chars" from a length reward, which produced a bogus
+  # min_score/max_score in the generated code for every other reward type.
+  if (!is.null(spec[["command"]])) parts <- c(parts, sprintf("command = %s", fmt(unlist(spec[["command"]]))))
+  if (!is.null(spec[["input"]]) && !identical(spec[["input"]], "stdin")) parts <- c(parts, sprintf("input = %s", fmt(spec[["input"]])))
+  if (!is.null(spec[["score_from"]]) && !identical(spec[["score_from"]], "exit_code")) parts <- c(parts, sprintf("score_from = %s", fmt(spec[["score_from"]])))
+  if (!is.null(spec[["min"]])) parts <- c(parts, sprintf("min_score = %s", fmt(spec[["min"]])))
+  if (!is.null(spec[["max"]])) parts <- c(parts, sprintf("max_score = %s", fmt(spec[["max"]])))
+  if (!is.null(spec[["timeout"]]) && !identical(spec[["timeout"]], 30)) parts <- c(parts, sprintf("timeout = %s", fmt(spec[["timeout"]])))
   if (!is.null(spec$file)) parts <- c(parts, sprintf("file = %s", fmt(spec$file)))
   if (!is.null(spec[["function"]]) && !identical(spec[["function"]], "reward")) parts <- c(parts, sprintf("fn = %s", fmt(spec[["function"]])))
   sprintf("dragon_reward(%s)", paste(parts, collapse = ", "))

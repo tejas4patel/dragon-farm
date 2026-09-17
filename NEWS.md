@@ -1,5 +1,11 @@
 # dragonfarm (development version)
 
+* `dragon_reward("command", command = ...)`: a reward for `dragon_reinforce()`
+  that runs a command (a test suite, a linter) against the completion and
+  scores by its exit code or a number in its stdout. Runs the command
+  directly, never through a shell, so the completion's own text cannot
+  inject anything into the command line.
+
 * The Chat tab streams replies token by token, for the local worker and for
   server backends alike, instead of showing the whole reply only once
   generation finishes. Compare mode still shows each side's full reply once

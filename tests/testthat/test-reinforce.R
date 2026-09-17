@@ -48,9 +48,22 @@ test_that("dragon_reward validates each type and prints", {
   expect_equal(dragon_reward("json", keys = c("id", "status"))$keys, list("id", "status"))
   expect_equal(dragon_reward("length", max_chars = 200)$max_chars, 200)
   expect_equal(dragon_reward("keyword", words = c("a", "b"), mode = "all")$mode, "all")
+  cmd <- dragon_reward("command", command = c("pytest", "-q"))
+  expect_equal(cmd$command, list("pytest", "-q"))
+  expect_equal(cmd$input, "stdin")
+  expect_equal(cmd$score_from, "exit_code")
+  expect_equal(cmd$timeout, 30)
+  expect_null(cmd$min)
+  out <- dragon_reward("command", command = "check.sh", input = "file", score_from = "stdout",
+                       min_score = -5, max_score = 5, timeout = 5)
+  expect_equal(out$input, "file")
+  expect_equal(out$min, -5)
+  expect_equal(out$max, 5)
+  expect_equal(out$timeout, 5)
   expect_error(dragon_reward("regex"), "pattern")
   expect_error(dragon_reward("length"), "min_chars")
   expect_error(dragon_reward("keyword"), "words")
+  expect_error(dragon_reward("command"), "command")
   expect_error(dragon_reward("custom", file = tempfile()), "does not exist")
   expect_error(dragon_reward("exact", weight = -1), "between")
   expect_error(dragon_reward("nope"))
@@ -61,6 +74,24 @@ test_that("dragon_reward validates each type and prints", {
   expect_false(inherits(specs[[1]], "dragon_reward"))
   expect_error(dragonfarm:::as_reward_specs(list("exact")), "dragon_reward")
   expect_error(dragonfarm:::as_reward_specs(NULL), "dragon_reward")
+})
+
+test_that("a command reward reproduces as code, with defaults omitted", {
+  minimal <- dragon_reward("command", command = c("pytest", "-q"))
+  expect_equal(dragonfarm:::reward_code(minimal), 'dragon_reward("command", command = c("pytest", "-q"))')
+
+  full <- dragon_reward("command", command = "check.sh", weight = 0.5, input = "file", score_from = "stdout",
+                        min_score = -1, max_score = 9, timeout = 5)
+  code <- dragonfarm:::reward_code(full)
+  expect_match(code, 'command = "check.sh"', fixed = TRUE)
+  expect_match(code, 'input = "file"', fixed = TRUE)
+  expect_match(code, 'score_from = "stdout"', fixed = TRUE)
+  expect_match(code, "min_score = -1", fixed = TRUE)
+  expect_match(code, "max_score = 9", fixed = TRUE)
+  expect_match(code, "timeout = 5", fixed = TRUE)
+  parsed <- eval(parse(text = code)[[1]])
+  expect_equal(parsed$command, full$command)
+  expect_equal(parsed$min, full$min)
 })
 
 test_that("stages refuse prompt datasets and reinforce refuses the others", {

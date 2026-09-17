@@ -6,7 +6,7 @@
 \usage{
 dragon_reward(
   type = c("exact", "contains", "numeric", "regex", "json", "length", "keyword",
-    "custom"),
+    "command", "custom"),
   weight = 1,
   name = NULL,
   pattern = NULL,
@@ -16,6 +16,12 @@ dragon_reward(
   max_chars = NULL,
   words = NULL,
   mode = c("any", "all"),
+  command = NULL,
+  input = c("stdin", "file"),
+  score_from = c("exit_code", "stdout"),
+  min_score = 0,
+  max_score = 1,
+  timeout = 30,
   file = NULL,
   fn = "reward"
 )
@@ -38,6 +44,20 @@ dragon_reward(
 \item{words}{Words to look for, for \code{"keyword"}.}
 
 \item{mode}{\code{"any"} or \code{"all"} of \code{words}.}
+
+\item{command}{A character vector: the command and its arguments (run
+directly, not through a shell), for \code{"command"}.}
+
+\item{input}{\code{"stdin"} or \code{"file"}, for \code{"command"}.}
+
+\item{score_from}{\code{"exit_code"} (0 means 1.0, anything else 0.0) or
+\code{"stdout"} (the last number the command prints, rescaled from
+\code{min_score}/\code{max_score} and clamped to \code{0} to \code{1}), for \code{"command"}.}
+
+\item{min_score, max_score}{Range that a \code{"stdout"} score is rescaled
+from, for \code{"command"}.}
+
+\item{timeout}{Seconds before a \code{"command"} reward gives up and scores 0.}
 
 \item{file}{Python file, for \code{"custom"}.}
 
@@ -63,6 +83,15 @@ learning work on small models.
 (partial credit per key).
 \item \code{"length"}: 1 within \code{min_chars} to \code{max_chars}, falling to 0 beyond.
 \item \code{"keyword"}: any (or all) of \code{words} appear.
+\item \code{"command"}: runs \code{command} and scores the completion by its exit code
+or its stdout. Common for code tasks: \code{command} a test suite or a
+linter. Never runs through a shell, so the completion's own text
+cannot inject anything into the command line: with \code{input = "stdin"}
+(the default) the completion is piped to the command's stdin; with
+\code{input = "file"} it is written to a temp file whose path replaces
+every \code{"{completion_file}"} token in \code{command}. This reward runs on
+whichever machine trains the run, so a cloud notebook needs \code{command}
+to be available there too.
 \item \code{"custom"}: a Python \code{file} defining \code{reward(prompt, completion, reference, row)} that returns a number. The file is copied into the run
 so the run stays self-contained.
 }
@@ -72,4 +101,7 @@ dragon_reward("exact")
 dragon_reward("regex", pattern = "^T-\\\\d{4}", weight = 2)
 dragon_reward("length", max_chars = 400, weight = 0.5)
 dragon_reward("json", keys = c("id", "status"))
+\dontrun{
+dragon_reward("command", command = c("pytest", "-q", "--tb=no"), input = "file")
+}
 }

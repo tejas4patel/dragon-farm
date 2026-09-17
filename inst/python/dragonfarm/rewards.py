@@ -10,7 +10,10 @@ Kept free of torch so the functions can be unit-tested directly.
 
 import importlib.util
 import json
+import os
 import re
+import subprocess
+import tempfile
 from pathlib import Path
 
 
@@ -96,6 +99,55 @@ def reward_keyword(prompt, completion, reference, row, spec):
     return 1.0 if any(hits) else 0.0
 
 
+def reward_command(prompt, completion, reference, row, spec):
+    """Run a command against the completion; common for code tasks, where
+    the command is a test suite or a linter and the reward is whether it
+    passed. Never runs through a shell, so the completion's own text can't
+    inject anything into the command line: it either goes to the command's
+    stdin (the default), or, with ``"input": "file"``, is written to a
+    temp file whose path replaces every ``"{completion_file}"`` token in
+    ``command``.
+
+    ``"score_from"``: ``"exit_code"`` (the default; 0 -> 1.0, anything else
+    -> 0.0) or ``"stdout"`` (the last number printed, linearly rescaled
+    from ``["min", "max"]`` -- default 0 to 1 -- and clamped to that range).
+    """
+    cmd = spec.get("command")
+    if not cmd:
+        raise RuntimeError("a 'command' reward needs a 'command' field")
+    if isinstance(cmd, str):
+        cmd = [cmd]
+    timeout = float(spec.get("timeout", 30))
+    tmp_path = None
+    try:
+        if spec.get("input") == "file":
+            fd, tmp_path = tempfile.mkstemp(suffix=spec.get("suffix", ".txt"))
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(completion or "")
+            cmd = [str(c).replace("{completion_file}", tmp_path) for c in cmd]
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        else:
+            proc = subprocess.run(cmd, input=completion or "", capture_output=True, text=True, timeout=timeout)
+    except (subprocess.TimeoutExpired, OSError):
+        return 0.0
+    finally:
+        if tmp_path is not None:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+    if spec.get("score_from") == "stdout":
+        n = _last_number(proc.stdout)
+        if n is None:
+            return 0.0
+        lo, hi = float(spec.get("min", 0.0)), float(spec.get("max", 1.0))
+        if hi == lo:
+            return 0.0
+        return max(0.0, min(1.0, (n - lo) / (hi - lo)))
+    return 1.0 if proc.returncode == 0 else 0.0
+
+
 def _load_custom(spec, run_dir):
     path = Path(spec["file"])
     if not path.is_absolute():
@@ -121,6 +173,7 @@ BUILTIN = {
     "json": reward_json,
     "length": reward_length,
     "keyword": reward_keyword,
+    "command": reward_command,
 }
 
 

@@ -1,8 +1,9 @@
 import json
+import sys
 import tempfile
 from pathlib import Path
 
-from dragonfarm.rewards import RewardSet
+from dragonfarm.rewards import RewardSet, reward_command
 
 
 def test_exact_contains_numeric():
@@ -82,3 +83,47 @@ def test_errors_and_score_many():
     totals, breakdown = rs.score_many(["q", "q"], ["a", "b"], ["a", "a"], [{}, {}])
     assert totals == [1.0, 0.0]
     assert breakdown == {"exact": [1.0, 0.0]}
+
+
+def test_command_reward_scores_by_exit_code_via_stdin():
+    spec = {"command": [sys.executable, "-c", "import sys; sys.exit(0 if 'PASS' in sys.stdin.read() else 1)"]}
+    assert reward_command("q", "the tests PASS here", None, {}, spec) == 1.0
+    assert reward_command("q", "nope", None, {}, spec) == 0.0
+
+    rs = RewardSet([{"type": "command", **spec, "weight": 2.0}])
+    total, parts = rs.score("q", "it will PASS", None)
+    assert parts["command"] == 1.0
+    assert total == 2.0
+
+
+def test_command_reward_scores_from_stdout_rescaled_to_min_max():
+    spec = {
+        "command": [sys.executable, "-c", "import sys; print(len(sys.stdin.read()))"],
+        "score_from": "stdout", "min": 0, "max": 10,
+    }
+    assert reward_command("q", "x" * 5, None, {}, spec) == 0.5
+    assert reward_command("q", "x" * 20, None, {}, spec) == 1.0   # clamped
+    assert reward_command("q", "", None, {}, spec) == 0.0
+
+
+def test_command_reward_writes_a_temp_file_when_input_is_file():
+    spec = {
+        "command": [sys.executable, "-c", "import sys; sys.exit(0 if open(sys.argv[1]).read() == 'hello' else 1)", "{completion_file}"],
+        "input": "file",
+    }
+    assert reward_command("q", "hello", None, {}, spec) == 1.0
+    assert reward_command("q", "goodbye", None, {}, spec) == 0.0
+
+
+def test_command_reward_handles_timeouts_and_bad_commands_and_missing_field():
+    slow = {"command": [sys.executable, "-c", "import time; time.sleep(5)"], "timeout": 0.2}
+    assert reward_command("q", "x", None, {}, slow) == 0.0
+
+    bogus = {"command": ["dragonfarm-no-such-executable-xyz"]}
+    assert reward_command("q", "x", None, {}, bogus) == 0.0
+
+    try:
+        reward_command("q", "x", None, {}, {})
+        assert False, "expected an error"
+    except RuntimeError as e:
+        assert "needs a 'command'" in str(e)
