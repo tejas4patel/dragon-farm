@@ -270,8 +270,8 @@
 <td></td>
 </tr><tr><td>F8</td>
 <td>Windows: investigate the occasional process-start failure (exit status -1073741502) under heavy load</td>
-<td>idea</td>
-<td>Seen twice when a second heavy process started during training.</td>
+<td>doing</td>
+<td>The most common trigger identified: the local inference worker (from an earlier Try it or Chat call) still holding the GPU when a new training run starts. <code>launch_trainer()</code> now stops it first. Root cause (STATUS_DLL_INIT_FAILED racing on concurrent CUDA init) not confirmed, and the flake was never reliably reproducible to begin with.</td>
 </tr></tbody></table></div>
 <div class="section level2">
 <h2 id="g-product-and-distribution">G. Product and distribution<a class="anchor" aria-label="anchor" href="#g-product-and-distribution"></a></h2>
