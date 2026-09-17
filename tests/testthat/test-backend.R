@@ -161,23 +161,34 @@ test_that("the chat module sends turns through the chosen backend", {
   })
 })
 
-test_that("compare mode sends the same turn to a second backend and keeps two histories", {
-  skip_if_not_installed("httr2")
-  # Scoped here, at the test_that() level, rather than inside testServer()'s
-  # own evaluation frame, so it is reliably torn down when this test ends
-  # and cannot leak into a later test's (unmocked) httr2 calls.
-  httr2::local_mocked_responses(function(req) {
-    body <- req$body$data
-    last <- body$messages[[length(body$messages)]]$content
-    prefix <- if (grepl("first", req$url, fixed = TRUE)) "a-says" else "b-says"
-    httr2::response_json(200, body = list(choices = list(list(message = list(role = "assistant", content = paste0(prefix, ": ", last))))))
+# A labelled stand-in for an ollama/server backend: replies name which
+# instance answered, so a test can tell the primary and second backend
+# apart. Real chat_completion() streaming can't be exercised through
+# httr2's response mocking (it only supports req_perform(), not the
+# connection-based req_perform_connection() streaming uses), so the
+# compare-mode test below mocks the backend *constructors* instead and lets
+# the rest of the module's send logic run for real.
+labeled_backend <- function(label) structure(list(kind = "fake", model = label), class = c("dragon_backend_labeled", "dragon_backend_server", "dragon_backend"))
+registerS3method("backend_generate", "dragon_backend_labeled", function(backend, target, conversations, max_new_tokens = 256,
+                                                                        temperature = 0.7, top_p = 0.9, on_token = NULL) {
+  lapply(conversations, function(msgs) {
+    last <- msgs[[length(msgs)]]$content
+    reply <- paste0(backend$model, "-says: ", last)
+    if (!is.null(on_token)) for (piece in strsplit(reply, " ")[[1]]) on_token(paste0(piece, " "))
+    trimws(reply)
   })
+}, envir = asNamespace("dragonfarm"))
+
+test_that("compare mode sends the same turn to a second backend and keeps two histories", {
+  testthat::local_mocked_bindings(
+    dragon_backend_server = function(url, model, api_key = NULL, headers = NULL) labeled_backend(model)
+  )
   runs <- tempfile("runs-")
   dir.create(runs)
   state <- shiny::reactiveValues(run = NULL)
   shiny::testServer(dragonfarm:::mod_chat_server, args = list(state = state, runs_dir = runs), {
-    session$setInputs(source = "server", server_url = "https://first/v1", server_model = "m1",
-                      source_b = "server", server_url_b = "https://second/v1", server_model_b = "m2",
+    session$setInputs(source = "server", server_url = "https://first/v1", server_model = "a",
+                      source_b = "server", server_url_b = "https://second/v1", server_model_b = "b",
                       compare = TRUE, system = "", temperature = 0, max_new_tokens = 64, text = "hello")
     session$setInputs(send = 1)
     expect_length(history(), 2)
@@ -186,7 +197,7 @@ test_that("compare mode sends the same turn to a second backend and keeps two hi
     expect_equal(history_b()[[2]]$content, "b-says: hello")
 
     title_b <- as.character(output$title_b$html)
-    expect_match(title_b, "m2")   # the second card's title mentions its model
+    expect_match(title_b, "<code>b</code>", fixed = TRUE)   # the second card's title names its model
     thread_b <- as.character(output$thread_b$html)
     expect_match(thread_b, "b-says: hello", fixed = TRUE)
     expect_false(grepl("fb-btn", thread_b))   # the comparison thread has no feedback buttons

@@ -61,13 +61,38 @@ mod_chat_ui <- function(id) {
         shiny::textAreaInput(ns("text"), NULL, rows = 2, width = "100%", placeholder = "Type a message"),
         shiny::actionButton(ns("send"), "Send", class = "btn-primary")
       )
-    )
+    ),
+    # A reply from the local worker or a server streams token by token; this
+    # writes those tokens straight into the DOM as they arrive, bypassing
+    # Shiny's own reactive flush (which only happens after $say() returns,
+    # since it runs synchronously inside the click handler). The real bubble
+    # takes over once history() updates at the end of the turn.
+    shiny::tags$script(shiny::HTML(sprintf(
+      "Shiny.addCustomMessageHandler('%s', function(msg) {
+         var bubble = document.getElementById('%s'), content = document.getElementById('%s');
+         if (!bubble || !content) return;
+         if (msg.reset) content.textContent = '';
+         if (msg.text) content.textContent += msg.text;
+         bubble.style.display = msg.hide ? 'none' : 'block';
+         bubble.scrollIntoView({block: 'end'});
+       });",
+      ns("stream"), ns("streaming_bubble"), ns("streaming_content")
+    )))
   )
 }
 
 mod_chat_server <- function(id, state, runs_dir) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
+    stream_type <- ns("stream")
+    # Pushed straight to the client, bypassing Shiny's reactive flush, so the
+    # primary reply's tokens appear as they arrive rather than all at once
+    # when $say() finally returns. reset() clears and shows the streaming
+    # bubble; a token appends to it; hide() lets the settled reply (now part
+    # of history()) take over.
+    # tryCatch: a streaming glitch (or a test session that does not support
+    # sendCustomMessage) should never break sending or receiving a reply.
+    stream_msg <- function(...) tryCatch(session$sendCustomMessage(stream_type, list(...)), error = function(e) NULL)
 
     runs <- shiny::reactivePoll(4000, session,
       checkFunc = function() {
@@ -172,9 +197,12 @@ mod_chat_server <- function(id, state, runs_dir) {
       }
       shiny::updateTextAreaInput(session, "text", value = "")
       history(c(history(), list(list(role = "user", content = text))))
+      stream_msg(reset = TRUE)
       shiny::withProgress(message = "Thinking", value = 0.5, {
-        reply <- tryCatch(ch$say(text), error = function(e) { notify_error(e); NULL })
+        reply <- tryCatch(ch$say(text, on_token = function(piece) stream_msg(text = piece)),
+                          error = function(e) { notify_error(e); NULL })
       })
+      stream_msg(hide = TRUE)
       if (is.null(reply)) {
         h <- history()
         history(h[seq_len(length(h) - 1)])   # drop the unanswered user turn
@@ -269,7 +297,10 @@ mod_chat_server <- function(id, state, runs_dir) {
 
     output$panes <- shiny::renderUI({
       primary <- bslib::card(bslib::card_header(shiny::uiOutput(ns("title"), inline = TRUE)),
-                             shiny::div(class = "chat-thread", shiny::uiOutput(ns("thread"))))
+                             shiny::div(class = "chat-thread", shiny::uiOutput(ns("thread")),
+                               shiny::div(id = ns("streaming_bubble"), class = "bubble assistant", style = "display:none;",
+                                 shiny::span(class = "role", "model"),
+                                 shiny::div(id = ns("streaming_content"), class = "content"))))
       if (!isTRUE(input$compare)) return(primary)
       bslib::layout_columns(col_widths = c(6, 6), primary,
         bslib::card(bslib::card_header(shiny::uiOutput(ns("title_b"), inline = TRUE)),
@@ -312,9 +343,12 @@ mod_chat_server <- function(id, state, runs_dir) {
         regen = {
           ch <- tryCatch(build_chat(), error = function(e) { notify_error(e); NULL })
           if (is.null(ch)) return()
+          stream_msg(reset = TRUE)
           shiny::withProgress(message = "Asking again", value = 0.5, {
-            ok <- tryCatch({ ch$regenerate(); TRUE }, error = function(e) { notify_error(e); FALSE })
+            ok <- tryCatch({ ch$regenerate(on_token = function(piece) stream_msg(text = piece)); TRUE },
+                          error = function(e) { notify_error(e); FALSE })
           })
+          stream_msg(hide = TRUE)
           if (ok) {
             history(ch$history())
             chat_obj(ch)
