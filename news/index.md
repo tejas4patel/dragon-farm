@@ -2,6 +2,11 @@
 
 ## dragonfarm (development version)
 
+- The Chat tab streams replies token by token, for the local worker and
+  for server backends alike, instead of showing the whole reply only
+  once generation finishes. Compare mode still shows each side’s full
+  reply once it lands.
+
 - Starting a training run now stops the local inference worker first, if
   one is loaded from an earlier Try it or Chat call. Two heavy
   Python/CUDA processes starting at the same moment has occasionally

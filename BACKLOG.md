@@ -41,7 +41,7 @@ section decouples where a model runs from where it trained.
 | C5 | `backend` argument on [`dragon_generate()`](https://dragonfarm.dev/reference/dragon_generate.md), judge and teacher wrappers, [`dragon_synthesize_pairs()`](https://dragonfarm.dev/reference/dragon_synthesize_pairs.md), [`dragon_judge()`](https://dragonfarm.dev/reference/dragon_judge.md); session default via `options(dragonfarm.backend)` | done | Local stays the default. |
 | C6 | Try it panel: Publish card (repo, format, private) that pushes via [`dragon_publish()`](https://dragonfarm.dev/reference/dragon_publish.md) | done | Serve-with selector (this machine, Ollama, URL) already exists as the Chat tab’s backend picker; a from-URL Try-it selector is folded into C7. |
 | C7 | `dragon_deploy()` helpers for RunPod and Modal vLLM endpoints | idea | Both have configs on this machine; wraps publish (C4) plus a template launch and returns a backend. |
-| C8 | Chat panel: multi-turn conversation with any backend, with context | planned | See section D. |
+| C8 | Chat panel: multi-turn conversation with any backend, with context | done | See section D, all done. |
 
 ## D. Chat UI with context
 
@@ -52,7 +52,7 @@ function, so a trained model can be used the way it will be used.
 |----|----|----|----|
 | D1 | `dragon_chat(backend)` in R: returns a conversation object that keeps message history; `$say()`, `$reset()`, `$history()` | done | Same message list format as training data, so transcripts can become data. |
 | D2 | Multi-turn generation in the Python worker and the server client: send the full history each turn | done | Chat templates already handle multi-turn rendering. |
-| D3 | App: Chat tab with message thread, system prompt, temperature, max tokens, backend selector, streaming replies | doing | Streaming reaches R (`on_token`); the Shiny panel shows whole replies for now. |
+| D3 | App: Chat tab with message thread, system prompt, temperature, max tokens, backend selector, streaming replies | done | Tokens are pushed to the client as they arrive (`session$sendCustomMessage`, bypassing Shiny’s own reactive flush) into a placeholder bubble; the real bubble takes over once the turn settles. Verified live for the local worker; compare mode does not stream (shows the full reply once done). |
 | D4 | Context window handling: token count per turn, warn near the model’s limit, drop or summarise oldest turns | done | `dragon_chat(context_window=)`, `$context_usage()`; drops the oldest turns (an LLM-summarizing alternative was not built). |
 | D5 | Side-by-side chat: same conversation sent to two backends or two runs (before and after a stage) | done | Compare toggle in the Chat tab; feedback stays scoped to the primary conversation. |
 | D6 | Feedback in the thread: thumbs up or down, edit a reply | done | Stored per turn with the run id. |

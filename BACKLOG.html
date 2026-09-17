@@ -147,8 +147,8 @@
 <td>Both have configs on this machine; wraps publish (C4) plus a template launch and returns a backend.</td>
 </tr><tr><td>C8</td>
 <td>Chat panel: multi-turn conversation with any backend, with context</td>
-<td>planned</td>
-<td>See section D.</td>
+<td>done</td>
+<td>See section D, all done.</td>
 </tr></tbody></table></div>
 <div class="section level2">
 <h2 id="d-chat-ui-with-context">D. Chat UI with context<a class="anchor" aria-label="anchor" href="#d-chat-ui-with-context"></a></h2>
@@ -169,8 +169,8 @@
 <td>Chat templates already handle multi-turn rendering.</td>
 </tr><tr><td>D3</td>
 <td>App: Chat tab with message thread, system prompt, temperature, max tokens, backend selector, streaming replies</td>
-<td>doing</td>
-<td>Streaming reaches R (<code>on_token</code>); the Shiny panel shows whole replies for now.</td>
+<td>done</td>
+<td>Tokens are pushed to the client as they arrive (<code>session$sendCustomMessage</code>, bypassing Shiny’s own reactive flush) into a placeholder bubble; the real bubble takes over once the turn settles. Verified live for the local worker; compare mode does not stream (shows the full reply once done).</td>
 </tr><tr><td>D4</td>
 <td>Context window handling: token count per turn, warn near the model’s limit, drop or summarise oldest turns</td>
 <td>done</td>
