@@ -217,8 +217,9 @@
 </tr><tr><td>E4</td>
 <td>
 <code><a href="reference/dragon_reinforce.html">dragon_reinforce()</a></code>: tests as rewards (run a command or Python test against the completion)</td>
-<td>idea</td>
-<td>Common for code tasks; a <code>"command"</code> reward type.</td>
+<td>done</td>
+<td>
+<code>dragon_reward("command", ...)</code>; runs the command directly (no shell), completion via stdin or a temp file, scores by exit code or a number in stdout.</td>
 </tr><tr><td>E5</td>
 <td>
 <code><a href="reference/dragon_reinforce.html">dragon_reinforce()</a></code>: optional length normalisation and reward clipping options exposed</td>
@@ -266,8 +267,8 @@
 <td>API calls verified against ellmer 0.5, no live call yet.</td>
 </tr><tr><td>F7</td>
 <td>Persistent generation worker also serves the Try it panel (folds into C1)</td>
-<td>planned</td>
-<td></td>
+<td>done</td>
+<td>Already true since C1 landed: <code><a href="reference/dragon_generate.html">dragon_generate()</a></code> defaults to <code><a href="reference/dragon_backend.html">dragon_backend()</a></code>, which defaults to <code><a href="reference/dragon_backend.html">dragon_backend_local()</a></code> (the persistent worker) when no session option is set, and Try it never passes a <code>backend=</code> override. Just never marked done at the time.</td>
 </tr><tr><td>F8</td>
 <td>Windows: investigate the occasional process-start failure (exit status -1073741502) under heavy load</td>
 <td>doing</td>

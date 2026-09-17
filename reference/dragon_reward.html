@@ -60,7 +60,7 @@ learning work on small models.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">dragon_reward</span><span class="op">(</span></span>
 <span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exact"</span>, <span class="st">"contains"</span>, <span class="st">"numeric"</span>, <span class="st">"regex"</span>, <span class="st">"json"</span>, <span class="st">"length"</span>, <span class="st">"keyword"</span>,</span>
-<span>    <span class="st">"custom"</span><span class="op">)</span>,</span>
+<span>    <span class="st">"command"</span>, <span class="st">"custom"</span><span class="op">)</span>,</span>
 <span>  weight <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pattern <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -70,6 +70,12 @@ learning work on small models.</p>
 <span>  max_chars <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  words <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"any"</span>, <span class="st">"all"</span><span class="op">)</span>,</span>
+<span>  command <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"stdin"</span>, <span class="st">"file"</span><span class="op">)</span>,</span>
+<span>  score_from <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exit_code"</span>, <span class="st">"stdout"</span><span class="op">)</span>,</span>
+<span>  min_score <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  max_score <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  timeout <span class="op">=</span> <span class="fl">30</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fn <span class="op">=</span> <span class="st">"reward"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -115,6 +121,30 @@ learning work on small models.</p>
 <dd><p><code>"any"</code> or <code>"all"</code> of <code>words</code>.</p></dd>
 
 
+<dt id="arg-command">command<a class="anchor" aria-label="anchor" href="#arg-command"></a></dt>
+<dd><p>A character vector: the command and its arguments (run
+directly, not through a shell), for <code>"command"</code>.</p></dd>
+
+
+<dt id="arg-input">input<a class="anchor" aria-label="anchor" href="#arg-input"></a></dt>
+<dd><p><code>"stdin"</code> or <code>"file"</code>, for <code>"command"</code>.</p></dd>
+
+
+<dt id="arg-score-from">score_from<a class="anchor" aria-label="anchor" href="#arg-score-from"></a></dt>
+<dd><p><code>"exit_code"</code> (0 means 1.0, anything else 0.0) or
+<code>"stdout"</code> (the last number the command prints, rescaled from
+<code>min_score</code>/<code>max_score</code> and clamped to <code>0</code> to <code>1</code>), for <code>"command"</code>.</p></dd>
+
+
+<dt id="arg-min-score-max-score">min_score, max_score<a class="anchor" aria-label="anchor" href="#arg-min-score-max-score"></a></dt>
+<dd><p>Range that a <code>"stdout"</code> score is rescaled
+from, for <code>"command"</code>.</p></dd>
+
+
+<dt id="arg-timeout">timeout<a class="anchor" aria-label="anchor" href="#arg-timeout"></a></dt>
+<dd><p>Seconds before a <code>"command"</code> reward gives up and scores 0.</p></dd>
+
+
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>
 <dd><p>Python file, for <code>"custom"</code>.</p></dd>
 
@@ -138,6 +168,15 @@ learning work on small models.</p>
 (partial credit per key).</p></li>
 <li><p><code>"length"</code>: 1 within <code>min_chars</code> to <code>max_chars</code>, falling to 0 beyond.</p></li>
 <li><p><code>"keyword"</code>: any (or all) of <code>words</code> appear.</p></li>
+<li><p><code>"command"</code>: runs <code>command</code> and scores the completion by its exit code
+or its stdout. Common for code tasks: <code>command</code> a test suite or a
+linter. Never runs through a shell, so the completion's own text
+cannot inject anything into the command line: with <code>input = "stdin"</code>
+(the default) the completion is piped to the command's stdin; with
+<code>input = "file"</code> it is written to a temp file whose path replaces
+every <code>"{completion_file}"</code> token in <code>command</code>. This reward runs on
+whichever machine trains the run, so a cloud notebook needs <code>command</code>
+to be available there too.</p></li>
 <li><p><code>"custom"</code>: a Python <code>file</code> defining <code>reward(prompt, completion, reference, row)</code> that returns a number. The file is copied into the run
 so the run stays self-contained.</p></li>
 </ul></div>
@@ -153,6 +192,9 @@ so the run stays self-contained.</p></li>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">&lt;dragon_reward&gt;</span> <span style="font-weight: bold;">length</span> (type length, weight 0.5; max_chars = 400)</span>
 <span class="r-in"><span><span class="fu">dragon_reward</span><span class="op">(</span><span class="st">"json"</span>, keys <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"status"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">&lt;dragon_reward&gt;</span> <span style="font-weight: bold;">json</span> (type json, weight 1; keys = id,status)</span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="fu">dragon_reward</span><span class="op">(</span><span class="st">"command"</span>, command <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pytest"</span>, <span class="st">"-q"</span>, <span class="st">"--tb=no"</span><span class="op">)</span>, input <span class="op">=</span> <span class="st">"file"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
