@@ -57,11 +57,11 @@ def pack(run_dir, out_dir=None) -> Path:
     return out
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("run_dir")
     ap.add_argument("--out", default=None)
-    a = ap.parse_args()
+    a = ap.parse_args(argv)
     print(pack(a.run_dir, a.out))
 
 

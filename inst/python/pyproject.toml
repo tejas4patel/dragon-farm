@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dragonfarm"
+version = "0.1.0"
+description = "Fine-tune small language models with LoRA, from Python or the dragonfarm R package."
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+license = { text = "MIT" }
+authors = [{ name = "Tejas Patel", email = "algocrat@gmail.com" }]
+keywords = ["lora", "fine-tuning", "llm", "transformers", "peft", "dpo", "grpo"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "torch>=2.4",
+  "transformers>=4.46",
+  "peft>=0.13",
+  "accelerate>=1.0",
+  "safetensors>=0.4",
+  "numpy",
+  "sentencepiece",
+  "protobuf",
+  "huggingface_hub>=0.25",
+]
+
+[project.scripts]
+dragonfarm = "dragonfarm.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/tejas4patel/dragon-farm"
+Documentation = "https://tejas4patel.github.io/dragon-farm/"
+Repository = "https://github.com/tejas4patel/dragon-farm"
+
+[tool.setuptools.packages.find]
+include = ["dragonfarm*"]
+exclude = ["tests*"]

@@ -90,7 +90,7 @@ function, so a trained model can be used the way it will be used.
 | G2 | DNS at Spaceship: A records to GitHub Pages addresses, CNAME for www | waiting | GitHub Pages already has the custom domain set. Paused on request. Until it resolves, CRAN's URL check flags the DESCRIPTION link. |
 | G3 | Move pkgdown to a subdomain if G1 chooses the product-site layout | planned | |
 | G4 | Product site (Cloudflare Pages or GitHub Pages): landing, R and Python quickstarts, cloud-GPU buttons, docs links | planned | |
-| G5 | Python package `dragonfarm` on PyPI: extract `inst/python/dragonfarm`, add CLI (`train`, `check`, `generate`, `pack`) and a Python API over the run directory | planned | Name is free on PyPI and conda-forge. |
+| G5 | Python package `dragonfarm` on PyPI: extract `inst/python/dragonfarm`, add CLI (`train`, `check`, `generate`, `pack`) and a Python API over the run directory | doing | Packaged (`inst/python/pyproject.toml`), CLI and `dragonfarm.api.Run`/`runs()` built and tested; wheel builds and installs cleanly (verified in a scratch venv). Left for the user: a PyPI account and `twine upload`. Name is free on PyPI and conda-forge. |
 | G6 | R package 0.3 depends on the PyPI package through `py_require("dragonfarm==...")`, dropping the bundled copy | planned | After G5. |
 | G7 | Gradio UI in the Python package mirroring the Shiny panels (`pip install dragonfarm[ui]`) | idea | |
 | G8 | Hosted training on dragonfarm.dev (upload data, train on Modal, download adapter) | idea | Deferred until the static site and packages have users. |

@@ -306,11 +306,11 @@ def train(run_dir: Path, status: Status, resume: bool) -> str:
     return STAGES[stage](cfg, run_dir, status, resume, hw, tok, model, cancel)
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--run-dir", required=True)
     ap.add_argument("--resume", action="store_true")
-    a = ap.parse_args()
+    a = ap.parse_args(argv)
     run_dir = Path(a.run_dir).resolve()
     status = Status(run_dir)
     status.update(state="running", pid=os.getpid(), started_at=now_iso(), finished_at=None, error=None)

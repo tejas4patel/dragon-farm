@@ -10,11 +10,11 @@ import json
 from pathlib import Path
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--request", required=True)
     ap.add_argument("--out", required=True)
-    a = ap.parse_args()
+    a = ap.parse_args(argv)
     with open(a.request, encoding="utf-8") as f:
         req = json.load(f)
 
