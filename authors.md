@@ -10,13 +10,13 @@ Source:
 [`DESCRIPTION`](https://github.com/tejas4patel/dragon-farm/blob/main/DESCRIPTION)
 
 Patel T (2026). *dragonfarm: Fine-Tune Small Language Models with LoRA
-from R*. R package version 0.3.1,
+from R*. R package version 0.3.2,
 <https://github.com/tejas4patel/dragon-farm>.
 
     @Manual{,
       title = {dragonfarm: Fine-Tune Small Language Models with LoRA from R},
       author = {Tejas Patel},
       year = {2026},
-      note = {R package version 0.3.1},
+      note = {R package version 0.3.2},
       url = {https://github.com/tejas4patel/dragon-farm},
     }
