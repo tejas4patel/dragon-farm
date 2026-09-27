@@ -1,3 +1,13 @@
+# dragonfarm 0.3.1
+
+* Fixed cloud training (`dragon_remote()` on Colab, Kaggle, Lightning AI, and
+  RunPod) failing with `ImportError: Found an incompatible version of
+  torchao`. dragonfarm never uses torchao, but recent `peft` versions probe
+  it while dispatching LoRA and raise instead of skipping when an older
+  version is already installed, which Colab and Kaggle's base images ship by
+  default. `dragon_python_requirements()` now pins `torchao>=0.16.0` so the
+  bundled `requirements.txt` installs a compatible version.
+
 # dragonfarm 0.3.0
 
 CRAN maintainers reviewed 0.1.1 and asked for several changes, folded into
