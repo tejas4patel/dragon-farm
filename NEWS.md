@@ -1,3 +1,16 @@
+# dragonfarm 0.3.3
+
+* Fixed the Shiny app's Try it, Chat, Train, and Pipeline panels sometimes
+  keeping a stale runs list until the page was reloaded -- most visibly, a
+  run that had just finished training would not appear as selectable in Try
+  it. Their `reactivePoll()`s watched only each run's own `status.json`
+  mtime, which misses a change when the file that actually matters (the
+  adapter, or a run's directory being renamed by archive/restore) is written
+  or moved without `status.json` itself changing again. All of the app's
+  run-list pollers now share `runs_change_signature()`, which changes
+  whenever any file anywhere under the runs directory is added, edited, or
+  moved.
+
 # dragonfarm 0.3.2
 
 * The 0.3.1 fix for the torchao `ImportError` on cloud GPUs (pinning

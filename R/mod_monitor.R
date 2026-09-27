@@ -66,17 +66,11 @@ mod_monitor_server <- function(id, state, runs_dir) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
     active_runs <- shiny::reactivePoll(3000, session,
-      checkFunc = function() {
-        dirs <- list.dirs(runs_dir, recursive = FALSE)
-        paste(dirs, file.info(file.path(dirs, "status.json"))$mtime, collapse = "|")
-      },
+      checkFunc = function() runs_change_signature(runs_dir),
       valueFunc = function() dragon_runs(runs_dir)
     )
     archived_runs_poll <- shiny::reactivePoll(3000, session,
-      checkFunc = function() {
-        dirs <- list.dirs(file.path(runs_dir, "archived"), recursive = FALSE)
-        paste(dirs, file.info(file.path(dirs, "status.json"))$mtime, collapse = "|")
-      },
+      checkFunc = function() runs_change_signature(file.path(runs_dir, "archived")),
       valueFunc = function() dragon_archived_runs(runs_dir)
     )
     runs <- shiny::reactive(if (isTRUE(input$show_archived)) archived_runs_poll() else active_runs())

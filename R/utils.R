@@ -126,6 +126,21 @@ estimate_tokens <- function(text) {
   as.integer(ceiling(nchar(text) / 4))
 }
 
+# Signature for a reactivePoll checkFunc: changes whenever any file anywhere
+# under a runs directory is added or modified. Watching only each run's own
+# status.json mtime missed runs finishing if the last write that mattered
+# (the adapter, say) landed a moment after status.json's own mtime was
+# already sampled, leaving a run's UI stuck showing stale choices until the
+# page was reloaded.
+runs_change_signature <- function(dir) {
+  files <- sort(list.files(dir, recursive = TRUE, full.names = TRUE))
+  if (!length(files)) return("")
+  # Full paths, not just a count, so a rename (archive/restore moves a run's
+  # files to a new path without touching their mtime) changes the signature
+  # too, not just an edited file's content would.
+  paste(files, file.info(files)$mtime, collapse = "|")
+}
+
 hf_token_present <- function() {
   nzchar(Sys.getenv("HF_TOKEN")) || nzchar(Sys.getenv("HUGGING_FACE_HUB_TOKEN")) ||
     file.exists(file.path(Sys.getenv("HF_HOME", file.path(path.expand("~"), ".cache", "huggingface")), "token")) ||

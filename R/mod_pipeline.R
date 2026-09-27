@@ -142,10 +142,7 @@ mod_pipeline_server <- function(id, state, runs_dir) {
     })
 
     runs <- shiny::reactivePoll(3000, session,
-      checkFunc = function() {
-        dirs <- list.dirs(runs_dir, recursive = FALSE)
-        paste(dirs, file.info(file.path(dirs, "status.json"))$mtime, collapse = "|")
-      },
+      checkFunc = function() runs_change_signature(runs_dir),
       valueFunc = function() tryCatch(dragon_compare(runs_dir = runs_dir), error = function(e) NULL)
     )
 
