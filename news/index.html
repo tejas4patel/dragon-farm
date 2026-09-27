@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">dragonfarm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,6 +39,10 @@
       <small>Source: <a href="https://github.com/tejas4patel/dragon-farm/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.1" id="dragonfarm-031">dragonfarm 0.3.1<a class="anchor" aria-label="anchor" href="#dragonfarm-031"></a></h2>
+<ul><li>Fixed cloud training (<code><a href="../reference/dragon_remote.html">dragon_remote()</a></code> on Colab, Kaggle, Lightning AI, and RunPod) failing with <code>ImportError: Found an incompatible version of torchao</code>. dragonfarm never uses torchao, but recent <code>peft</code> versions probe it while dispatching LoRA and raise instead of skipping when an older version is already installed, which Colab and Kaggle’s base images ship by default. <code><a href="../reference/dragon_python_requirements.html">dragon_python_requirements()</a></code> now pins <code>torchao&gt;=0.16.0</code> so the bundled <code>requirements.txt</code> installs a compatible version.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="dragonfarm-030">dragonfarm 0.3.0<a class="anchor" aria-label="anchor" href="#dragonfarm-030"></a></h2>
 <p>CRAN maintainers reviewed 0.1.1 and asked for several changes, folded into this release along with everything added since 0.2.0:</p>
