@@ -1,3 +1,17 @@
+# dragonfarm 0.3.2
+
+* The 0.3.1 fix for the torchao `ImportError` on cloud GPUs (pinning
+  `torchao>=0.16.0` in requirements) turned out not to be reliably honored on
+  Colab's and Kaggle's preinstalled environment (pip reported success but the
+  old 0.10.0 build was still what got imported). The requirements pin is
+  reverted, and the shared remote notebook (`inst/remote/dragonfarm_remote.ipynb`,
+  used by `dragon_remote()` for Colab, Kaggle, Lightning AI, and RunPod) now
+  explicitly uninstalls torchao after installing the trainer's requirements.
+  dragonfarm never imports torchao itself, and peft's LoRA dispatch skips its
+  torchao check cleanly when the package is entirely absent rather than
+  present at an old version, so removing it sidesteps the problem instead of
+  depending on pip to upgrade it in place.
+
 # dragonfarm 0.3.1
 
 * Fixed cloud training (`dragon_remote()` on Colab, Kaggle, Lightning AI, and

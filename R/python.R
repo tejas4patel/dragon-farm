@@ -18,11 +18,7 @@ dragon_python_requirements <- function() {
       "numpy",
       "sentencepiece",
       "protobuf",
-      "huggingface_hub>=0.25",
-      # Not used directly, but peft's LoRA dispatch probes torchao and raises
-      # (instead of skipping) if an older version is already present, which
-      # cloud notebook images (Colab, Kaggle) ship by default.
-      "torchao>=0.16.0"
+      "huggingface_hub>=0.25"
     ),
     python_version = ">=3.10,<3.14"
   )
