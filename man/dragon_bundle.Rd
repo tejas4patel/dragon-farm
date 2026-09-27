@@ -78,7 +78,7 @@ Continue with \code{\link[=dragon_remote]{dragon_remote()}} to open a provider a
 \code{\link[=dragon_import]{dragon_import()}} to bring the results back into this run directory.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 run <- dragon_dataset(dragon_example_data()) |>
   dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
   dragon_bundle("Qwen/Qwen2.5-0.5B-Instruct")

@@ -33,7 +33,7 @@ queued or running (cancel it first) and a run that another run
 continues from, unless \code{force = TRUE}.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 dragon_archive_run(run)
 dragon_archived_runs()
 dragon_unarchive_run(run$id)

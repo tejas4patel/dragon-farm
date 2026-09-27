@@ -16,7 +16,7 @@ GPU memory, and whether a Hugging Face token is configured. Run this first
 on a new machine.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 dragon_check()
 }
 }

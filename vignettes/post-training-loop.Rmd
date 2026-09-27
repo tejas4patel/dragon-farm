@@ -35,7 +35,7 @@ stage adds its own.
 
 ## 1. Fine-tune
 
-```{r}
+```{r, purl = FALSE}
 library(dragonfarm)
 
 tickets <- dragon_dataset(dragon_example_data()) |>
@@ -49,7 +49,7 @@ If the data is thin, let a stronger model write the replies first.
 `dragon_synthesize()` asks a teacher to answer your prompts and returns a
 mapped dataset:
 
-```{r}
+```{r, purl = FALSE}
 persona <- "You are a concise, warm support agent for a smart-home company."
 teacher <- dragon_llm_anthropic(system = persona)   # reads ANTHROPIC_API_KEY
 synth <- dragon_synthesize(tickets, teacher, system = persona)
@@ -64,7 +64,7 @@ a local model by id, a finished run, or any function from prompts to replies.
 Held-out loss says the model learned the data. It does not say the replies
 got better. Two more views:
 
-```{r}
+```{r, purl = FALSE}
 dragon_evaluate(sft, metrics = c("token_f1", "length_ratio"))
 ```
 
@@ -72,7 +72,7 @@ Task metrics are deterministic checks over every held-out row: exact match,
 containment, token overlap, JSON validity, numeric answers, length. Add your
 own as functions of `(generated, reference, prompt)`.
 
-```{r}
+```{r, purl = FALSE}
 judge <- dragon_judge_anthropic(model = "claude-sonnet-5")
 dragon_judge(sft, judge = judge,
              rubric = "Reward replies that give concrete next steps and stay under 120 words.")
@@ -89,7 +89,7 @@ works as a judge too: `judge = "Qwen/Qwen2.5-1.5B-Instruct"`.
 Preference optimization needs, per prompt, a better and a worse reply. You
 do not have to write them:
 
-```{r}
+```{r, purl = FALSE}
 pairs <- dragon_synthesize_pairs(
   dragon_prompts(sft, "train", n = 200),   # prompts the run already has
   student = sft, judge = judge,
@@ -109,7 +109,7 @@ If a teacher is clearly stronger than the student, skip the judge: pass
 
 ## 4. Preference-optimize on top of the fine-tune
 
-```{r}
+```{r, purl = FALSE}
 dpo <- dragon_prefer(pairs, sft, method = "dpo", beta = 0.1, wait = TRUE)
 dragon_evaluate(dpo)   # preference accuracy and reward margin on held-out pairs
 ```
@@ -122,7 +122,7 @@ pushed; 0.1 is a sensible start for both.
 
 ## 5. Compare, then go around again
 
-```{r}
+```{r, purl = FALSE}
 dragon_judge(dpo, against = "base", judge = judge)   # DPO run versus the fine-tune it started from
 dragon_compare()                                     # every run, side by side
 ```
@@ -133,7 +133,7 @@ Two or three rounds are typical before the gains flatten.
 
 ## The same loop in one call
 
-```{r}
+```{r, purl = FALSE}
 p <- dragon_pipeline("Qwen/Qwen2.5-0.5B-Instruct", list(
   dragon_step_train(tickets),
   dragon_step_synthesize_pairs(prompts = "train", n = 200, judge = judge),
@@ -151,7 +151,7 @@ app's Pipeline panel or another session.
 
 ## Talk to the result
 
-```{r}
+```{r, purl = FALSE}
 chat <- dragon_chat(dpo, system = persona)
 chat$say("My thermostat keeps dropping off Wi-Fi.")
 chat$say("I tried that already. What else?")   # the model sees the first exchange

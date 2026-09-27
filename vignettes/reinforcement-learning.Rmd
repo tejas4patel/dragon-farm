@@ -41,7 +41,7 @@ Rows carry a prompt and, optionally, a reference answer for rewards that
 compare against one. Every other column travels along as `fields` for custom
 rewards.
 
-```{r}
+```{r, purl = FALSE}
 library(dragonfarm)
 
 a <- sample(10:999, 400, replace = TRUE)
@@ -58,7 +58,7 @@ dragon_preview(prompts, n = 1)
 
 `dragon_reward()` builds one reward; a list of them is summed by weight.
 
-```{r}
+```{r, purl = FALSE}
 rewards <- list(
   dragon_reward("numeric"),                            # last number equals the reference
   dragon_reward("length", max_chars = 12, weight = 0.3) # keep it terse
@@ -70,7 +70,7 @@ The built-ins: `"exact"`, `"contains"`, `"numeric"`, `"regex"` (with
 `"length"` (with `min_chars` and `max_chars`), and `"keyword"` (with `words`
 and `mode`). For anything else, `"custom"` points at a Python file:
 
-```{r}
+```{r, purl = FALSE}
 writeLines(c(
   "def reward(prompt, completion, reference, row):",
   "    # 1.0 when the reply mentions the product named in the row",
@@ -87,7 +87,7 @@ with the cloud bundle.
 Start from a fine-tuned run when you have one; the RL stage folds its
 adapters in before adding its own.
 
-```{r}
+```{r, purl = FALSE}
 rl <- dragon_reinforce(
   prompts, sft,                    # or a model id such as "Qwen/Qwen2.5-0.5B-Instruct"
   rewards = rewards,
@@ -105,7 +105,7 @@ one optimizer step. Sampling dominates the cost, so short `max_new_tokens`
 and modest `group_size` keep steps fast. Progress rows carry `reward`,
 `reward_std`, `kl`, and `completion_len`, plus one column per reward:
 
-```{r}
+```{r, purl = FALSE}
 dragon_progress(rl)[, c("step", "reward", "reward_numeric", "reward_length", "kl", "completion_len")]
 ```
 
@@ -113,7 +113,7 @@ The Monitor panel plots mean reward on a second axis next to the loss.
 
 ## Read the result
 
-```{r}
+```{r, purl = FALSE}
 dragon_evaluate(rl)   # mean held-out reward, per reward
 dragon_generate(rl, "What is 417 + 285? Reply with just the number.", temperature = 0)
 dragon_compare(sft, rl)
@@ -147,7 +147,7 @@ Reinforcement learning is a stage like the others. A typical order is
 fine-tune, then preference optimization for style, then RL for a
 verifiable target, and each starts from the previous run. In a pipeline:
 
-```{r}
+```{r, purl = FALSE}
 dragon_pipeline("Qwen/Qwen2.5-0.5B-Instruct", list(
   dragon_step_train(tickets),
   dragon_step_reinforce(prompts, rewards = rewards, group_size = 6, max_new_tokens = 16),

@@ -95,7 +95,7 @@ Pass a finished run as \code{model} to continue from it, which is the usual
 order: \code{\link[=dragon_train]{dragon_train()}}, optionally \code{\link[=dragon_prefer]{dragon_prefer()}}, then this.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 math <- dragon_dataset("arithmetic.csv") |>
   dragon_map_prompts(prompt = "question", reference = "answer")
 rl <- dragon_reinforce(

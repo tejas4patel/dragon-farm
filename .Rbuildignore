@@ -16,3 +16,5 @@
 ^cran-comments\.md$
 ^CRAN-SUBMISSION$
 ^BACKLOG\.md$
+^.*\.Rcheck$
+^dragonfarm_.*\.tar\.gz$

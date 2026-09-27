@@ -121,7 +121,7 @@ remote_notebook_source <- function() {
 #' @return A `dragon_run` whose state is `"bundled"`.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' run <- dragon_dataset(dragon_example_data()) |>
 #'   dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
 #'   dragon_bundle("Qwen/Qwen2.5-0.5B-Instruct")
@@ -345,7 +345,7 @@ remote_readme <- function(run, paths = bundle_paths(run)) {
 #'   zip), and `steps` (a character vector).
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' dragon_remote(run, "kaggle")
 #' }
 dragon_remote <- function(run, provider = c("colab", "kaggle", "lightning", "runpod"),
@@ -390,7 +390,7 @@ dragon_remote <- function(run, provider = c("colab", "kaggle", "lightning", "run
 #' @return The run, invisibly.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' dragon_import(run, "~/Downloads/dragonfarm-results-20260914-101500-qwen2-5-0-5b-instruct.zip")
 #' }
 dragon_import <- function(run, results) {

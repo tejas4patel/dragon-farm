@@ -44,7 +44,7 @@ teachers made with \code{\link[=dragon_llm_anthropic]{dragon_llm_anthropic()}} o
 \code{ellmer} chat objects are not.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 p <- dragon_pipeline("Qwen/Qwen2.5-0.5B-Instruct", list(
   dragon_step_train(tickets),
   dragon_step_synthesize_pairs(judge = dragon_judge_anthropic(model = "claude-sonnet-5")),

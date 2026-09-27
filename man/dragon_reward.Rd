@@ -101,7 +101,7 @@ dragon_reward("exact")
 dragon_reward("regex", pattern = "^T-\\\\d{4}", weight = 2)
 dragon_reward("length", max_chars = 400, weight = 0.5)
 dragon_reward("json", keys = c("id", "status"))
-\dontrun{
+if (interactive()) {
 dragon_reward("command", command = c("pytest", "-q", "--tb=no"), input = "file")
 }
 }

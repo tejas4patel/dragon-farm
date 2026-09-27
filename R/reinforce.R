@@ -114,7 +114,7 @@ prompt_as_messages <- function(row) {
 #' dragon_reward("regex", pattern = "^T-\\d{4}", weight = 2)
 #' dragon_reward("length", max_chars = 400, weight = 0.5)
 #' dragon_reward("json", keys = c("id", "status"))
-#' \dontrun{
+#' if (interactive()) {
 #' dragon_reward("command", command = c("pytest", "-q", "--tb=no"), input = "file")
 #' }
 dragon_reward <- function(type = c("exact", "contains", "numeric", "regex", "json", "length", "keyword", "command", "custom"),
@@ -242,7 +242,7 @@ localize_rewards <- function(specs, run_dir) {
 #' @return A `dragon_run` object.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' math <- dragon_dataset("arithmetic.csv") |>
 #'   dragon_map_prompts(prompt = "question", reference = "answer")
 #' rl <- dragon_reinforce(

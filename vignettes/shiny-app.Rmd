@@ -11,7 +11,7 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-```{r}
+```{r, purl = FALSE}
 library(dragonfarm)
 dragon_app()
 ```
@@ -79,7 +79,7 @@ such as shinyapps.io, can run the app but training will be CPU only.
 
 Set the runs directory so every session sees the same runs:
 
-```{r}
+```{r, purl = FALSE}
 dragon_app(runs_dir = "/srv/dragonfarm/runs", host = "0.0.0.0", port = 3838)
 ```
 

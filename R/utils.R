@@ -11,6 +11,21 @@ now_iso <- function() format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
 
 empty_object <- function() structure(list(), names = character(0))
 
+# Sample n indices from seq_len(total), sorted, deterministically for a
+# given seed, without disturbing the caller's own RNG stream. Delegates the
+# save-and-restore of .Random.seed to withr so dragonfarm's own source never
+# touches .GlobalEnv directly.
+seeded_sample_idx <- function(total, n, seed) {
+  withr::with_seed(seed, sort(sample.int(total, n)))
+}
+
+# Appends a line to a run's log file (never the console).
+append_log <- function(path, text) {
+  con <- file(path, open = "a", encoding = "UTF-8")
+  on.exit(close(con))
+  writeLines(text, con)
+}
+
 read_jsonl <- function(path) {
   if (!file.exists(path)) return(list())
   lines <- readLines(path, warn = FALSE, encoding = "UTF-8")

@@ -67,7 +67,7 @@ message format as training data, so a good conversation can become an
 example.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 chat <- dragon_chat(run, system = "You are a concise support agent.")
 chat$say("My thermostat keeps dropping off Wi-Fi.")
 chat$say("I tried that. What else?")   # the model sees the first exchange

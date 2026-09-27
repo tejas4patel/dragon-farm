@@ -84,7 +84,7 @@ The result is saved as JSONL and returned as a dataset mapped with
 the student run itself.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 # Close the loop: sample from the fine-tuned run, let a judge rank, train DPO on the result.
 pairs <- dragon_synthesize_pairs(dragon_prompts(sft, "train", n = 200), student = sft,
                                  judge = dragon_judge_anthropic(model = "claude-sonnet-5"))

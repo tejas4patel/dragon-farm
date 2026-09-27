@@ -97,7 +97,7 @@ python_failure_message <- function(res, what) {
 #' @return Invisibly, a list of the collected facts.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' dragon_check()
 #' }
 dragon_check <- function() {

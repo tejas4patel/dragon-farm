@@ -96,12 +96,7 @@ dragon_prompts <- function(run, split = c("eval", "train"), n = Inf, seed = 42) 
   }
   prompts <- prompts[!is.na(prompts) & nzchar(prompts)]
   if (is.finite(n) && length(prompts) > n) {
-    idx <- local({
-      old <- if (exists(".Random.seed", envir = globalenv())) get(".Random.seed", envir = globalenv()) else NULL
-      on.exit(if (!is.null(old)) assign(".Random.seed", old, envir = globalenv()))
-      set.seed(seed)
-      sort(sample.int(length(prompts), n))
-    })
+    idx <- seeded_sample_idx(length(prompts), n, seed)
     prompts <- prompts[idx]
   }
   prompts
@@ -248,7 +243,7 @@ quality_filter <- function(df, prompt_col, response_col, dedupe = TRUE, near_dup
 #'   down what the quality pass (and the judge, if used) removed.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' tickets <- dragon_dataset("tickets.csv") |>
 #'   dragon_map(prompt = "{subject}\n\n{body}", response = "reply")
 #' persona <- "You are a concise, warm support agent for a smart-home company."
@@ -346,7 +341,7 @@ dragon_synthesize <- function(prompts, teacher, system = NULL, max_new_tokens = 
 #'   file also records `chosen_score` and `rejected_score`.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' # Close the loop: sample from the fine-tuned run, let a judge rank, train DPO on the result.
 #' pairs <- dragon_synthesize_pairs(dragon_prompts(sft, "train", n = 200), student = sft,
 #'                                  judge = dragon_judge_anthropic(model = "claude-sonnet-5"))

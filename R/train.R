@@ -26,7 +26,7 @@
 #' @return A `dragon_run` object.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' run <- dragon_dataset(dragon_example_data()) |>
 #'   dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
 #'   dragon_train("HuggingFaceTB/SmolLM2-135M-Instruct", wait = TRUE)
@@ -202,7 +202,7 @@ dragon_resume <- function(run, wait = FALSE) {
   st$error <- NULL
   st$finished_at <- NULL
   write_json(st, run_path(run, "status.json"))
-  cat(sprintf("\n[dragonfarm] ---- resumed %s ----\n", now_iso()), file = run_path(run, "log.txt"), append = TRUE)
+  append_log(run_path(run, "log.txt"), sprintf("\n[dragonfarm] ---- resumed %s ----", now_iso()))
   run <- launch_trainer(run$dir, resume = TRUE)
   cli::cli_alert_success("Resumed run {.strong {run$id}}.")
   if (wait) dragon_wait(run) else run

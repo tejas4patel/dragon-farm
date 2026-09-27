@@ -35,7 +35,7 @@ backend points \code{\link[=dragon_generate]{dragon_generate()}} and \code{\link
 Needs the \code{ollama} command on the PATH and the Ollama service running.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 backend <- dragon_serve_ollama(run)
 options(dragonfarm.backend = backend)
 dragon_chat(run)$say("Hello")

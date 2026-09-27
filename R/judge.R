@@ -37,7 +37,7 @@
 #'   `details` (one row per prompt).
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' # Did preference optimization help? Compare the DPO run with the SFT run it started from.
 #' j <- dragon_judge(dpo, against = "base", judge = dragon_judge_anthropic())
 #' j$summary
@@ -132,12 +132,7 @@ eval_prompts <- function(run, prompts, n, seed, split = "eval") {
   prompts <- prompts[keep]
   refs <- refs[keep]
   if (length(prompts) > n) {
-    idx <- local({
-      old <- if (exists(".Random.seed", envir = globalenv())) get(".Random.seed", envir = globalenv()) else NULL
-      on.exit(if (!is.null(old)) assign(".Random.seed", old, envir = globalenv()))
-      set.seed(seed)
-      sort(sample.int(length(prompts), n))
-    })
+    idx <- seeded_sample_idx(length(prompts), n, seed)
     prompts <- prompts[idx]
     refs <- refs[idx]
   }
@@ -184,7 +179,7 @@ as_judge <- function(judge) {
 #'   [dragon_synthesize_pairs()].
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' teacher <- dragon_llm_anthropic(system = "You are a concise support agent.")
 #' teacher(c("My thermostat drops off Wi-Fi.", "Invoice total looks wrong."))
 #' }

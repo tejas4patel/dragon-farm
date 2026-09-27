@@ -24,7 +24,7 @@ Afterwards \code{\link[=dragon_status]{dragon_status()}}, \code{\link[=dragon_pr
 locally.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 dragon_import(run, "~/Downloads/dragonfarm-results-20260914-101500-qwen2-5-0-5b-instruct.zip")
 }
 }

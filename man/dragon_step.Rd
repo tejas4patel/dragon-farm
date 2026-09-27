@@ -101,7 +101,7 @@ evaluate steps measure the most recent run, and a merge step writes it
 out as a standalone model.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 steps <- list(
   dragon_step_train(tickets),
   dragon_step_synthesize_pairs(prompts = "train", n = 150, judge = dragon_judge_anthropic()),

@@ -64,7 +64,7 @@ with a system prompt that asks for JSON-only answers, which
 \code{\link[=dragon_judge]{dragon_judge()}} and \code{\link[=dragon_synthesize_pairs]{dragon_synthesize_pairs()}} need.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 teacher <- dragon_llm_anthropic(system = "You are a concise support agent.")
 teacher(c("My thermostat drops off Wi-Fi.", "Invoice total looks wrong."))
 }

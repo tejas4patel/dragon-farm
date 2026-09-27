@@ -7,8 +7,6 @@ model to answer in your format and your domain, and gives you back an adapter
 or a merged model that loads with plain Hugging Face `transformers`. Training
 runs in a background Python process that the package sets up for you.
 
-Documentation: <https://dragonfarm.dev>
-
 ## Install
 
 ```r
@@ -46,6 +44,21 @@ Run `dragon_check()` after installing. It reports the device it will train
 on, and if that is the CPU on a machine with an NVIDIA GPU it says why (no
 driver, a driver too old for the installed torch, or a CPU-only torch build)
 and prints the one-line fix.
+
+**Where runs are stored.** By default a run's files (adapter, checkpoints,
+data, logs) go under a `dragonfarm_runs` folder inside a session temp
+directory, so a fresh R session never writes to your working directory or
+home filespace on its own; that folder disappears when the session ends.
+For runs you want to keep, set a real location once per project, before
+training anything:
+
+```r
+options(dragonfarm.runs_dir = "~/dragonfarm_runs")   # or any path you like
+```
+
+or set the `DRAGONFARM_RUNS_DIR` environment variable, or pass `runs_dir =`
+to `dragon_train()`, `dragon_bundle()`, `dragon_app()`, and the rest
+directly. See `?dragon_runs_dir`.
 
 ## The five-line version
 
@@ -334,7 +347,7 @@ The Python side has its own tests: `PYTHONPATH=inst/python python inst/python/te
 |---|---|
 | `DRAGONFARM_PYTHON` | Use this interpreter instead of the one reticulate builds. It must already have the packages from `dragon_python_requirements()`. |
 | `DRAGONFARM_TORCH_INDEX` | Windows only. `auto` (default) selects the CUDA wheel index matching your NVIDIA driver on first Python use. Set to `""` to use PyPI's CPU build, or to another index URL. |
-| `DRAGONFARM_RUNS_DIR` | Where runs are stored. Default `dragonfarm_runs`. |
+| `DRAGONFARM_RUNS_DIR` | Where runs are stored. Defaults to `dragonfarm_runs` under a session temp directory; see [Requirements](#requirements) for a persistent location. |
 | `HF_TOKEN` | Hugging Face token for gated models. |
 | `LLAMA_CPP_DIR` | A llama.cpp checkout, for `dragon_export_gguf()`. |
 

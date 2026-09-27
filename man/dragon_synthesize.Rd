@@ -94,7 +94,7 @@ weaker answers. The result is saved as JSONL and returned as a mapped
 dataset ready for \code{\link[=dragon_train]{dragon_train()}}.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 tickets <- dragon_dataset("tickets.csv") |>
   dragon_map(prompt = "{subject}\n\n{body}", response = "reply")
 persona <- "You are a concise, warm support agent for a smart-home company."

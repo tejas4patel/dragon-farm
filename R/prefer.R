@@ -31,7 +31,7 @@
 #' @return A `dragon_run` object.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' sft <- dragon_dataset("tickets.csv") |>
 #'   dragon_map(prompt = "question", response = "answer") |>
 #'   dragon_train("Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)

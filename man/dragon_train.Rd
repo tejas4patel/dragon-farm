@@ -60,7 +60,7 @@ process. Returns immediately unless \code{wait = TRUE}. The run survives the R
 session; reopen it later with \code{\link[=dragon_run]{dragon_run()}}.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 run <- dragon_dataset(dragon_example_data()) |>
   dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
   dragon_train("HuggingFaceTB/SmolLM2-135M-Instruct", wait = TRUE)

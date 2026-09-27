@@ -36,7 +36,7 @@
 #'   `$as_example()` returns the conversation as one training row.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' chat <- dragon_chat(run, system = "You are a concise support agent.")
 #' chat$say("My thermostat keeps dropping off Wi-Fi.")
 #' chat$say("I tried that. What else?")   # the model sees the first exchange

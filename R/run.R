@@ -1,13 +1,22 @@
 #' Directory where runs are stored
 #'
-#' Defaults to `dragonfarm_runs` under the working directory. Override with
-#' `options(dragonfarm.runs_dir = ...)` or the `DRAGONFARM_RUNS_DIR`
-#' environment variable.
+#' Every function that writes a run (`dragon_train()`, `dragon_bundle()`,
+#' the app, and so on) takes a `runs_dir` argument that defaults to this.
+#' Without configuration it resolves to a `dragonfarm_runs` folder under a
+#' session temp directory, so a fresh R session never writes to your
+#' working directory or home filespace by default; that folder disappears
+#' once the session ends. For runs you want to keep, set a real location
+#' once with `options(dragonfarm.runs_dir = "path/to/dragonfarm_runs")` or
+#' the `DRAGONFARM_RUNS_DIR` environment variable, or pass `runs_dir=` to
+#' the function you're calling.
 #'
 #' @return A path.
 #' @export
+#' @examples
+#' dragon_runs_dir()
+#' withr::with_options(list(dragonfarm.runs_dir = "~/dragonfarm_runs"), dragon_runs_dir())
 dragon_runs_dir <- function() {
-  getOption("dragonfarm.runs_dir", Sys.getenv("DRAGONFARM_RUNS_DIR", unset = "dragonfarm_runs"))
+  getOption("dragonfarm.runs_dir", Sys.getenv("DRAGONFARM_RUNS_DIR", unset = file.path(tempdir(), "dragonfarm_runs")))
 }
 
 new_run <- function(dir, process = NULL) {
@@ -155,7 +164,7 @@ resolve_run_for_removal <- function(run, runs_dir, force) {
 #' @return The run id, invisibly.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' dragon_archive_run(run)
 #' dragon_archived_runs()
 #' dragon_unarchive_run(run$id)

@@ -23,7 +23,7 @@ Every run started here is a normal run directory, and the Monitor panel
 shows the R code that reproduces it.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 dragon_app()
 }
 }

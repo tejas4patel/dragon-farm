@@ -54,7 +54,7 @@ with Ollama on this machine.
 }
 }
 \examples{
-\dontrun{
+if (interactive()) {
 options(dragonfarm.backend = dragon_backend_ollama("support-0.5b"))
 dragon_generate(run, "My thermostat keeps dropping off Wi-Fi.")
 

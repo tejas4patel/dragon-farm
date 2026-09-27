@@ -12,7 +12,7 @@
 #' @return A Shiny app object. Printing it runs the app.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' dragon_app()
 #' }
 dragon_app <- function(runs_dir = dragon_runs_dir(), ...) {

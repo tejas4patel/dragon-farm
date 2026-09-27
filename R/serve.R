@@ -16,7 +16,7 @@
 #' @return A `dragon_backend` for the served model.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' backend <- dragon_serve_ollama(run)
 #' options(dragonfarm.backend = backend)
 #' dragon_chat(run)$say("Hello")

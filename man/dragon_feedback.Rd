@@ -34,7 +34,7 @@ Both are written as JSONL under \verb{feedback/} so runs trained on them stay
 reproducible through \code{\link[=dragon_code]{dragon_code()}}.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 fb <- dragon_feedback()
 fb$records
 better <- dragon_train(fb$sft, dpo, wait = TRUE)       # continue from the run people chatted with

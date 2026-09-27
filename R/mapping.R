@@ -148,13 +148,7 @@ dragon_split <- function(dataset, eval_frac = 0.05, seed = 42) {
   n_eval <- floor(n * eval_frac)
   eval_idx <- integer()
   if (n_eval > 0) {
-    withr_seed <- function(code) {
-      old <- if (exists(".Random.seed", envir = globalenv())) get(".Random.seed", envir = globalenv()) else NULL
-      on.exit(if (!is.null(old)) assign(".Random.seed", old, envir = globalenv()))
-      set.seed(seed)
-      code
-    }
-    eval_idx <- withr_seed(sort(sample.int(n, n_eval)))
+    eval_idx <- seeded_sample_idx(n, n_eval, seed)
   }
   dataset$split <- list(eval_frac = eval_frac, seed = seed, eval_idx = eval_idx)
   dataset

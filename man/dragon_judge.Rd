@@ -61,7 +61,7 @@ directory and the summary is recorded in the run's status, where
 \code{\link[=dragon_compare]{dragon_compare()}} picks it up.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 # Did preference optimization help? Compare the DPO run with the SFT run it started from.
 j <- dragon_judge(dpo, against = "base", judge = dragon_judge_anthropic())
 j$summary

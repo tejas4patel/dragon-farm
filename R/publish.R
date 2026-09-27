@@ -18,7 +18,7 @@
 #' @return The repo URL, invisibly.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' dragon_publish(run, "yourname/support-agent-0.5b")
 #' dragon_publish(run, "yourname/support-agent-0.5b-adapter", what = "adapter")
 #' }

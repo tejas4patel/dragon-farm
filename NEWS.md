@@ -1,4 +1,35 @@
-# dragonfarm (development version)
+# dragonfarm 0.3.0
+
+CRAN maintainers reviewed 0.1.1 and asked for several changes, folded into
+this release along with everything added since 0.2.0:
+
+* **Where runs are stored by default has changed.** `dragon_runs_dir()` used
+  to default to `dragonfarm_runs` under the working directory; a package
+  must not write there without being asked. It now defaults to
+  `dragonfarm_runs` under a session temp directory, so a fresh R session
+  never writes to your project or home folder on its own, and that folder
+  disappears when the session ends. For runs you want to keep, set
+  `options(dragonfarm.runs_dir = "path/to/dragonfarm_runs")` or the
+  `DRAGONFARM_RUNS_DIR` environment variable once, or pass `runs_dir=` to
+  the function you're calling. See `?dragon_runs_dir` and the README.
+* Fixed three places (`dragon_judge()`, `dragon_split()`,
+  `dragon_synthesize()`/`dragon_prompts()`) that saved and restored
+  `.Random.seed` by hand for a seeded sample; they now use
+  `withr::with_seed()`, which does the same thing without dragonfarm's own
+  code touching `.GlobalEnv`. `withr` moved from Suggests to Imports.
+  `dragon_resume()`'s log line now goes through a small file-append helper
+  rather than `cat()`.
+* Examples that need Python, a GPU, or a model download now use
+  `if (interactive())` instead of `\dontrun{}`, so `R CMD check` at least
+  parses them; they still don't run during checks or on CRAN's servers.
+* Package and software names in the `Title` and `Description` fields are
+  now quoted and cased correctly (`'Python'`, `'shiny'`), and quotes were
+  removed from `LoRA`, which is a technique name, not a package.
+* Added `testthat`-based tests for the three app modules (Data, Model, Try
+  it) that had none, covering their server logic without needing a real
+  Shiny session, Python, or a GPU.
+
+## Everything else added since 0.2.0
 
 * `dragon_reward("command", command = ...)`: a reward for `dragon_reinforce()`
   that runs a command (a test suite, a linter) against the completion and

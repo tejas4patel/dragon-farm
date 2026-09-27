@@ -22,7 +22,7 @@ accuracy, task metrics from \code{\link[=dragon_evaluate]{dragon_evaluate()}}, a
 result from \code{\link[=dragon_judge]{dragon_judge()}}. Runs that lack a measurement show \code{NA}.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 dragon_compare()                 # everything in the runs directory
 dragon_compare(sft, dpo)         # two specific runs
 }

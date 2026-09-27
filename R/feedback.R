@@ -51,7 +51,7 @@ context_key <- function(system, context) {
 #'   `sft` (dataset or `NULL`), and `pairs` (dataset or `NULL`).
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' fb <- dragon_feedback()
 #' fb$records
 #' better <- dragon_train(fb$sft, dpo, wait = TRUE)       # continue from the run people chatted with

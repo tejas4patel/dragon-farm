@@ -30,7 +30,7 @@ first, so a run that failed locally for lack of memory can be sent to the
 cloud as is.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 dragon_remote(run, "kaggle")
 }
 }

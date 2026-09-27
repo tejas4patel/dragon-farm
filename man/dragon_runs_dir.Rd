@@ -10,7 +10,17 @@ dragon_runs_dir()
 A path.
 }
 \description{
-Defaults to \code{dragonfarm_runs} under the working directory. Override with
-\code{options(dragonfarm.runs_dir = ...)} or the \code{DRAGONFARM_RUNS_DIR}
-environment variable.
+Every function that writes a run (\code{dragon_train()}, \code{dragon_bundle()},
+the app, and so on) takes a \code{runs_dir} argument that defaults to this.
+Without configuration it resolves to a \code{dragonfarm_runs} folder under a
+session temp directory, so a fresh R session never writes to your
+working directory or home filespace by default; that folder disappears
+once the session ends. For runs you want to keep, set a real location
+once with \code{options(dragonfarm.runs_dir = "path/to/dragonfarm_runs")} or
+the \code{DRAGONFARM_RUNS_DIR} environment variable, or pass \verb{runs_dir=} to
+the function you're calling.
+}
+\examples{
+dragon_runs_dir()
+withr::with_options(list(dragonfarm.runs_dir = "~/dragonfarm_runs"), dragon_runs_dir())
 }

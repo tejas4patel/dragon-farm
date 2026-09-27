@@ -1,3 +1,14 @@
+test_that("dragon_runs_dir() defaults under tempdir(), never the working directory", {
+  withr::local_envvar(DRAGONFARM_RUNS_DIR = NA)
+  withr::local_options(dragonfarm.runs_dir = NULL)
+  d <- dragon_runs_dir()
+  expect_true(startsWith(normalizePath(d, winslash = "/", mustWork = FALSE), normalizePath(tempdir(), winslash = "/")))
+  expect_false(startsWith(normalizePath(d, winslash = "/", mustWork = FALSE), normalizePath(getwd(), winslash = "/")))
+
+  withr::local_options(dragonfarm.runs_dir = "custom/path")
+  expect_equal(dragon_runs_dir(), "custom/path")
+})
+
 test_that("a finished run can be reopened and inspected", {
   dir <- copy_fixture_run()
   run <- dragon_run(dir)

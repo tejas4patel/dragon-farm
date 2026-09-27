@@ -31,7 +31,7 @@ new_step <- function(type, ...) structure(list(type = type, ...), class = "drago
 #' @return A `dragon_step` object.
 #' @name dragon_step
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' steps <- list(
 #'   dragon_step_train(tickets),
 #'   dragon_step_synthesize_pairs(prompts = "train", n = 150, judge = dragon_judge_anthropic()),
@@ -162,7 +162,7 @@ strip_handles <- function(x) {
 #'   progress [dragon_pipeline_status()] reads.
 #' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' p <- dragon_pipeline("Qwen/Qwen2.5-0.5B-Instruct", list(
 #'   dragon_step_train(tickets),
 #'   dragon_step_synthesize_pairs(judge = dragon_judge_anthropic(model = "claude-sonnet-5")),

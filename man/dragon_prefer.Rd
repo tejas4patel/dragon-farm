@@ -87,7 +87,7 @@ folded into the weights before this stage adds its own, which is the
 usual sequence: \code{\link[=dragon_train]{dragon_train()}} first, then \code{dragon_prefer()} on top.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 sft <- dragon_dataset("tickets.csv") |>
   dragon_map(prompt = "question", response = "answer") |>
   dragon_train("Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
