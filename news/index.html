@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">dragonfarm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,6 +39,10 @@
       <small>Source: <a href="https://github.com/tejas4patel/dragon-farm/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.3" id="dragonfarm-033">dragonfarm 0.3.3<a class="anchor" aria-label="anchor" href="#dragonfarm-033"></a></h2>
+<ul><li>Fixed the Shiny app’s Try it, Chat, Train, and Pipeline panels sometimes keeping a stale runs list until the page was reloaded – most visibly, a run that had just finished training would not appear as selectable in Try it. Their <code>reactivePoll()</code>s watched only each run’s own <code>status.json</code> mtime, which misses a change when the file that actually matters (the adapter, or a run’s directory being renamed by archive/restore) is written or moved without <code>status.json</code> itself changing again. All of the app’s run-list pollers now share <code>runs_change_signature()</code>, which changes whenever any file anywhere under the runs directory is added, edited, or moved.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.2" id="dragonfarm-032">dragonfarm 0.3.2<a class="anchor" aria-label="anchor" href="#dragonfarm-032"></a></h2>
 <ul><li>The 0.3.1 fix for the torchao <code>ImportError</code> on cloud GPUs (pinning <code>torchao&gt;=0.16.0</code> in requirements) turned out not to be reliably honored on Colab’s and Kaggle’s preinstalled environment (pip reported success but the old 0.10.0 build was still what got imported). The requirements pin is reverted, and the shared remote notebook (<code>inst/remote/dragonfarm_remote.ipynb</code>, used by <code><a href="../reference/dragon_remote.html">dragon_remote()</a></code> for Colab, Kaggle, Lightning AI, and RunPod) now explicitly uninstalls torchao after installing the trainer’s requirements. dragonfarm never imports torchao itself, and peft’s LoRA dispatch skips its torchao check cleanly when the package is entirely absent rather than present at an old version, so removing it sidesteps the problem instead of depending on pip to upgrade it in place.</li>
