@@ -17,9 +17,9 @@
 
 # ---- 0. Install dragonfarm from GitHub ---------------------------------------
 if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
-remotes::install_github("tejas4patel/dragon-farm", ref = "v0.3.2", upgrade = "never")
-# ^ pinned to the 0.3.2 release candidate, so this always tests the exact
-#   version being submitted to CRAN. Drop `ref = "v0.3.2"` to track the
+remotes::install_github("tejas4patel/dragon-farm", ref = "v0.3.3", upgrade = "never")
+# ^ pinned to the 0.3.3 release candidate, so this always tests the exact
+#   version being submitted to CRAN. Drop `ref = "v0.3.3"` to track the
 #   latest commit on main instead.
 
 library(dragonfarm)
