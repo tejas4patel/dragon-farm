@@ -117,11 +117,11 @@ usually continuing from the student run itself.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 # Close the loop: sample from the fine-tuned run, let a judge rank, train DPO on the result.
 pairs <- dragon_synthesize_pairs(dragon_prompts(sft, "train", n = 200), student = sft,
                                  judge = dragon_judge_anthropic(model = "claude-sonnet-5"))
 dpo <- dragon_prefer(pairs, sft, wait = TRUE)
 dragon_judge(dpo, against = "base", judge = dragon_judge_anthropic())
-} # }
+}
 ```

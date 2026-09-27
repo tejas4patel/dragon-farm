@@ -18,7 +18,7 @@ Invisibly, a list of the collected facts.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 dragon_check()
-} # }
+}
 ```

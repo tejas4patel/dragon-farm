@@ -43,10 +43,10 @@ The run id, invisibly.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 dragon_archive_run(run)
 dragon_archived_runs()
 dragon_unarchive_run(run$id)
 dragon_delete_run("20260101-000000-old-experiment")
-} # }
+}
 ```

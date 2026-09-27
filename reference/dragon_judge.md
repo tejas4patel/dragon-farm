@@ -86,7 +86,7 @@ picks it up.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 # Did preference optimization help? Compare the DPO run with the SFT run it started from.
 j <- dragon_judge(dpo, against = "base", judge = dragon_judge_anthropic())
 j$summary
@@ -97,5 +97,5 @@ dragon_judge(sft, rubric = "Reward replies that give concrete next steps and sta
 
 # A local judge: any model dragon_generate() can load.
 dragon_judge(sft, against = "base", judge = "Qwen/Qwen2.5-1.5B-Instruct")
-} # }
+}
 ```

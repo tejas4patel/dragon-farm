@@ -129,7 +129,7 @@ A `dragon_step` object.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 steps <- list(
   dragon_step_train(tickets),
   dragon_step_synthesize_pairs(prompts = "train", n = 150, judge = dragon_judge_anthropic()),
@@ -139,5 +139,5 @@ steps <- list(
 )
 p <- dragon_pipeline("Qwen/Qwen2.5-0.5B-Instruct", steps)
 dragon_compare(p)
-} # }
+}
 ```

@@ -45,10 +45,10 @@ reproducible through
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 fb <- dragon_feedback()
 fb$records
 better <- dragon_train(fb$sft, dpo, wait = TRUE)       # continue from the run people chatted with
 dpo2 <- dragon_prefer(fb$pairs, better, wait = TRUE)
-} # }
+}
 ```

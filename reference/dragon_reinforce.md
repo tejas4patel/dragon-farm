@@ -147,7 +147,7 @@ then this.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 math <- dragon_dataset("arithmetic.csv") |>
   dragon_map_prompts(prompt = "question", reference = "answer")
 rl <- dragon_reinforce(
@@ -156,5 +156,5 @@ rl <- dragon_reinforce(
   group_size = 6, wait = TRUE
 )
 dragon_evaluate(rl)     # mean reward on held-out prompts, per reward
-} # }
+}
 ```

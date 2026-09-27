@@ -126,7 +126,7 @@ to bring the results back into this run directory.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 run <- dragon_dataset(dragon_example_data()) |>
   dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
   dragon_bundle("Qwen/Qwen2.5-0.5B-Instruct")
@@ -134,5 +134,5 @@ dragon_remote(run, "colab")
 # ... train in the browser, download the results zip ...
 dragon_import(run, "~/Downloads/dragonfarm-results-<run id>.zip")
 dragon_generate(run, "My thermostat keeps dropping off Wi-Fi.")
-} # }
+}
 ```

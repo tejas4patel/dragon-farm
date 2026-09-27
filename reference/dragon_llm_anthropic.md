@@ -84,8 +84,8 @@ need.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 teacher <- dragon_llm_anthropic(system = "You are a concise support agent.")
 teacher(c("My thermostat drops off Wi-Fi.", "Invoice total looks wrong."))
-} # }
+}
 ```

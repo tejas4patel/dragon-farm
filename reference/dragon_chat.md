@@ -87,11 +87,11 @@ returns the conversation as one training row.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 chat <- dragon_chat(run, system = "You are a concise support agent.")
 chat$say("My thermostat keeps dropping off Wi-Fi.")
 chat$say("I tried that. What else?")   # the model sees the first exchange
 chat$history()
 chat$save("good-conversation.json")
-} # }
+}
 ```

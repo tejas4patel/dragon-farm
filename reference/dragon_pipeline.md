@@ -63,7 +63,7 @@ or plain functions are fine, `ellmer` chat objects are not.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 p <- dragon_pipeline("Qwen/Qwen2.5-0.5B-Instruct", list(
   dragon_step_train(tickets),
   dragon_step_synthesize_pairs(judge = dragon_judge_anthropic(model = "claude-sonnet-5")),
@@ -71,5 +71,5 @@ p <- dragon_pipeline("Qwen/Qwen2.5-0.5B-Instruct", list(
   dragon_step_judge(judge = dragon_judge_anthropic())
 ), background = TRUE)
 dragon_pipeline_status(p)
-} # }
+}
 ```

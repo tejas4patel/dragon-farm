@@ -130,7 +130,7 @@ first, then `dragon_prefer()` on top.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 sft <- dragon_dataset("tickets.csv") |>
   dragon_map(prompt = "question", response = "answer") |>
   dragon_train("Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
@@ -141,5 +141,5 @@ dpo <- dragon_dataset("preferences.csv") |>
 
 dragon_evaluate(dpo)
 dragon_generate(dpo, "My thermostat keeps dropping off Wi-Fi.")
-} # }
+}
 ```

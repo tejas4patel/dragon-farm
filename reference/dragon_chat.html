@@ -15,7 +15,7 @@ example."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">dragonfarm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -136,13 +136,13 @@ how many turns have been dropped to stay under it (<code>NULL</code> when
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span><span class="va">chat</span> <span class="op">&lt;-</span> <span class="fu">dragon_chat</span><span class="op">(</span><span class="va">run</span>, system <span class="op">=</span> <span class="st">"You are a concise support agent."</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">chat</span><span class="op">$</span><span class="fu">say</span><span class="op">(</span><span class="st">"My thermostat keeps dropping off Wi-Fi."</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">chat</span><span class="op">$</span><span class="fu">say</span><span class="op">(</span><span class="st">"I tried that. What else?"</span><span class="op">)</span>   <span class="co"># the model sees the first exchange</span></span></span>
 <span class="r-in"><span><span class="va">chat</span><span class="op">$</span><span class="fu">history</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">chat</span><span class="op">$</span><span class="fu">save</span><span class="op">(</span><span class="st">"good-conversation.json"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

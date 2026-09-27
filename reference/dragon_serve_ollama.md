@@ -50,9 +50,9 @@ Needs the `ollama` command on the PATH and the Ollama service running.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 backend <- dragon_serve_ollama(run)
 options(dragonfarm.backend = backend)
 dragon_chat(run)$say("Hello")
-} # }
+}
 ```

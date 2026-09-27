@@ -11,8 +11,8 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Fine-Tune Small Language Models with LoRA from R">
-<meta name="description" content="Fine-tune small (100M to 3B parameter) causal language models with LoRA (Low-Rank Adaptation) from R. Datasets are mapped to chat-format prompts and responses, training runs in a background Python process built on Hugging Face transformers and peft, and a Shiny app offers drag-and-drop dataset upload and column mapping. Python dependencies are declared through reticulate and resolved automatically on first use.">
-<meta property="og:description" content="Fine-tune small (100M to 3B parameter) causal language models with LoRA (Low-Rank Adaptation) from R. Datasets are mapped to chat-format prompts and responses, training runs in a background Python process built on Hugging Face transformers and peft, and a Shiny app offers drag-and-drop dataset upload and column mapping. Python dependencies are declared through reticulate and resolved automatically on first use.">
+<meta name="description" content="Fine-tune small (100M to 3B parameter) causal language models with LoRA (Low-Rank Adaptation) from R. Datasets are mapped to chat-format prompts and responses, training runs in a background Python process built on Hugging Face transformers and peft, and a shiny app offers drag-and-drop dataset upload and column mapping. Python dependencies are declared through reticulate and resolved automatically on first use.">
+<meta property="og:description" content="Fine-tune small (100M to 3B parameter) causal language models with LoRA (Low-Rank Adaptation) from R. Datasets are mapped to chat-format prompts and responses, training runs in a background Python process built on Hugging Face transformers and peft, and a shiny app offers drag-and-drop dataset upload and column mapping. Python dependencies are declared through reticulate and resolved automatically on first use.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">dragonfarm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,7 +60,6 @@
 </h1></div>
 <p>Fine-tune small language models with LoRA from R, by code or by drag and drop.</p>
 <p><code>dragonfarm</code> takes a table of prompts and replies, teaches a 100M to 3B parameter model to answer in your format and your domain, and gives you back an adapter or a merged model that loads with plain Hugging Face <code>transformers</code>. Training runs in a background Python process that the package sets up for you.</p>
-<p>Documentation: <a href="https://dragonfarm.dev" class="uri">https://dragonfarm.dev</a></p>
 <div class="section level2">
 <h2 id="install">Install<a class="anchor" aria-label="anchor" href="#install"></a>
 </h2>
@@ -69,7 +68,7 @@
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"tejas4patel/dragon-farm"</span><span class="op">)</span></span></code></pre></div>
 <p>Then check the machine. The first call builds a Python environment with torch and transformers, which downloads 2 to 3 GB and takes a few minutes.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dragonfarm.dev">dragonfarm</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tejas4patel/dragon-farm" class="external-link">dragonfarm</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/dragon_check.html">dragon_check</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -89,12 +88,16 @@
 <strong>No GPU:</strong> training runs on the CPU. Fine for the 135M and 360M models, slow beyond that.</li>
 </ul>
 <p>Run <code><a href="reference/dragon_check.html">dragon_check()</a></code> after installing. It reports the device it will train on, and if that is the CPU on a machine with an NVIDIA GPU it says why (no driver, a driver too old for the installed torch, or a CPU-only torch build) and prints the one-line fix.</p>
+<p><strong>Where runs are stored.</strong> By default a run’s files (adapter, checkpoints, data, logs) go under a <code>dragonfarm_runs</code> folder inside a session temp directory, so a fresh R session never writes to your working directory or home filespace on its own; that folder disappears when the session ends. For runs you want to keep, set a real location once per project, before training anything:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>dragonfarm.runs_dir <span class="op">=</span> <span class="st">"~/dragonfarm_runs"</span><span class="op">)</span>   <span class="co"># or any path you like</span></span></code></pre></div>
+<p>or set the <code>DRAGONFARM_RUNS_DIR</code> environment variable, or pass <code>runs_dir =</code> to <code><a href="reference/dragon_train.html">dragon_train()</a></code>, <code><a href="reference/dragon_bundle.html">dragon_bundle()</a></code>, <code><a href="reference/dragon_app.html">dragon_app()</a></code>, and the rest directly. See <code><a href="reference/dragon_runs_dir.html">?dragon_runs_dir</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="the-five-line-version">The five-line version<a class="anchor" aria-label="anchor" href="#the-five-line-version"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dragonfarm.dev">dragonfarm</a></span><span class="op">)</span></span>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tejas4patel/dragon-farm" class="external-link">dragonfarm</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="fu"><a href="reference/dragon_example_data.html">dragon_example_data</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_map.html">dragon_map</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"{subject}\n\n{body}"</span>, response <span class="op">=</span> <span class="st">"reply"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -103,7 +106,7 @@
 <span><span class="fu"><a href="reference/dragon_generate.html">dragon_generate</a></span><span class="op">(</span><span class="va">run</span>, <span class="st">"My thermostat keeps dropping off Wi-Fi."</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/dragon_merge.html">dragon_merge</a></span><span class="op">(</span><span class="va">run</span>, <span class="st">"models/support-0.5b"</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="reference/dragon_train.html">dragon_train()</a></code> returns immediately by default. Runs live on disk, so you can close R and come back:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_run.html">dragon_run</a></span><span class="op">(</span><span class="st">"dragonfarm_runs/20260913-143201-qwen2.5-0.5b-instruct"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/dragon_status.html">dragon_status</a></span><span class="op">(</span><span class="va">run</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/dragon_status.html">dragon_progress</a></span><span class="op">(</span><span class="va">run</span><span class="op">)</span>   <span class="co"># one row per logged step</span></span>
@@ -114,7 +117,7 @@
 <div class="section level2">
 <h2 id="the-app">The app<a class="anchor" aria-label="anchor" href="#the-app"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/dragon_app.html">dragon_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Six panels, left to right: drop a file, drag its columns into Prompt and Response slots, pick a model, set a few numbers, watch the loss curve, and compare the tuned model against the base model. Every run started in the app is a normal run directory, and the Monitor panel shows the R code that reproduces it.</p>
 </div>
@@ -122,7 +125,7 @@
 <h2 id="beyond-fine-tuning-preference-optimization">Beyond fine-tuning: preference optimization<a class="anchor" aria-label="anchor" href="#beyond-fine-tuning-preference-optimization"></a>
 </h2>
 <p>Fine-tuning teaches the model what a good reply looks like. The next stage teaches it which of two replies is better, from a table with a prompt, a chosen reply, and a rejected one. It runs on top of a fine-tuned run:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sft</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="st">"tickets.csv"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_map.html">dragon_map</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"question"</span>, response <span class="op">=</span> <span class="st">"answer"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_train.html">dragon_train</a></span><span class="op">(</span><span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span>, wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -139,7 +142,7 @@
 <h2 id="reinforcement-learning-with-rewards-you-can-check">Reinforcement learning with rewards you can check<a class="anchor" aria-label="anchor" href="#reinforcement-learning-with-rewards-you-can-check"></a>
 </h2>
 <p>When the goal is verifiable, a correct number, valid JSON, a format, a length budget, reinforcement learning beats preference data. The model writes several answers per prompt, the rewards score them, and it learns from the ones that beat their group’s average (GRPO):</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">math</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="st">"arithmetic.csv"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_map_prompts.html">dragon_map_prompts</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"question"</span>, reference <span class="op">=</span> <span class="st">"answer"</span><span class="op">)</span></span>
 <span></span>
@@ -155,7 +158,7 @@
 <h2 id="make-the-data-teachers-and-self-improvement">Make the data: teachers and self-improvement<a class="anchor" aria-label="anchor" href="#make-the-data-teachers-and-self-improvement"></a>
 </h2>
 <p>Small models are only as good as their training data, and most teams do not have a few hundred hand-written ideal replies. Two shortcuts:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># A stronger model answers your prompts; its replies become the training set.</span></span>
 <span><span class="va">teacher</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_llm_anthropic.html">dragon_llm_anthropic</a></span><span class="op">(</span>system <span class="op">=</span> <span class="st">"You are a concise, warm support agent."</span><span class="op">)</span></span>
 <span><span class="va">synth</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_synthesize.html">dragon_synthesize</a></span><span class="op">(</span><span class="fu"><a href="reference/dragon_prompts.html">dragon_prompts</a></span><span class="op">(</span><span class="va">sft</span>, <span class="st">"train"</span><span class="op">)</span>, <span class="va">teacher</span>, system <span class="op">=</span> <span class="st">"You are a concise, warm support agent."</span><span class="op">)</span></span>
@@ -173,7 +176,7 @@
 <h2 id="talk-to-it-anywhere-it-runs">Talk to it, anywhere it runs<a class="anchor" aria-label="anchor" href="#talk-to-it-anywhere-it-runs"></a>
 </h2>
 <p>Training machines are rarely the right inference machines. Generation goes through a backend you choose:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">chat</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_chat.html">dragon_chat</a></span><span class="op">(</span><span class="va">run</span>, system <span class="op">=</span> <span class="st">"You are a concise support agent."</span><span class="op">)</span></span>
 <span><span class="va">chat</span><span class="op">$</span><span class="fu">say</span><span class="op">(</span><span class="st">"My thermostat keeps dropping off Wi-Fi."</span><span class="op">)</span></span>
 <span><span class="va">chat</span><span class="op">$</span><span class="fu">say</span><span class="op">(</span><span class="st">"I tried that. What else?"</span><span class="op">)</span>        <span class="co"># the model remembers the first exchange</span></span>
@@ -186,7 +189,7 @@
 <span><span class="fu"><a href="reference/dragon_chat.html">dragon_chat</a></span><span class="op">(</span>backend <span class="op">=</span> <span class="va">vllm</span><span class="op">)</span><span class="op">$</span><span class="fu">say</span><span class="op">(</span><span class="st">"Hello"</span><span class="op">)</span></span></code></pre></div>
 <p>The default backend is a local worker that keeps the last two models loaded, so judge and synthesis loops stop paying a model load per call. The app’s Chat panel offers the same choice of backend.</p>
 <p>Conversations are also where human feedback comes from. Rate a reply, fix it, and the verdict is saved; <code><a href="reference/dragon_feedback.html">dragon_feedback()</a></code> turns the verdicts into data for the next stage:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">chat</span><span class="op">$</span><span class="fu">rate</span><span class="op">(</span><span class="st">"down"</span><span class="op">)</span></span>
 <span><span class="va">chat</span><span class="op">$</span><span class="fu">regenerate</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">chat</span><span class="op">$</span><span class="fu">rate</span><span class="op">(</span><span class="st">"up"</span><span class="op">)</span></span>
@@ -200,7 +203,7 @@
 <div class="section level2">
 <h2 id="the-whole-loop-in-one-call">The whole loop in one call<a class="anchor" aria-label="anchor" href="#the-whole-loop-in-one-call"></a>
 </h2>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_pipeline.html">dragon_pipeline</a></span><span class="op">(</span><span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="reference/dragon_step.html">dragon_step_train</a></span><span class="op">(</span><span class="va">tickets</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="reference/dragon_step.html">dragon_step_synthesize_pairs</a></span><span class="op">(</span>prompts <span class="op">=</span> <span class="st">"train"</span>, n <span class="op">=</span> <span class="fl">150</span>, judge <span class="op">=</span> <span class="fu"><a href="reference/dragon_llm_anthropic.html">dragon_judge_anthropic</a></span><span class="op">(</span>model <span class="op">=</span> <span class="st">"claude-sonnet-5"</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -217,7 +220,7 @@
 <h2 id="did-it-help-metrics-judges-and-comparisons">Did it help? Metrics, judges, and comparisons<a class="anchor" aria-label="anchor" href="#did-it-help-metrics-judges-and-comparisons"></a>
 </h2>
 <p>Held-out loss says a stage trained. It does not say the replies got better. Three tools answer that:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Deterministic checks over every held-out row</span></span>
 <span><span class="fu"><a href="reference/dragon_evaluate.html">dragon_evaluate</a></span><span class="op">(</span><span class="va">dpo</span>, metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exact"</span>, <span class="st">"token_f1"</span>, <span class="st">"json_valid"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -237,7 +240,7 @@
 <h2 id="no-gpu-train-in-the-cloud">No GPU? Train in the cloud<a class="anchor" aria-label="anchor" href="#no-gpu-train-in-the-cloud"></a>
 </h2>
 <p>The run directory is the whole contract between R and the trainer, so a run can be trained on any machine with a GPU and its results copied back. <code><a href="reference/dragon_bundle.html">dragon_bundle()</a></code> zips the run, <code><a href="reference/dragon_remote.html">dragon_remote()</a></code> opens a provider with the dragon-farm notebook and prints the steps, and <code><a href="reference/dragon_import.html">dragon_import()</a></code> puts the trained adapter into place. Nothing else changes: <code><a href="reference/dragon_generate.html">dragon_generate()</a></code> and <code><a href="reference/dragon_merge.html">dragon_merge()</a></code> work on the imported run as if it had trained locally.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="fu"><a href="reference/dragon_example_data.html">dragon_example_data</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_map.html">dragon_map</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"{subject}\n\n{body}"</span>, response <span class="op">=</span> <span class="st">"reply"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/dragon_bundle.html">dragon_bundle</a></span><span class="op">(</span><span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span><span class="op">)</span></span>
@@ -424,7 +427,7 @@
 <div class="section level2">
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a>
 </h2>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span><span class="op">)</span>                                  <span class="co"># unit tests, no Python needed</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>DRAGONFARM_INTEGRATION <span class="op">=</span> <span class="st">"true"</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span>filter <span class="op">=</span> <span class="st">"integration"</span><span class="op">)</span>            <span class="co"># trains SmolLM2-135M for 6 steps</span></span></code></pre></div>
@@ -453,7 +456,7 @@
 </tr>
 <tr>
 <td><code>DRAGONFARM_RUNS_DIR</code></td>
-<td>Where runs are stored. Default <code>dragonfarm_runs</code>.</td>
+<td>Where runs are stored. Defaults to <code>dragonfarm_runs</code> under a session temp directory; see <a href="#requirements">Requirements</a> for a persistent location.</td>
 </tr>
 <tr>
 <td><code>HF_TOKEN</code></td>

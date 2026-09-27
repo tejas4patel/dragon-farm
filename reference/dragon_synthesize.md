@@ -130,7 +130,7 @@ down what the quality pass (and the judge, if used) removed.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 tickets <- dragon_dataset("tickets.csv") |>
   dragon_map(prompt = "{subject}\n\n{body}", response = "reply")
 persona <- "You are a concise, warm support agent for a smart-home company."
@@ -141,5 +141,5 @@ run <- dragon_train(synth, "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
 # Distill from the student's own prompts, keeping only replies a judge likes.
 distilled <- dragon_synthesize(dragon_prompts(run, "train"), teacher,
                                judge = dragon_judge_anthropic(), min_score = 7)
-} # }
+}
 ```

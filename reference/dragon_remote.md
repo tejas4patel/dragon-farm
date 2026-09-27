@@ -39,7 +39,7 @@ and `steps` (a character vector).
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 dragon_remote(run, "kaggle")
-} # }
+}
 ```

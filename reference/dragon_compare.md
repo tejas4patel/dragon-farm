@@ -32,8 +32,8 @@ A data frame of class `dragon_comparison`.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 dragon_compare()                 # everything in the runs directory
 dragon_compare(sft, dpo)         # two specific runs
-} # }
+}
 ```

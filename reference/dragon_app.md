@@ -32,7 +32,7 @@ A Shiny app object. Printing it runs the app.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 dragon_app()
-} # }
+}
 ```

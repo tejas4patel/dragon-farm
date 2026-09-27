@@ -71,11 +71,11 @@ A `dragon_backend` object.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 options(dragonfarm.backend = dragon_backend_ollama("support-0.5b"))
 dragon_generate(run, "My thermostat keeps dropping off Wi-Fi.")
 
 vllm <- dragon_backend_server("https://my-pod.example.com/v1", model = "tejas/support-0.5b")
 dragon_generate(run, "Hello", backend = vllm)
-} # }
+}
 ```

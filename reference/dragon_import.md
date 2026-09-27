@@ -35,7 +35,7 @@ The run, invisibly.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 dragon_import(run, "~/Downloads/dragonfarm-results-20260914-101500-qwen2-5-0-5b-instruct.zip")
-} # }
+}
 ```

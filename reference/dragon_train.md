@@ -96,10 +96,10 @@ A `dragon_run` object.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 run <- dragon_dataset(dragon_example_data()) |>
   dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
   dragon_train("HuggingFaceTB/SmolLM2-135M-Instruct", wait = TRUE)
 dragon_generate(run, "My order arrived damaged.")
-} # }
+}
 ```
