@@ -13,6 +13,21 @@ or a merged model that loads with plain Hugging Face `transformers`. Training
 runs in a background Python process that the package sets up for you, on your
 own GPU or on a free cloud one.
 
+The app walks through six numbered steps, the same ones as in the GIF above:
+
+1. **Data**: load a table (CSV, TSV, JSON, JSONL, or Parquet, which needs the
+   `arrow` package) or the example tickets.
+2. **Map**: drag columns into the Prompt and Response slots.
+3. **Model**: pick a base model and check your GPU.
+4. **Train**: set a few numbers and press Start training, or send the run to a
+   cloud GPU.
+5. **Monitor**: watch the loss curve; the panel also shows the R code that
+   reproduces the run.
+6. **Try it**: compare the fine-tuned model with the base model, then judge,
+   merge, or publish it.
+
+Everything the app does is also available as R functions, shown below.
+
 ## Before and after
 
 `Qwen/Qwen2.5-0.5B-Instruct`, before and after fine-tuning on the package's
@@ -86,13 +101,11 @@ dragon_resume(run)     # picks up from that checkpoint
 dragon_app()
 ```
 
-Eight panels, left to right: **Data** (drop a file), **Map** (drag its columns
-into Prompt and Response slots), **Model** (pick one and check your GPU),
-**Train** (set a few numbers, or send it to a cloud GPU), **Monitor** (watch
-the loss curve), **Try it** (compare the tuned model with the base model, then
-judge, improve, merge, or publish), **Chat**, and **Pipeline**. Every run
-started in the app is a normal run directory, and the Monitor panel shows the
-R code that reproduces it.
+The six steps above are the first six panels. Two more follow them: **7 Chat**
+talks to a run with context and takes thumbs-up and thumbs-down feedback, and
+**8 Pipeline** runs the whole post-training loop in one go. Every run started
+in the app is a normal run directory, and the Monitor panel shows the R code
+that reproduces it.
 
 ![The Map panel: subject and body dragged into the Prompt slot, reply into Response, with a live preview of what the model will see.](https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/demo/02-map.png)
 
