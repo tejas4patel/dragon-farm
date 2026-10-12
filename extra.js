@@ -47,7 +47,7 @@
     var cap = document.getElementById("df-cap");
     var captions = [
       "Load a table, or start from the example tickets.",
-      "Drag columns into the Prompt and Response slots.",
+      "Drag one or more columns into the Prompt and Response slots.",
       "Pick a base model and check your GPU.",
       "Set a few numbers and press Start training.",
       "Watch the loss curve while it trains.",

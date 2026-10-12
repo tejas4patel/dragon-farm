@@ -15,7 +15,7 @@
 })(typeof self !== "undefined" ? self : this, function () {
   var STEPS = [
     { n: 1, name: "Data", sub: "Load a table" },
-    { n: 2, name: "Map", sub: "Drag two columns" },
+    { n: 2, name: "Map", sub: "Drag columns into slots" },
     { n: 3, name: "Model", sub: "Pick a base model" },
     { n: 4, name: "Train", sub: "Press start" },
     { n: 5, name: "Monitor", sub: "Watch the loss" },

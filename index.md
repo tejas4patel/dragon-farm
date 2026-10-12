@@ -2,9 +2,9 @@
 
 R package · on CRAN · MIT licensed
 
-Drop in a table, drag two columns into place, press Train. dragonfarm
-teaches a small model your format and your domain, on your own GPU or a
-free cloud one.
+Drop in a table, drag its columns into Prompt and Response, press Train.
+dragonfarm teaches a small model your format and your domain, on your
+own GPU or a free cloud one.
 
 `install.packages("dragonfarm")`
 
@@ -71,7 +71,7 @@ Code
 
 ### Five lines
 
-Map two columns, train, generate.
+Map your columns, train, generate.
 
     library(dragonfarm)
     run <- dragon_dataset(dragon_example_data()) |>
