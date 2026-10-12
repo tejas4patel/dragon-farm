@@ -28,7 +28,9 @@ mod_monitor_ui <- function(id) {
       ),
       bslib::card(
         bslib::card_header("Loss"),
-        plotly::plotlyOutput(ns("loss"), height = "320px")
+        # Fixed-height wrapper: the card stretches to match the taller Runs
+        # card beside it, and a bare plotly output would grow to fill it.
+        shiny::div(style = "height: 320px;", plotly::plotlyOutput(ns("loss"), height = "100%"))
       )
     ),
     bslib::layout_columns(

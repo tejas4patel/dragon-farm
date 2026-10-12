@@ -1,3 +1,13 @@
+# dragonfarm (development version)
+
+* Fixed the Shiny app clipping its own controls. The navbar page was
+  "fillable", so every card on a panel shared a single screenful of height:
+  on the Map step the drag-and-drop slots were cut off to a thin strip, and on
+  the Try it panel the Generate button and the Judge, Improve, Export, and
+  Publish cards were squeezed into short scroll boxes. Panels now take their
+  natural height and the page scrolls. The Monitor loss plot is given a fixed
+  height so it does not stretch to match the taller Runs card beside it.
+
 # dragonfarm 0.3.4
 
 * Fixed a test that failed on macOS (CRAN's M1mac additional check) though it

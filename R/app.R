@@ -25,6 +25,9 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), ...) {
   ui <- bslib::page_navbar(
     title = shiny::tags$span(shiny::tags$span(class = "brand-mark", "\u25b2"), "dragon-farm"),
     id = "nav",
+    # Not fillable: otherwise every card shares one screenful of height and
+    # panels such as the drag-and-drop slots and the Try it controls get clipped.
+    fillable = FALSE,
     theme = bslib::bs_theme(
       version = 5, preset = "shiny",
       primary = "#2F6F8F", "navbar-bg" = "#1B2230",
