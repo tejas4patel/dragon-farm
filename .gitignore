@@ -18,3 +18,7 @@ inst/doc
 # CRAN submission tarball
 *.tar.gz
 *.Rcheck/
+
+# Internal planning notes and local tooling config: kept on disk, not published
+BACKLOG.md
+.claude/
