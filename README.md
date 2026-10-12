@@ -17,7 +17,9 @@ The app walks through six numbered steps, the same ones as in the GIF:
 
 1. **Data**: load a table (CSV, TSV, JSON, JSONL, or Parquet, which needs the
    `arrow` package) or the example tickets.
-2. **Map**: drag columns into the Prompt and Response slots.
+2. **Map**: drag one or more columns into the Prompt and Response slots.
+   Several columns in one slot are joined with a blank line, and a System
+   slot is optional.
 3. **Model**: pick a base model and check your GPU.
 4. **Train**: set a few numbers and press Start training, or send the run to a
    cloud GPU.

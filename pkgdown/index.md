@@ -3,7 +3,7 @@
 <div class="df-wrap">
 <p class="df-eyebrow"><span class="df-dot"></span>R package · on CRAN · MIT licensed</p>
 <h1 class="df-h1">Fine-tune a language model<br>from R. <span class="df-grad">In minutes.</span></h1>
-<p class="df-lede">Drop in a table, drag two columns into place, press Train. dragonfarm teaches a small model your format and your domain, on your own GPU or a free cloud one.</p>
+<p class="df-lede">Drop in a table, drag its columns into Prompt and Response, press Train. dragonfarm teaches a small model your format and your domain, on your own GPU or a free cloud one.</p>
 <div class="df-cta">
 <div class="df-install"><code>install.packages(&quot;dragonfarm&quot;)</code><button class="df-copy" type="button" data-copy="install.packages(&quot;dragonfarm&quot;)">Copy</button></div>
 <a class="df-btn df-btn-primary" href="articles/quickstart.html">Get started</a>
@@ -45,7 +45,7 @@
 <h2 class="df-h2">Start where you're comfortable.</h2>
 <p class="df-sub">Everything the app does is also an R function, and every run is a plain folder of files you can inspect.</p>
 <div class="df-grid3 df-ways">
-<div class="df-card"><span class="df-tag">Code</span><h3>Five lines</h3><p>Map two columns, train, generate.</p>
+<div class="df-card"><span class="df-tag">Code</span><h3>Five lines</h3><p>Map your columns, train, generate.</p>
 <pre><code>library(dragonfarm)
 run &lt;- dragon_dataset(dragon_example_data()) |&gt;
   dragon_map(prompt = "{subject}\n\n{body}",
