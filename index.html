@@ -64,6 +64,22 @@
 <img src="https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/demo/dragonfarm-demo.gif" alt="The dragon-farm app: load a table, drag its columns into slots, pick a model, train, watch the loss, and compare against the base model."><div class="figcaption">The dragon-farm app: load a table, drag its columns into slots, pick a model, train, watch the loss, and compare against the base model.</div>
 </div>
 <p><code>dragonfarm</code> takes a table of prompts and replies, teaches a 100M to 3B parameter model to answer in your format and your domain, and gives you back an adapter or a merged model that loads with plain Hugging Face <code>transformers</code>. Training runs in a background Python process that the package sets up for you, on your own GPU or on a free cloud one.</p>
+<p>The app walks through six numbered steps, the same ones as in the GIF above:</p>
+<ol style="list-style-type: decimal">
+<li>
+<strong>Data</strong>: load a table (CSV, TSV, JSON, JSONL, or Parquet, which needs the <code>arrow</code> package) or the example tickets.</li>
+<li>
+<strong>Map</strong>: drag columns into the Prompt and Response slots.</li>
+<li>
+<strong>Model</strong>: pick a base model and check your GPU.</li>
+<li>
+<strong>Train</strong>: set a few numbers and press Start training, or send the run to a cloud GPU.</li>
+<li>
+<strong>Monitor</strong>: watch the loss curve; the panel also shows the R code that reproduces the run.</li>
+<li>
+<strong>Try it</strong>: compare the fine-tuned model with the base model, then judge, merge, or publish it.</li>
+</ol>
+<p>Everything the app does is also available as R functions, shown below.</p>
 <div class="section level2">
 <h2 id="before-and-after">Before and after<a class="anchor" aria-label="anchor" href="#before-and-after"></a>
 </h2>
@@ -115,7 +131,7 @@
 </h2>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/dragon_app.html">dragon_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>Eight panels, left to right: <strong>Data</strong> (drop a file), <strong>Map</strong> (drag its columns into Prompt and Response slots), <strong>Model</strong> (pick one and check your GPU), <strong>Train</strong> (set a few numbers, or send it to a cloud GPU), <strong>Monitor</strong> (watch the loss curve), <strong>Try it</strong> (compare the tuned model with the base model, then judge, improve, merge, or publish), <strong>Chat</strong>, and <strong>Pipeline</strong>. Every run started in the app is a normal run directory, and the Monitor panel shows the R code that reproduces it.</p>
+<p>The six steps above are the first six panels. Two more follow them: <strong>7 Chat</strong> talks to a run with context and takes thumbs-up and thumbs-down feedback, and <strong>8 Pipeline</strong> runs the whole post-training loop in one go. Every run started in the app is a normal run directory, and the Monitor panel shows the R code that reproduces it.</p>
 <div class="float">
 <img src="https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/demo/02-map.png" alt="The Map panel: subject and body dragged into the Prompt slot, reply into Response, with a live preview of what the model will see."><div class="figcaption">The Map panel: subject and body dragged into the Prompt slot, reply into Response, with a live preview of what the model will see.</div>
 </div>
