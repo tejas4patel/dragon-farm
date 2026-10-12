@@ -31,11 +31,22 @@ def matches(text, pats): return all(re.search(p, text.lower()) for p in pats)
 
 def prompt_rag(q, ctx): return f"Documentation excerpts:\n{ctx}\n\nQuestion: {q}"
 
-def generate(base, adapter, prompts, system, max_new=160, bs=8):
+def load_model(base, four_bit=False):
+    """bf16 on the GPU, or 4-bit NF4 via bitsandbytes (also for pre-quantised '-bnb-4bit' ids)."""
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoModelForCausalLM
+    if four_bit or "bnb-4bit" in base.lower():
+        from transformers import BitsAndBytesConfig
+        q = None if "bnb-4bit" in base.lower() else BitsAndBytesConfig(
+            load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.bfloat16)
+        return AutoModelForCausalLM.from_pretrained(base, quantization_config=q, device_map="cuda", dtype=torch.bfloat16).eval()
+    return AutoModelForCausalLM.from_pretrained(base, dtype=torch.bfloat16).to("cuda").eval()
+
+def generate(base, adapter, prompts, system, max_new=160, bs=8, four_bit=False):
+    import torch
+    from transformers import AutoTokenizer
     tok = AutoTokenizer.from_pretrained(base, padding_side="left")
-    model = AutoModelForCausalLM.from_pretrained(base, dtype=torch.bfloat16).to("cuda").eval()
+    model = load_model(base, four_bit)
     if adapter:
         from peft import PeftModel
         model = PeftModel.from_pretrained(model, adapter).eval()
@@ -54,6 +65,7 @@ if __name__ == "__main__":
     ap.add_argument("mode"); ap.add_argument("name", nargs="?")
     ap.add_argument("--base", default="Qwen/Qwen2.5-0.5B-Instruct"); ap.add_argument("--adapter")
     ap.add_argument("--no-rag", action="store_true"); ap.add_argument("--no-system", action="store_true")
+    ap.add_argument("--4bit", dest="four_bit", action="store_true"); ap.add_argument("--bs", type=int, default=8)
     a = ap.parse_args()
     chunks = load_jsonl("chunks.jsonl"); gold = load_jsonl("gold.jsonl")
     os.makedirs("outputs", exist_ok=True)
@@ -73,7 +85,7 @@ if __name__ == "__main__":
             prompts = qs
         else:
             prompts = [prompt_rag(q, "\n\n".join(chunk_text(chunks[i]) for i in h)) for q, h in zip(qs, hits)]
-        replies = generate(a.base, a.adapter, prompts, None if (a.no_rag or a.no_system) else SYSTEM)
+        replies = generate(a.base, a.adapter, prompts, None if (a.no_rag or a.no_system) else SYSTEM, bs=a.bs, four_bit=a.four_bit)
         with open(f"outputs/{a.name}.jsonl", "w", encoding="utf-8") as f:
             for g, h, r in zip(gold, hits, replies):
                 f.write(json.dumps({"q": g["q"], "reply": r, "retrieved": h if not a.no_rag else []}, ensure_ascii=False) + "\n")

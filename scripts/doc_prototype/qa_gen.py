@@ -62,11 +62,12 @@ def judge(q, a, c, seen):
     seen.append(qs)
     return None
 
-def generate(model_id, chunks, n, bs):
+def generate(model_id, chunks, n, bs, four_bit=False):
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoTokenizer
+    from eval_docs import load_model
     tok = AutoTokenizer.from_pretrained(model_id, padding_side="left")
-    model = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.bfloat16).to("cuda").eval()
+    model = load_model(model_id, four_bit)
     outs = []
     for i in range(0, len(chunks), bs):
         batch = chunks[i:i + bs]
@@ -84,6 +85,7 @@ if __name__ == "__main__":
     ap.add_argument("chunks"); ap.add_argument("out"); ap.add_argument("model")
     ap.add_argument("--per-chunk", type=int, default=3); ap.add_argument("--bs", type=int, default=4)
     ap.add_argument("--regenerate", action="store_true")
+    ap.add_argument("--4bit", dest="four_bit", action="store_true")
     ap.add_argument("--skip", default="NEWS.md", help="source files to leave out of generation")
     a = ap.parse_args()
     chunks = [json.loads(l) for l in open(a.chunks, encoding="utf-8")]
@@ -93,7 +95,7 @@ if __name__ == "__main__":
     if os.path.exists(rawp) and not a.regenerate:
         raw = json.load(open(rawp, encoding="utf-8"))
     else:
-        raw = generate(a.model, chunks, a.per_chunk, a.bs)
+        raw = generate(a.model, chunks, a.per_chunk, a.bs, a.four_bit)
         json.dump(raw, open(rawp, "w", encoding="utf-8"))
     seen, rows, drop = [], [], {}
     for c, out in zip(chunks, raw):

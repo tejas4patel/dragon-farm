@@ -126,6 +126,69 @@ answer that misses the `swapped` pattern).
    *after* training had finished. Training succeeded with batch 2 x accum 8.
    Worth fixing: evaluate with batch 1, or compute the loss in chunks.
 
+## Addendum: a mid-sized model (Qwen2.5-7B-Instruct, 4-bit)
+
+Run after the above, same chunks, same retrieved context, same gold
+questions, same pair prompt and filters. The 7B does not fit an 8 GB GPU in
+bf16 (15 GB), so it was loaded 4-bit NF4 through `bitsandbytes` 0.50.2,
+quantised on the fly from the full download. (The pre-quantised
+`unsloth/Qwen2.5-7B-Instruct-bnb-4bit` checkpoint fails to load under
+transformers 5.19 with a tensor-size mismatch; on-the-fly quantisation of the
+official weights works.)
+
+**Answering the 35 gold questions** (retrieval, top 4):
+
+| Model | Answered (regex) | Answered (read by hand) | Unsupported names |
+|---|---|---|---|
+| 1.5B bf16 | 60% | — | 0% |
+| 3B bf16 | 69% | ~74% | 0% |
+| **7B 4-bit** | **77%** | **~86%** | **0%** |
+
+Reading the eight regex misses by hand: three are correct answers the
+pattern missed (KL penalty, feedback datasets, which models need a token);
+one is faithful to a retrieved code example rather than the prose the gold
+wanted; and four are questions whose answer was *not* retrieved, where the
+7B wrote "the documentation does not specify" instead of guessing. The
+smaller models guessed on those. So the 7B answered essentially every
+question whose chunk was in front of it, and declined the rest. The
+remaining gap is retrieval, not the model.
+
+**Generating pairs** (same 50 chunks, 3 per chunk):
+
+| Generator | Written | Pass filters | Usable on reading | Yield |
+|---|---|---|---|---|
+| 1.5B | 106 | 34 | ~21 | ~20% |
+| 3B | 150 | 70 | ~50 | ~33% |
+| **7B 4-bit** | 150 | 111 | **~90** | **~60%** |
+
+The 7B's pairs are noticeably more specific (they quote the right function
+and argument) and far fewer are trivial. What did not go away: the three
+"Lumen bulb pack" pairs generated from the README's quoted example reply,
+one `dragon_merge` misreading, and a few link-only pairs from the README's
+table. The quote guard and the review screen are needed at every size.
+
+**Cost on this laptop (RTX 4060, 8 GB), each model alone in a fresh process,
+~1,180-token prompts, 60 new tokens:**
+
+| Model | Load | Weights in VRAM | Peak VRAM | One question | 8 questions batched |
+|---|---|---|---|---|---|
+| 1.5B bf16 | 7 s | 2.9 GB | 3.7 GB | 1.4 s (13 tok/s) | 3.0 s |
+| 3B bf16 | 14 s | 5.9 GB | 6.9 GB | 2.0 s (10 tok/s) | 5.7 s |
+| 7B 4-bit | 37 s | 5.5 GB | 7.2 GB | 2.8 s (8.5 tok/s) | 11.0 s |
+
+A 4-bit 7B uses about the same memory as a bf16 3B and is about 40% slower
+per token, for a large gain in answer quality and double the pair yield.
+Download is 15 GB (the full weights; quantisation happens at load) against
+6 GB for the 3B. It does not fit next to a training run on 8 GB, and it
+leaves no room for anything else on a 6 GB card.
+
+**What this changes in the recommendation:** the default pair generator and
+default answer model should follow the hardware check: 1.5B below 6 GB, 3B
+at 6 to 8 GB, 7B 4-bit at 8 GB and above (or whenever the user asks). That
+requires 4-bit loading in the package, which the measurement shows works on
+Windows with the environment dragonfarm already builds. Fine-tuning a 7B
+(QLoRA) was not measured here.
+
 ## Caveats
 
 - 35 questions, one corpus, one seed each. Differences under ~6 points

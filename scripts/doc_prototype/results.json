@@ -23,6 +23,12 @@
   "unsupported_ids": 0.0,
   "avg_words": 20.7
  },
+ "base7b_rag": {
+  "answered": 0.771,
+  "fact_in_context": 0.8,
+  "unsupported_ids": 0.0,
+  "avg_words": 20.8
+ },
  "ragtuned05": {
   "answered": 0.571,
   "fact_in_context": 0.8,
