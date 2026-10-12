@@ -1,8 +1,31 @@
 url: https://dragonfarm.dev/
 template:
   bootstrap: 5
+  light-switch: true
   bslib:
     primary: "#2F6F8F"
+    base_font: "Inter"
+    heading_font: "Space Grotesk"
+    code_font: "JetBrains Mono"
+  opengraph:
+    image:
+      src: https://dragonfarm.dev/social.png
+      alt: "dragonfarm: fine-tune a language model from R in minutes"
+  includes:
+    in_header: |
+      <meta name="twitter:card" content="summary_large_image">
+      <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+navbar:
+  bg: dark
+  type: dark
+  structure:
+    left: [get-started, reference, articles, news]
+    right: [search, github, lightswitch]
+  components:
+    get-started:
+      text: Get started
+      href: articles/quickstart.html
 
 reference:
 - title: Setup
@@ -85,10 +108,17 @@ reference:
   - dragon_app
 
 articles:
-- title: Guides
-  navbar: ~
+- title: Start here
   contents:
   - quickstart
+  - shiny-app
+  - "`articles/cloud-gpu`"
+- title: Go further
+  contents:
   - post-training-loop
   - reinforcement-learning
-  - shiny-app
+  - "`articles/chat-and-feedback`"
+  - "`articles/evaluate`"
+- title: Reference notes
+  contents:
+  - "`articles/under-the-hood`"

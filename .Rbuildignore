@@ -19,3 +19,4 @@
 ^BACKLOG\.md$
 ^.*\.Rcheck$
 ^dragonfarm_.*\.tar\.gz$
+^vignettes/articles$
