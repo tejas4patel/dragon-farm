@@ -41,8 +41,9 @@ box open in the meantime. The destination is still a fine-tuned model.
 | Placement | Documents is tab 1 and the default path. The table route lives behind a "Have a table instead?" link that opens the Data and Map steps; those steps are hidden from the stepper until chosen. Step 1 of the six-step story becomes "Documents" |
 | Default mode | Ask first (no training yet), then Generate pairs, Review, Train. The Train button is reachable only through the review screen |
 | File types, v1 | PDF, HTML, Markdown, plain text, DOCX, web URLs (fetched as HTML), spreadsheets (xlsx/csv treated as documents: one chunk per row group or sheet) |
-| Answer model | `Qwen/Qwen2.5-1.5B-Instruct` when nothing is trained; any run or base model can be chosen |
-| Q&A generator | Local `Qwen/Qwen2.5-3B-Instruct` by default; an optional teacher via `dragon_llm_anthropic()` / `dragon_llm_ellmer()` when given, same pattern as `dragon_judge()` |
+| Answer model | Follows the hardware tier (decided 2026-10-12 after the 7B measurement): `Qwen2.5-1.5B-Instruct` under 6 GB of GPU memory or on CPU, `Qwen2.5-3B-Instruct` at 6 to 8 GB, `Qwen2.5-7B-Instruct` loaded 4-bit at 8 GB and above. Any run or base model can be chosen instead |
+| Q&A generator | Same tiers, so a 7B 4-bit on an 8 GB card (60% usable pairs against 33% for the 3B); an optional teacher via `dragon_llm_anthropic()` / `dragon_llm_ellmer()` when given, same pattern as `dragon_judge()` |
+| 4-bit loading | In 0.4.0: `bitsandbytes` NF4 for inference and generation (`dragon_generate(..., load_in_4bit = TRUE)`, automatic for the 7B tier). `dragon_check()` reports the tier. QLoRA training of 7B models is a stretch goal, measured before it is promised |
 | Citations | Numbered footnotes with expandable excerpts (file, section, text); the same structure is returned by `dragon_ask()` |
 | Persistence | Under `runs_dir/documents/<name>/`; temporary by default like runs, kept when `dragonfarm.runs_dir` is set; re-index only changed files |
 
@@ -107,7 +108,10 @@ loaded between calls:
 - `pairs.py`: generation prompt and filters (grounding ratio with stemming, unknown-identifier check, "the passage" check, length, duplicates). Ports `scripts/doc_prototype/qa_gen.py`. Worker op `pairs`, streaming progress through the usual `progress.jsonl` so the app can show a bar.
 
 New requirements in `dragon_python_requirements()`: `pypdf`, `python-docx`,
-`openpyxl`. All pure Python, small, no compiled extensions.
+`openpyxl` (pure Python) and `bitsandbytes` (compiled; 0.50.2 verified on
+Windows with the cu130 torch the package installs, 2026-10-12). `loading.py`
+gains a `quantization` argument used by the worker, the generator, and the
+pair generator; the trainer ignores it until QLoRA is measured.
 
 ## App
 
@@ -164,9 +168,10 @@ retrieval is in; revisit if users bring very long or jargon-heavy corpora).
 |---|---|
 | Oct 16 | This note; eval OOM fix |
 | Oct 21 | `dragon_documents()` + readers + chunker + manifest |
+| Oct 24 | 4-bit loading, hardware tiers, `dragon_check()` tier report |
 | Oct 28 | `dragon_index()`, `dragon_retrieve()`, `dragon_ask()`; Chat/Try it toggle |
-| Nov 4 | Documents tab (Sources + Ask cards) |
-| Nov 6 | Tejas tests on real documents |
+| Nov 6 | Documents tab (Sources + Ask cards) |
+| Nov 8 | Tejas tests on real documents |
 | Nov 11 | `dragon_pairs()`, review screen, Teach card, hand-off to training |
 | Nov 18 | Article, README, hero/GIF step 1, quickstart |
 | Nov 24 | Launch (dev version via pak) |
