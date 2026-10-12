@@ -24,6 +24,8 @@
 
 ## dragonfarm 0.3.4
 
+CRAN release: 2026-10-12
+
 - Fixed a test that failed on macOS (CRAN’s M1mac additional check)
   though it passed everywhere else. It compared
   [`dragon_runs_dir()`](https://dragonfarm.dev/reference/dragon_runs_dir.md)’s
