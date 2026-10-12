@@ -1,6 +1,22 @@
 # Changelog
 
+## dragonfarm 0.3.4
+
+- Fixed a test that failed on macOS (CRAN’s M1mac additional check)
+  though it passed everywhere else. It compared
+  [`dragon_runs_dir()`](https://dragonfarm.dev/reference/dragon_runs_dir.md)’s
+  default, a directory that does not exist yet, against
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) after
+  [`normalizePath()`](https://rdrr.io/r/base/normalizePath.html); on
+  macOS that resolves `/var` to `/private/var` for the existing
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) but leaves the
+  nonexistent path unresolved, so the prefix check failed. The test now
+  compares the existing parent directory. No change to package code or
+  behaviour.
+
 ## dragonfarm 0.3.3
+
+CRAN release: 2026-10-07
 
 - Fixed the Shiny app’s Try it, Chat, Train, and Pipeline panels
   sometimes keeping a stale runs list until the page was reloaded – most
