@@ -1,0 +1,35 @@
+{"q": "Which NVIDIA driver version do I need to get the CUDA 13 build of torch?", "all_of": ["580"]}
+{"q": "How much disk space does the Python environment need?", "all_of": ["3 ?gb"]}
+{"q": "Where do a run's files go by default?", "all_of": ["session temp"]}
+{"q": "Which environment variable sets where runs are stored?", "all_of": ["dragonfarm_runs_dir"]}
+{"q": "Which free GPU service has been tested end to end for training in the cloud, and how long does the example take?", "all_of": ["colab", "four minutes"]}
+{"q": "Which function zips up a run so I can send it to a cloud GPU?", "all_of": ["dragon_bundle"]}
+{"q": "How do I put the results of cloud training back into my R session?", "all_of": ["dragon_import"]}
+{"q": "Which file records the loss and ETA at each logging step?", "all_of": ["progress[.]jsonl"]}
+{"q": "Which recommended model needs only about 2 GB of GPU memory, or can run on a CPU?", "all_of": ["135m"]}
+{"q": "What does the trainer use so that only the reply tokens count toward the loss?", "all_of": ["collator"]}
+{"q": "What command does R launch in a subprocess to train?", "all_of": ["dragonfarm[.]train"]}
+{"q": "Do I have to install the CUDA Toolkit myself?", "all_of": ["cuda toolkit and cudnn are not needed"]}
+{"q": "Which algorithm does dragon_reinforce use?", "all_of": ["group relative policy optimization|grpo"]}
+{"q": "Which kinds of rewards are built in?", "all_of": ["exact", "contains", "numeric", "regex", "json", "keyword"]}
+{"q": "Why is reinforcement learning a poor substitute for preference data when the goal is to sound friendlier?", "all_of": ["noisy"]}
+{"q": "What does the KL penalty do during reinforcement learning?", "all_of": ["drifting"]}
+{"q": "What learning rate range is typical for reinforcement learning?", "all_of": ["1e-6"]}
+{"q": "How many panels does the app have?", "all_of": ["eight panels"]}
+{"q": "How does the Monitor panel get live progress while a run trains?", "all_of": ["polling progress[.]jsonl"]}
+{"q": "Which package provides the drag-and-drop buckets in the Map panel?", "all_of": ["sortable"]}
+{"q": "Can I train with a GPU on shinyapps.io?", "all_of": ["cpu only"]}
+{"q": "What do rated and edited chat replies turn into?", "all_of": ["dragon_feedback"]}
+{"q": "What is the difference between DPO and ORPO in what they start from?", "all_of": ["orpo", "reference model"]}
+{"q": "How does the judge avoid favouring whichever answer comes first?", "all_of": ["swapped"]}
+{"q": "Which function builds chosen and rejected pairs from the model's own replies without hand labelling?", "all_of": ["dragon_synthesize_pairs"]}
+{"q": "How many rounds of the improvement loop are typical before the gains flatten?", "all_of": ["two or three rounds"]}
+{"q": "How do I serve my model through Ollama?", "all_of": ["dragon_serve_ollama"]}
+{"q": "How many free GPU hours per week does Kaggle give?", "all_of": ["30 gpu hours"]}
+{"q": "Which file formats can I drop into the Data panel?", "all_of": ["csv", "parquet"]}
+{"q": "What LoRA rank is recommended when the model must learn many new facts?", "all_of": ["32 or 64"]}
+{"q": "What share of rows does training hold out for evaluation?", "all_of": ["5 percent"]}
+{"q": "What does dragon_merge give me?", "all_of": ["standalone model"]}
+{"q": "Which models need a Hugging Face token?", "all_of": ["gemma", "yes"]}
+{"q": "What happens to the model between turns in the Try it and Chat panels?", "all_of": ["loaded between turns|loads the model"]}
+{"q": "Which function turns a list of message lists into whole-conversation training data?", "all_of": ["dragon_conversations"]}

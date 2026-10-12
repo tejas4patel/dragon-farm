@@ -1,0 +1,32 @@
+{
+ "base05_norag": {
+  "answered": 0.0,
+  "fact_in_context": 0.0,
+  "unsupported_ids": 0.171,
+  "avg_words": 115.2
+ },
+ "base05_rag": {
+  "answered": 0.486,
+  "fact_in_context": 0.8,
+  "unsupported_ids": 0.029,
+  "avg_words": 19.1
+ },
+ "base15_rag": {
+  "answered": 0.6,
+  "fact_in_context": 0.8,
+  "unsupported_ids": 0.0,
+  "avg_words": 16.0
+ },
+ "base3b_rag": {
+  "answered": 0.686,
+  "fact_in_context": 0.8,
+  "unsupported_ids": 0.0,
+  "avg_words": 20.7
+ },
+ "ragtuned05": {
+  "answered": 0.571,
+  "fact_in_context": 0.8,
+  "unsupported_ids": 0.057,
+  "avg_words": 20.7
+ }
+}
