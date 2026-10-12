@@ -2,6 +2,17 @@
 
 ## dragonfarm (development version)
 
+- [`dragon_example_data()`](https://dragonfarm.dev/reference/dragon_example_data.md)
+  no longer contains duplicate tickets. The 200 example support tickets
+  used to be drawn with replacement from 315 possible ones, so about a
+  quarter were repeats and a “held-out” row often had an identical twin
+  in the training rows, which made held-out loss and perplexity look
+  nearly perfect. The tickets are now 200 distinct ones, and each issue
+  is answered in one of three wordings instead of a single fixed reply,
+  so held-out numbers are no longer inflated by verbatim repeats. The
+  tickets are still synthetic and built from templates, so treat the
+  example as a smoke test, not a benchmark.
+
 - Fixed the Shiny app clipping its own controls. The navbar page was
   “fillable”, so every card on a panel shared a single screenful of
   height: on the Map step the drag-and-drop slots were cut off to a thin

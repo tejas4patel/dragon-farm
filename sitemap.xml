@@ -1,13 +1,16 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://dragonfarm.dev/404.html</loc></url>
-<url><loc>https://dragonfarm.dev/BACKLOG.html</loc></url>
 <url><loc>https://dragonfarm.dev/LICENSE-text.html</loc></url>
 <url><loc>https://dragonfarm.dev/LICENSE.html</loc></url>
+<url><loc>https://dragonfarm.dev/articles/chat-and-feedback.html</loc></url>
+<url><loc>https://dragonfarm.dev/articles/cloud-gpu.html</loc></url>
+<url><loc>https://dragonfarm.dev/articles/evaluate.html</loc></url>
 <url><loc>https://dragonfarm.dev/articles/index.html</loc></url>
 <url><loc>https://dragonfarm.dev/articles/post-training-loop.html</loc></url>
 <url><loc>https://dragonfarm.dev/articles/quickstart.html</loc></url>
 <url><loc>https://dragonfarm.dev/articles/reinforcement-learning.html</loc></url>
 <url><loc>https://dragonfarm.dev/articles/shiny-app.html</loc></url>
+<url><loc>https://dragonfarm.dev/articles/under-the-hood.html</loc></url>
 <url><loc>https://dragonfarm.dev/authors.html</loc></url>
 <url><loc>https://dragonfarm.dev/index.html</loc></url>
 <url><loc>https://dragonfarm.dev/news/index.html</loc></url>
