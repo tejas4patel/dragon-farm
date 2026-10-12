@@ -1,0 +1,116 @@
+{
+ "base_plain": {
+  "n": 56,
+  "fact_recall": 0.089,
+  "unsupported_rate": 0.089,
+  "avg_words": 169.0
+ },
+ "base_rag": {
+  "n": 56,
+  "fact_recall": 0.418,
+  "unsupported_rate": 0.161,
+  "avg_words": 99.8
+ },
+ "base_rag__changed": {
+  "n": 32,
+  "fact_recall": 0.316,
+  "unsupported_rate": 0.031,
+  "avg_words": 86.8,
+  "changed_facts": {
+   "by_category": {
+    "return": {
+     "new": 0.25,
+     "stale": 0.0
+    },
+    "damaged": {
+     "new": 0.25,
+     "stale": 0.0
+    },
+    "warranty": {
+     "new": 0.25,
+     "stale": 0.0
+    },
+    "app": {
+     "new": 0.12,
+     "stale": 0.0
+    }
+   },
+   "new_mean": 0.217,
+   "stale_mean": 0.0
+  }
+ },
+ "ft_plain": {
+  "n": 56,
+  "fact_recall": 0.681,
+  "unsupported_rate": 0.268,
+  "avg_words": 91.8
+ },
+ "ft_rag": {
+  "n": 56,
+  "fact_recall": 0.732,
+  "unsupported_rate": 0.214,
+  "avg_words": 98.3
+ },
+ "ft_rag__changed": {
+  "n": 32,
+  "fact_recall": 0.671,
+  "unsupported_rate": 0.469,
+  "avg_words": 93.8,
+  "changed_facts": {
+   "by_category": {
+    "return": {
+     "new": 0.0,
+     "stale": 0.38
+    },
+    "damaged": {
+     "new": 0.0,
+     "stale": 0.12
+    },
+    "warranty": {
+     "new": 0.0,
+     "stale": 0.88
+    },
+    "app": {
+     "new": 0.25,
+     "stale": 0.0
+    }
+   },
+   "new_mean": 0.062,
+   "stale_mean": 0.345
+  }
+ },
+ "ragtuned": {
+  "n": 56,
+  "fact_recall": 0.89,
+  "unsupported_rate": 0.036,
+  "avg_words": 93.7
+ },
+ "ragtuned__changed": {
+  "n": 32,
+  "fact_recall": 0.88,
+  "unsupported_rate": 0.0,
+  "avg_words": 89.4,
+  "changed_facts": {
+   "by_category": {
+    "return": {
+     "new": 1.0,
+     "stale": 0.0
+    },
+    "damaged": {
+     "new": 0.62,
+     "stale": 0.0
+    },
+    "warranty": {
+     "new": 0.88,
+     "stale": 0.0
+    },
+    "app": {
+     "new": 1.0,
+     "stale": 0.0
+    }
+   },
+   "new_mean": 0.875,
+   "stale_mean": 0.0
+  }
+ }
+}
