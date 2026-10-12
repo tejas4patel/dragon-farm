@@ -39,3 +39,11 @@ test_that("the bundled example loads", {
   expect_true(all(c("subject", "body", "reply", "product") %in% names(ds$data)))
   expect_message(print(ds), "200 rows")
 })
+
+test_that("the bundled example has no duplicate tickets and varied replies", {
+  d <- dragon_dataset(dragon_example_data())$data
+  # Duplicated tickets let a "held-out" row have an identical twin in training.
+  expect_false(anyDuplicated(d[c("subject", "body")]) > 0)
+  # Each issue is answered in several wordings, so replies are not verbatim copies.
+  expect_true(all(tapply(d$reply, d$category, function(r) length(unique(r))) > 5))
+})
