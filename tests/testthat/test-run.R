@@ -2,8 +2,11 @@ test_that("dragon_runs_dir() defaults under tempdir(), never the working directo
   withr::local_envvar(DRAGONFARM_RUNS_DIR = NA)
   withr::local_options(dragonfarm.runs_dir = NULL)
   d <- dragon_runs_dir()
-  expect_true(startsWith(normalizePath(d, winslash = "/", mustWork = FALSE), normalizePath(tempdir(), winslash = "/")))
-  expect_false(startsWith(normalizePath(d, winslash = "/", mustWork = FALSE), normalizePath(getwd(), winslash = "/")))
+  # d itself doesn't exist yet, and normalizePath() leaves a nonexistent path
+  # unresolved, so on macOS (/var -> /private/var) only tempdir() would be
+  # resolved. Compare the existing parent directory instead.
+  expect_equal(basename(d), "dragonfarm_runs")
+  expect_equal(normalizePath(dirname(d), winslash = "/"), normalizePath(tempdir(), winslash = "/"))
 
   withr::local_options(dragonfarm.runs_dir = "custom/path")
   expect_equal(dragon_runs_dir(), "custom/path")

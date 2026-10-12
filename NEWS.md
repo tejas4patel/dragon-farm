@@ -1,3 +1,13 @@
+# dragonfarm 0.3.4
+
+* Fixed a test that failed on macOS (CRAN's M1mac additional check) though it
+  passed everywhere else. It compared `dragon_runs_dir()`'s default, a
+  directory that does not exist yet, against `tempdir()` after
+  `normalizePath()`; on macOS that resolves `/var` to `/private/var` for the
+  existing `tempdir()` but leaves the nonexistent path unresolved, so the
+  prefix check failed. The test now compares the existing parent directory.
+  No change to package code or behaviour.
+
 # dragonfarm 0.3.3
 
 * Fixed the Shiny app's Try it, Chat, Train, and Pipeline panels sometimes
