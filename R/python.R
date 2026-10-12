@@ -18,7 +18,11 @@ dragon_python_requirements <- function() {
       "numpy",
       "sentencepiece",
       "protobuf",
-      "huggingface_hub>=0.25"
+      "huggingface_hub>=0.25",
+      # document readers (dragon_documents): pure Python, small
+      "pypdf>=4",
+      "python-docx>=1.1",
+      "openpyxl>=3.1"
     ),
     python_version = ">=3.10,<3.14"
   )

@@ -33,6 +33,13 @@ def build_parser():
     p_pack.add_argument("run_dir")
     p_pack.add_argument("--out", default=None, help="Output zip path. Defaults to dragonfarm-results-<run id>.zip.")
 
+    p_docs = sub.add_parser("documents", help="Read files or URLs into a chunked document set.")
+    p_docs.add_argument("paths", nargs="+", help="Files, directories, or http(s) URLs.")
+    p_docs.add_argument("--out", required=True, help="Directory for manifest.json and chunks.jsonl.")
+    p_docs.add_argument("--name", required=True, help="Name of the document set.")
+    p_docs.add_argument("--max-words", type=int, default=170)
+    p_docs.add_argument("--min-words", type=int, default=35)
+
     return ap
 
 
@@ -58,6 +65,10 @@ def main(argv=None):
         if a.out:
             rest.extend(["--out", a.out])
         pack_results.main(rest)
+    elif a.command == "documents":
+        from . import documents
+        documents.main(["build", "--out", a.out, "--name", a.name,
+                        "--max-words", str(a.max_words), "--min-words", str(a.min_words), *a.paths])
 
 
 if __name__ == "__main__":

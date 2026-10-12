@@ -1,5 +1,16 @@
 # dragonfarm (development version)
 
+* New: `dragon_documents()` reads PDF, HTML, Markdown, text, Word, spreadsheet
+  files, directories of them, and web pages into a *document set*: chunks of
+  about 170 words that never cross a heading, each keeping its file and
+  section, stored under `runs_dir/documents/<name>/`. Reading again re-reads
+  only files whose contents changed. Changelog-like files are flagged and
+  down-weighted; quoted material and code blocks are marked on each chunk.
+  `dragon_chunks()`, `dragon_documents_load()`, and `dragon_documents_list()`
+  go with it. This is the first piece of the document route (drop in
+  documents, ask, then fine-tune); retrieval and answering follow. The Python
+  environment gains `pypdf`, `python-docx`, and `openpyxl`.
+
 * A run can no longer be marked failed by an out-of-memory error in the
   evaluation that follows training. Scoring the held-out rows materialized
   the full `batch x tokens x vocabulary` logits tensor; with a 150k-token

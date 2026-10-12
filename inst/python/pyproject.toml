@@ -30,6 +30,9 @@ dependencies = [
   "sentencepiece",
   "protobuf",
   "huggingface_hub>=0.25",
+  "pypdf>=4",
+  "python-docx>=1.1",
+  "openpyxl>=3.1",
 ]
 
 [project.scripts]
