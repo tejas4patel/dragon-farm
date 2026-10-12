@@ -29,6 +29,8 @@ dragon_code <- function(run) {
     sprintf("max_seq_len = %d", t$max_seq_len),
     if (!is.null(t$max_steps)) sprintf("max_steps = %d", t$max_steps),
     if (isTRUE(t$gradient_checkpointing)) "gradient_checkpointing = TRUE",
+    if (!is.null(t$per_device_eval_batch_size) && t$per_device_eval_batch_size != 1L)
+      sprintf("eval_batch_size = %d", t$per_device_eval_batch_size),
     sprintf("seed = %d", t$seed)
   )
   hw <- cfg$hardware

@@ -16,6 +16,7 @@ dragon_train_args(
   logging_steps = 5,
   save_steps = 100,
   gradient_checkpointing = FALSE,
+  eval_batch_size = 1,
   seed = 42,
   ...
 )
@@ -44,6 +45,12 @@ batch size is \code{batch_size * grad_accum}.}
 
 \item{gradient_checkpointing}{Trade compute for memory. Turn on if you run
 out of GPU memory.}
+
+\item{eval_batch_size}{Held-out rows scored per forward pass, during
+training and at the end. Defaults to 1: scoring materializes a
+\verb{batch x tokens x vocabulary} tensor, so at long \code{max_seq_len} a larger
+value can run a GPU out of memory after training has already succeeded.
+Raise it for speed on a large GPU.}
 
 \item{seed}{Random seed.}
 

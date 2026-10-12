@@ -124,7 +124,14 @@ answer that misses the `swapped` pattern).
    training batch size, and at `max_seq_len = 1536` with batch 4 the logits
    alone (4 x 1536 x 152k vocab) ran a 0.5B model out of memory on 8 GB
    *after* training had finished. Training succeeded with batch 2 x accum 8.
-   Worth fixing: evaluate with batch 1, or compute the loss in chunks.
+   Correction, found later the same day: the GPU was not otherwise idle. An
+   inference worker (`dragonfarm.worker`) left behind by the demo app had
+   held a loaded model since the morning, which is why memory was tighter
+   than it should have been. The evaluation tensor is still real and still
+   the thing that tipped it over, and it has since been fixed (chunked loss,
+   `eval_batch_size`, graceful fallback); but a second gap is that
+   `launch_trainer()` only stops the *current session's* worker, not one
+   owned by another R process such as the app.
 
 ## Addendum: a mid-sized model (Qwen2.5-7B-Instruct, 4-bit)
 

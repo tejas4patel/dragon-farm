@@ -48,6 +48,25 @@ def latest_checkpoint(run_dir: Path):
     return max(cands, key=lambda p: int(p.name.split("-")[-1]))
 
 
+def eval_batch_size(cfg):
+    """Rows per evaluation forward pass. Defaults to 1: evaluation materializes
+    [batch, seq, vocab] logits, which at long sequence lengths is what pushes
+    an 8 GB GPU over the edge after training itself has succeeded."""
+    return max(1, int(cfg["train"].get("per_device_eval_batch_size") or 1))
+
+
+def release_trainer(trainer):
+    """Drop the trainer's optimizer state and cached activations before the
+    end-of-run evaluation so the evaluation gets the whole GPU."""
+    from .evaluate_utils import free_gpu_memory
+
+    for attr in ("optimizer", "lr_scheduler"):
+        if hasattr(trainer, attr):
+            setattr(trainer, attr, None)
+    del trainer
+    free_gpu_memory()
+
+
 def training_arguments(cfg, run_dir, hw, has_eval):
     """TrainingArguments shared by every stage."""
     import inspect
@@ -69,7 +88,7 @@ def training_arguments(cfg, run_dir, hw, has_eval):
         max_steps=int(t["max_steps"]) if t.get("max_steps") else -1,
         learning_rate=float(t["learning_rate"]),
         per_device_train_batch_size=int(t["per_device_batch_size"]),
-        per_device_eval_batch_size=int(t["per_device_batch_size"]),
+        per_device_eval_batch_size=eval_batch_size(cfg),
         gradient_accumulation_steps=int(t["gradient_accumulation"]),
         weight_decay=float(t.get("weight_decay", 0.0)),
         lr_scheduler_type="cosine",
@@ -166,12 +185,41 @@ def finish(model, tok, run_dir, cancel):
     return not cancel.check()
 
 
-def run_sft(cfg, run_dir, status, resume, hw, tok, model, cancel):
+def make_sft_trainer_class():
+    """A Trainer whose evaluation scores held-out rows with the chunked loss.
+
+    Trainer's own prediction step runs the model with labels and lets the
+    model build the full [batch, seq, vocab] float32 logits for the loss. At a
+    long max_seq_len that single tensor is several gigabytes, and the
+    end-of-epoch evaluation would fail a run whose training steps all fit.
+    """
+    import torch
     from transformers import Trainer
+
+    from .data import IGNORE_INDEX
+    from .evaluate_utils import token_loss_sum
+
+    class SftTrainer(Trainer):
+        def prediction_step(self, model, inputs, prediction_loss_only, ignore_keys=None):
+            inputs = self._prepare_inputs(inputs)
+            unwrapped = self.accelerator.unwrap_model(model)
+            unwrapped.eval()
+            with torch.no_grad():
+                labels = inputs["labels"]
+                loss_sum = token_loss_sum(unwrapped, inputs["input_ids"], inputs["attention_mask"], labels)
+                n = (labels[:, 1:] != IGNORE_INDEX).sum().clamp(min=1)
+                loss = loss_sum / n
+            return loss.detach(), None, None
+
+    return SftTrainer
+
+
+def run_sft(cfg, run_dir, status, resume, hw, tok, model, cancel):
+    Trainer = make_sft_trainer_class()
 
     from .callbacks import ProgressCallback
     from .data import PadCollator, load_split
-    from .evaluate_utils import eval_loss, sample_generations, write_eval_files
+    from .evaluate_utils import eval_loss, evaluate_or_warn, sample_generations, write_eval_files
 
     max_len = int(cfg["train"]["max_seq_len"])
     train_ds, _ = load_split(run_dir / cfg["data"]["train"], tok, max_len)
@@ -197,14 +245,17 @@ def run_sft(cfg, run_dir, status, resume, hw, tok, model, cancel):
 
     if not finish(model, tok, run_dir, cancel):
         return "cancelled"
+    release_trainer(trainer)
 
     metrics, samples = None, []
     if eval_ds is not None:
         print("[dragonfarm] evaluating", flush=True)
-        metrics = eval_loss(model, eval_ds, tok.pad_token_id, hw.device)
+        metrics = evaluate_or_warn(status, "Held-out evaluation", lambda: eval_loss(
+            model, eval_ds, tok.pad_token_id, hw.device, batch_size=eval_batch_size(cfg)))
         n = int(cfg.get("eval", {}).get("n_samples", 10))
         if n > 0:
-            samples = sample_generations(model, tok, eval_records, hw.device, n=n)
+            samples = evaluate_or_warn(status, "Sample generation", lambda: sample_generations(
+                model, tok, eval_records, hw.device, n=n)) or []
     write_eval_files(run_dir, metrics, samples)
     if metrics:
         status.update(eval_loss=metrics["eval_loss"], perplexity=metrics["perplexity"])
@@ -214,7 +265,7 @@ def run_sft(cfg, run_dir, status, resume, hw, tok, model, cancel):
 def run_prefer(cfg, run_dir, status, resume, hw, tok, model, cancel):
     from .callbacks import ProgressCallback
     from .data import PairCollator, load_pairs_split
-    from .evaluate_utils import write_eval_files
+    from .evaluate_utils import evaluate_or_warn, write_eval_files
     from .prefer import PreferenceTrainer, eval_pairs, sample_pair_generations
 
     pref = cfg.get("prefer") or {}
@@ -246,14 +297,17 @@ def run_prefer(cfg, run_dir, status, resume, hw, tok, model, cancel):
 
     if not finish(model, tok, run_dir, cancel):
         return "cancelled"
+    release_trainer(trainer)
 
     metrics, samples = None, []
     if eval_ds is not None:
         print("[dragonfarm] evaluating", flush=True)
-        metrics = eval_pairs(model, eval_ds, tok.pad_token_id, hw.device, method, beta)
+        metrics = evaluate_or_warn(status, "Held-out evaluation", lambda: eval_pairs(
+            model, eval_ds, tok.pad_token_id, hw.device, method, beta, batch_size=eval_batch_size(cfg)))
         n = int(cfg.get("eval", {}).get("n_samples", 10))
         if n > 0:
-            samples = sample_pair_generations(model, tok, eval_records, hw.device, n=n)
+            samples = evaluate_or_warn(status, "Sample generation", lambda: sample_pair_generations(
+                model, tok, eval_records, hw.device, n=n)) or []
     write_eval_files(run_dir, metrics, samples)
     if metrics:
         status.update(eval_loss=metrics["eval_loss"], pref_accuracy=metrics["pref_accuracy"],

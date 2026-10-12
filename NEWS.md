@@ -1,5 +1,23 @@
 # dragonfarm (development version)
 
+* A run can no longer be marked failed by an out-of-memory error in the
+  evaluation that follows training. Scoring the held-out rows materialized
+  the full `batch x tokens x vocabulary` logits tensor; with a 150k-token
+  vocabulary, a long `max_seq_len`, and the training batch size, that tensor
+  alone was several gigabytes, and on an 8 GB GPU that was also holding a
+  loaded inference worker from the app, the run failed *after* the adapter
+  had been saved. Held-out loss is now computed in chunks of 256 positions
+  through the output layer, both in the Trainer's end-of-epoch evaluation
+  and in the end-of-run one, so the full tensor is never built; the trainer's
+  optimizer state is released before the final evaluation; evaluation falls
+  back to one row at a time if a batch still does not fit; and if even that
+  fails the run succeeds with an `eval_warning` in `status.json` (shown in
+  the Monitor panel and by `print()`) instead of failing. `dragon_train_args()`
+  gains `eval_batch_size` (default 1; it was silently the training batch size
+  before). Measured on `Qwen2.5-0.5B-Instruct` with a batch of 4 x 1536
+  tokens: peak evaluation memory fell from 7.9 GB to 2.4 GB, with the same
+  loss to the last decimal.
+
 * `dragon_example_data()` no longer contains duplicate tickets. The 200 example
   support tickets used to be drawn with replacement from 315 possible ones, so
   about a quarter were repeats and a "held-out" row often had an identical twin

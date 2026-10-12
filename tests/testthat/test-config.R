@@ -29,7 +29,8 @@ test_that("config round-trips through JSON", {
   cfg <- dragonfarm:::build_config(
     "r1", "HuggingFaceTB/SmolLM2-135M-Instruct", files,
     dragon_lora(r = 4, target_modules = c("q_proj", "v_proj")),
-    dragon_train_args(epochs = 1, max_steps = 6, gradient_checkpointing = TRUE, lr_scheduler_type = "linear"),
+    dragon_train_args(epochs = 1, max_steps = 6, gradient_checkpointing = TRUE, eval_batch_size = 2,
+                      lr_scheduler_type = "linear"),
     dragon_hardware(device = "cpu"), n_samples = 3
   )
   f <- tempfile(fileext = ".json")
@@ -44,7 +45,19 @@ test_that("config round-trips through JSON", {
   expect_equal(objs$lora$target_modules, c("q_proj", "v_proj"))
   expect_identical(objs$args$max_steps, 6L)
   expect_true(objs$args$gradient_checkpointing)
+  expect_identical(objs$args$eval_batch_size, 2L)
+  expect_match(txt, '"per_device_eval_batch_size": 2')
   expect_equal(objs$hardware$device, "cpu")
+})
+
+test_that("eval batch size defaults to 1 and old configs without it still read", {
+  expect_identical(dragon_train_args()$eval_batch_size, 1L)
+  expect_error(dragon_train_args(eval_batch_size = 0), "eval_batch_size")
+  files <- list(train = "data/train.jsonl", eval = NULL, n_train = 10L, n_eval = 0L)
+  cfg <- dragonfarm:::build_config("r2", "m", files, dragon_lora(), dragon_train_args(),
+                                   dragon_hardware(), n_samples = 0)
+  cfg$train$per_device_eval_batch_size <- NULL   # a run written before 0.4.0
+  expect_identical(dragonfarm:::config_to_objects(cfg)$args$eval_batch_size, 1L)
 })
 
 test_that("empty extra serializes as an object", {

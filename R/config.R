@@ -38,6 +38,11 @@ dragon_lora <- function(r = 16, alpha = 32, dropout = 0.05, target_modules = "au
 #' @param save_steps Steps between checkpoints.
 #' @param gradient_checkpointing Trade compute for memory. Turn on if you run
 #'   out of GPU memory.
+#' @param eval_batch_size Held-out rows scored per forward pass, during
+#'   training and at the end. Defaults to 1: scoring materializes a
+#'   `batch x tokens x vocabulary` tensor, so at long `max_seq_len` a larger
+#'   value can run a GPU out of memory after training has already succeeded.
+#'   Raise it for speed on a large GPU.
 #' @param seed Random seed.
 #' @param ... Extra named arguments passed straight to `TrainingArguments`.
 #' @return A `dragon_train_args` object.
@@ -48,8 +53,9 @@ dragon_train_args <- function(epochs = 3, learning_rate = 2e-4, batch_size = 4,
                               grad_accum = 4, max_seq_len = 1024, max_steps = NULL,
                               warmup_ratio = 0.03, weight_decay = 0,
                               logging_steps = 5, save_steps = 100,
-                              gradient_checkpointing = FALSE, seed = 42, ...) {
+                              gradient_checkpointing = FALSE, eval_batch_size = 1, seed = 42, ...) {
   check_number(epochs, "epochs", min = 0.01)
+  check_number(eval_batch_size, "eval_batch_size", min = 1, integer = TRUE)
   check_number(learning_rate, "learning_rate", min = 1e-8, max = 1)
   check_number(batch_size, "batch_size", min = 1, integer = TRUE)
   check_number(grad_accum, "grad_accum", min = 1, integer = TRUE)
@@ -74,6 +80,7 @@ dragon_train_args <- function(epochs = 3, learning_rate = 2e-4, batch_size = 4,
       warmup_ratio = warmup_ratio, weight_decay = weight_decay,
       logging_steps = as.integer(logging_steps), save_steps = as.integer(save_steps),
       gradient_checkpointing = isTRUE(gradient_checkpointing),
+      eval_batch_size = as.integer(eval_batch_size),
       seed = as.integer(seed), extra = extra
     ),
     class = "dragon_train_args"
@@ -127,6 +134,7 @@ build_config <- function(run_id, model, files, lora, args, hardware, n_samples,
       epochs = args$epochs,
       learning_rate = args$learning_rate,
       per_device_batch_size = args$batch_size,
+      per_device_eval_batch_size = args$eval_batch_size,
       gradient_accumulation = args$grad_accum,
       max_seq_len = args$max_seq_len,
       max_steps = args$max_steps,
@@ -159,7 +167,10 @@ config_to_objects <- function(cfg) {
         max_seq_len = cfg$train$max_seq_len, max_steps = cfg$train$max_steps,
         warmup_ratio = cfg$train$warmup_ratio, weight_decay = cfg$train$weight_decay,
         logging_steps = cfg$train$logging_steps, save_steps = cfg$train$save_steps,
-        gradient_checkpointing = cfg$train$gradient_checkpointing, seed = cfg$train$seed
+        gradient_checkpointing = cfg$train$gradient_checkpointing,
+        # Runs written before 0.4.0 have no eval batch size; they evaluated at the training batch size.
+        eval_batch_size = cfg$train$per_device_eval_batch_size %||% 1L,
+        seed = cfg$train$seed
       ),
       cfg$train$extra
     )),

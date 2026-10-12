@@ -22,6 +22,7 @@ def main():
 
     from .evaluate_utils import write_eval_files
     from .hardware import resolve
+    from .train import eval_batch_size
     from .loading import load_for_inference, load_tokenizer
 
     adapter = run_dir / "adapter"
@@ -56,7 +57,8 @@ def main():
             eval_ds, records = load_pairs_split(run_dir / cfg["data"]["eval"], tok, max_len)
             if len(eval_ds):
                 metrics = eval_pairs(model, eval_ds, tok.pad_token_id, hw.device,
-                                     pref.get("method", "dpo"), float(pref.get("beta", 0.1)))
+                                     pref.get("method", "dpo"), float(pref.get("beta", 0.1)),
+                                     batch_size=eval_batch_size(cfg))
                 samples = sample_pair_generations(model, tok, records, hw.device, n=a.n_samples)
         else:
             from .data import load_split
@@ -64,7 +66,7 @@ def main():
 
             eval_ds, records = load_split(run_dir / cfg["data"]["eval"], tok, max_len)
             if len(eval_ds):
-                metrics = eval_loss(model, eval_ds, tok.pad_token_id, hw.device)
+                metrics = eval_loss(model, eval_ds, tok.pad_token_id, hw.device, batch_size=eval_batch_size(cfg))
                 samples = sample_generations(model, tok, records, hw.device, n=a.n_samples)
     write_eval_files(run_dir, metrics, samples)
     print(json.dumps({"metrics": metrics, "n_samples": len(samples)}))

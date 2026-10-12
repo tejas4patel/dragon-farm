@@ -233,6 +233,7 @@ print.dragon_run <- function(x, ...) {
   } else if (!is.null(st$eval_loss)) {
     cli::cli_text("Eval loss: {round(st$eval_loss, 3)} \u00b7 perplexity {round(st$perplexity, 2)}")
   }
+  if (!is.null(st$eval_warning)) cli::cli_text("{.strong Note:} {st$eval_warning}")
   if (!is.null(st$error)) cli::cli_text("{.strong Error:} {st$error}")
   invisible(x)
 }
