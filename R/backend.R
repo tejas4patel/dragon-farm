@@ -25,6 +25,12 @@
 #' @param keep_loaded Keep the worker and its models alive between calls.
 #' @param device,dtype Device and precision for the local worker. See
 #'   [dragon_hardware()].
+#' @param load_in_4bit Load models in 4-bit (NF4 through bitsandbytes) on an
+#'   NVIDIA GPU. `"auto"`, the default, quantizes only models whose full
+#'   weights would not fit: a 7B on an 8 GB card, not a 3B. `TRUE` forces it,
+#'   `FALSE` never does. A 4-bit 7B uses about the memory of a 3B in full
+#'   precision and generates about 40 percent slower per token. The weights
+#'   are downloaded in full (about 15 GB for a 7B) and quantized at load.
 #' @param url Base URL of the server, ending in `/v1`.
 #' @param model Model name as the server knows it.
 #' @param api_key Bearer token, if the server needs one. Defaults to
@@ -44,8 +50,12 @@ NULL
 
 #' @rdname dragon_backend
 #' @export
-dragon_backend_local <- function(keep_loaded = TRUE, device = "auto", dtype = "auto") {
-  structure(list(kind = "local", keep_loaded = isTRUE(keep_loaded), device = device, dtype = dtype),
+dragon_backend_local <- function(keep_loaded = TRUE, device = "auto", dtype = "auto", load_in_4bit = "auto") {
+  if (!(identical(load_in_4bit, "auto") || isTRUE(load_in_4bit) || isFALSE(load_in_4bit))) {
+    cli::cli_abort("{.arg load_in_4bit} must be {.val auto}, {.code TRUE}, or {.code FALSE}.")
+  }
+  structure(list(kind = "local", keep_loaded = isTRUE(keep_loaded), device = device, dtype = dtype,
+                 load_in_4bit = load_in_4bit),
             class = c("dragon_backend_local", "dragon_backend"))
 }
 
@@ -113,6 +123,7 @@ backend_generate.dragon_backend_local <- function(backend, target, conversations
     base_adapters = as.list(target$base_adapters %||% character()),
     trust_remote_code = isTRUE(target$trust_remote_code),
     device = backend$device, dtype = backend$dtype,
+    load_in_4bit = backend$load_in_4bit %||% "auto",
     conversations = conversations,
     max_new_tokens = as.integer(max_new_tokens), temperature = temperature, top_p = top_p,
     stream = !is.null(on_token)

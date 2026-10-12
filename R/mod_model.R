@@ -63,7 +63,9 @@ mod_model_server <- function(id, state, nav_to) {
         shiny::div(class = "kv", shiny::span("Device"), shiny::strong(hw$device_name)),
         if (identical(hw$device, "cuda")) shiny::div(class = "kv", shiny::span("GPU memory"), shiny::strong(sprintf("%.1f GB", hw$vram_gb))),
         shiny::div(class = "kv", shiny::span("torch"), shiny::strong(hw$torch)),
-        shiny::div(class = "kv", shiny::span("transformers"), shiny::strong(hw$transformers))
+        shiny::div(class = "kv", shiny::span("transformers"), shiny::strong(hw$transformers)),
+        if (!is.null(hw$tier)) shiny::div(class = "kv", shiny::span("Default for answering"),
+          shiny::strong(paste0(hw$tier$model, if (isTRUE(hw$tier$load_in_4bit)) " (4-bit)" else "")))
       )
     })
 

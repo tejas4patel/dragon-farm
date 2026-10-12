@@ -19,14 +19,15 @@ def main(argv=None):
         req = json.load(f)
 
     from .evaluate_utils import generate_reply
-    from .hardware import resolve
+    from .hardware import resolve, wants_4bit
     from .loading import load_for_inference, load_tokenizer
 
     hw = resolve({"device": req.get("device", "auto"), "dtype": req.get("dtype", "auto")})
     trust = bool(req.get("trust_remote_code", False))
+    four_bit = wants_4bit(req.get("load_in_4bit", "auto"), req["model"], hw.kind, hw.vram_gb)
     tok = load_tokenizer(req["model"], trust_remote_code=trust)
     model = load_for_inference(req["model"], hw, adapter=req.get("adapter"), trust_remote_code=trust,
-                               base_adapters=req.get("base_adapters") or [])
+                               base_adapters=req.get("base_adapters") or [], load_in_4bit=four_bit)
 
     outputs = []
     for prompt in req["prompts"]:

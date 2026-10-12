@@ -41,17 +41,18 @@ class ModelCache:
         self.items = OrderedDict()
         self.hw = None
 
-    def key(self, req):
+    def key(self, req, four_bit=False):
         return json.dumps([req["model"], req.get("adapter"), req.get("base_adapters") or [],
-                           bool(req.get("trust_remote_code", False))])
+                           bool(req.get("trust_remote_code", False)), bool(four_bit)])
 
     def get(self, req):
-        from .hardware import resolve
+        from .hardware import resolve, wants_4bit
         from .loading import load_for_inference, load_tokenizer
 
         if self.hw is None:
             self.hw = resolve({"device": req.get("device", "auto"), "dtype": req.get("dtype", "auto")})
-        k = self.key(req)
+        four_bit = wants_4bit(req.get("load_in_4bit", "auto"), req["model"], self.hw.kind, self.hw.vram_gb)
+        k = self.key(req, four_bit)
         if k in self.items:
             self.items.move_to_end(k)
             return self.items[k]
@@ -66,9 +67,11 @@ class ModelCache:
             except Exception:
                 pass
         trust = bool(req.get("trust_remote_code", False))
+        if four_bit:
+            print(f"[dragonfarm] loading {req['model']} in 4-bit (NF4)", file=sys.stderr, flush=True)
         tok = load_tokenizer(req["model"], trust_remote_code=trust)
         model = load_for_inference(req["model"], self.hw, adapter=req.get("adapter"), trust_remote_code=trust,
-                                   base_adapters=req.get("base_adapters") or [])
+                                   base_adapters=req.get("base_adapters") or [], load_in_4bit=four_bit)
         self.items[k] = (tok, model)
         return tok, model
 

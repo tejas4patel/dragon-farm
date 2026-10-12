@@ -258,3 +258,22 @@ test_that("a saved transcript loads back into the thread, and the current one ex
     expect_error(export_example_content(empty))   # nothing to export yet
   })
 })
+
+test_that("the local backend validates and forwards load_in_4bit", {
+  expect_equal(dragon_backend_local()$load_in_4bit, "auto")
+  expect_true(dragon_backend_local(load_in_4bit = TRUE)$load_in_4bit)
+  expect_false(dragon_backend_local(load_in_4bit = FALSE)$load_in_4bit)
+  expect_error(dragon_backend_local(load_in_4bit = "yes"), "load_in_4bit")
+  expect_error(dragon_backend_local(load_in_4bit = NA), "load_in_4bit")
+
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    worker_start = function(backend) invisible(NULL),
+    worker_request = function(req, on_token = NULL) { seen <<- req; list(outputs = list("ok")) }
+  )
+  out <- dragon_generate("Qwen/Qwen2.5-7B-Instruct", "hi", backend = dragon_backend_local(load_in_4bit = TRUE))
+  expect_equal(out, "ok")
+  expect_true(seen$load_in_4bit)
+  dragon_generate("Qwen/Qwen2.5-7B-Instruct", "hi", backend = dragon_backend_local())
+  expect_equal(seen$load_in_4bit, "auto")
+})

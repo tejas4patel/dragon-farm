@@ -22,7 +22,9 @@ dragon_python_requirements <- function() {
       # document readers (dragon_documents): pure Python, small
       "pypdf>=4",
       "python-docx>=1.1",
-      "openpyxl>=3.1"
+      "openpyxl>=3.1",
+      # 4-bit loading on NVIDIA GPUs; no macOS build, so it is left out there
+      "bitsandbytes>=0.45; platform_system != 'Darwin'"
     ),
     python_version = ">=3.10,<3.14"
   )
@@ -132,6 +134,11 @@ dragon_check <- function() {
   dev <- info$device
   if (identical(dev, "cuda")) {
     cli::cli_alert_success("Device: CUDA {info$cuda_version} \u00b7 {info$device_name} \u00b7 {round(info$vram_gb, 1)} GB \u00b7 bf16 {if (isTRUE(info$bf16)) 'yes' else 'no'}")
+    if (!is.null(info$bitsandbytes)) {
+      cli::cli_alert_success("4-bit loading available (bitsandbytes {info$bitsandbytes}).")
+    } else {
+      cli::cli_alert_info("bitsandbytes not installed: models load in full precision only.")
+    }
   } else if (identical(dev, "mps")) {
     cli::cli_alert_success("Device: Apple MPS")
   } else {
@@ -142,6 +149,9 @@ dragon_check <- function() {
     cli::cli_bullets(c(
       "i" = "No GPU here? Train on a cloud one instead: {.code run <- dragon_bundle(...)} then {.code dragon_remote(run, \"colab\")}. Google Colab and Kaggle are free; Lightning AI and RunPod also work. See {.help dragonfarm::dragon_remote}."
     ))
+  }
+  if (!is.null(info$tier)) {
+    cli::cli_alert_info("Default model for answering and question generation here: {.val {info$tier$model}}{if (isTRUE(info$tier$load_in_4bit)) ' in 4-bit' else ''} ({info$tier$label}).")
   }
   if (hf_token_present()) {
     cli::cli_alert_success("Hugging Face token found (needed for gated models such as Gemma and Llama).")

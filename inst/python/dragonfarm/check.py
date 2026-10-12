@@ -18,13 +18,7 @@ def main():
         "transformers": transformers.__version__,
         "peft": peft.__version__,
     }
-    info.update(describe())
-    try:
-        import bitsandbytes  # noqa: F401
-
-        info["bitsandbytes"] = True
-    except Exception:
-        info["bitsandbytes"] = False
+    info.update(describe())   # includes bitsandbytes (version or null) and the recommended tier
     print(json.dumps(info))
 
 

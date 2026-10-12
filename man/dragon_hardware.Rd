@@ -16,8 +16,10 @@ dragon_hardware(
 \item{dtype}{\code{"auto"} picks bfloat16 on GPUs that support it, float16 on
 older GPUs, and float32 elsewhere.}
 
-\item{load_in_4bit}{Load the base model in 4-bit through bitsandbytes.
-Only available on Linux with CUDA.}
+\item{load_in_4bit}{Load the base model in 4-bit through bitsandbytes
+(QLoRA when training). Needs an NVIDIA GPU; works on Linux and Windows.
+For generation, prefer the \code{load_in_4bit} argument of
+\code{\link[=dragon_backend_local]{dragon_backend_local()}}, which decides per model.}
 }
 \value{
 A \code{dragon_hardware} object.

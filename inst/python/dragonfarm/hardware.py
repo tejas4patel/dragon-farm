@@ -16,6 +16,83 @@ class Hardware:
     vram_gb: float
 
 
+# Which models to reach for by default, by GPU memory. Measured on the
+# documentation question set (scripts/doc_prototype/RESULTS.md): the 7B in
+# 4-bit uses about the memory of a bf16 3B and answers markedly better.
+TIERS = [
+    {"name": "cpu", "min_vram_gb": 0.0, "model": "Qwen/Qwen2.5-1.5B-Instruct", "load_in_4bit": False,
+     "label": "CPU or Apple GPU: 1.5B in full precision; slow but it works"},
+    {"name": "small", "min_vram_gb": 3.0, "model": "Qwen/Qwen2.5-1.5B-Instruct", "load_in_4bit": False,
+     "label": "under 6 GB: 1.5B"},
+    {"name": "medium", "min_vram_gb": 6.0, "model": "Qwen/Qwen2.5-3B-Instruct", "load_in_4bit": False,
+     "label": "6 to 8 GB: 3B"},
+    {"name": "large", "min_vram_gb": 8.0, "model": "Qwen/Qwen2.5-7B-Instruct", "load_in_4bit": True,
+     "label": "8 GB and up: 7B in 4-bit"},
+]
+
+
+def bitsandbytes_version():
+    """Installed bitsandbytes version, or None when it is missing or cannot load."""
+    try:
+        import bitsandbytes
+
+        return getattr(bitsandbytes, "__version__", "unknown")
+    except Exception:
+        return None
+
+
+def model_size_b(model_id):
+    """Parameter count in billions guessed from a model id ('Qwen2.5-7B-Instruct' -> 7.0,
+    'SmolLM2-135M-Instruct' -> 0.135), or None when the id does not say."""
+    import re
+
+    name = str(model_id).rstrip("/").rsplit("/", 1)[-1]
+    sizes = []
+    for num, unit in re.findall(r"(\d+(?:\.\d+)?)\s*([bBmM])(?![A-Za-z])", name):
+        sizes.append(float(num) / (1000.0 if unit.lower() == "m" else 1.0))
+    return max(sizes) if sizes else None
+
+
+def inference_tier(kind, vram_gb, bnb_available):
+    """The tier for this machine: the largest whose memory floor fits, falling back
+    from the 4-bit tier when bitsandbytes is not usable."""
+    if kind != "cuda":
+        return dict(TIERS[0])
+    # Cards report a little under their nominal size (an "8 GB" RTX 4060 says
+    # 7.996 GB), so allow a third of a gigabyte of slack against each floor.
+    fit = [t for t in TIERS[1:] if vram_gb + 0.34 >= t["min_vram_gb"]] or [TIERS[1]]
+    tier = fit[-1]
+    if tier["load_in_4bit"] and not bnb_available:
+        tier = [t for t in fit if not t["load_in_4bit"]][-1]
+    return dict(tier)
+
+
+def wants_4bit(setting, model_id, kind, vram_gb, bnb_available=None):
+    """Resolve a load_in_4bit setting of True, False, or 'auto' for one model.
+
+    'auto' quantizes only when the model's bf16 weights would not leave room on
+    the GPU: estimated at 2.1 GB per billion parameters against 90% of GPU
+    memory, so a 7B goes 4-bit on 8 GB and a 3B does not.
+    """
+    if bnb_available is None:
+        bnb_available = bitsandbytes_version() is not None
+    if setting in (False, None, "false", "no"):
+        return False
+    if setting in (True, "true", "yes"):
+        if kind != "cuda":
+            raise RuntimeError("load_in_4bit needs an NVIDIA GPU; this machine would run on " + kind)
+        if not bnb_available:
+            raise RuntimeError("load_in_4bit needs the bitsandbytes package, which is not installed in this "
+                               "Python environment; run dragon_check() to refresh it")
+        return True
+    if kind != "cuda" or not bnb_available:
+        return False
+    size = model_size_b(model_id)
+    if size is None:
+        return False
+    return size * 2.1 > 0.9 * float(vram_gb or 0)
+
+
 def describe():
     """Facts about the machine, used by dragon_check()."""
     import torch
@@ -41,6 +118,8 @@ def describe():
     elif info["mps_available"]:
         info["device"] = "mps"
         info["device_name"] = "Apple MPS"
+    info["bitsandbytes"] = bitsandbytes_version()
+    info["tier"] = inference_tier(info["device"], info["vram_gb"], info["bitsandbytes"] is not None)
     return info
 
 

@@ -92,8 +92,10 @@ dragon_train_args <- function(epochs = 3, learning_rate = 2e-4, batch_size = 4,
 #' @param device `"auto"` picks CUDA, then Apple MPS, then CPU. Or name one.
 #' @param dtype `"auto"` picks bfloat16 on GPUs that support it, float16 on
 #'   older GPUs, and float32 elsewhere.
-#' @param load_in_4bit Load the base model in 4-bit through bitsandbytes.
-#'   Only available on Linux with CUDA.
+#' @param load_in_4bit Load the base model in 4-bit through bitsandbytes
+#'   (QLoRA when training). Needs an NVIDIA GPU; works on Linux and Windows.
+#'   For generation, prefer the `load_in_4bit` argument of
+#'   [dragon_backend_local()], which decides per model.
 #' @return A `dragon_hardware` object.
 #' @export
 dragon_hardware <- function(device = c("auto", "cuda", "mps", "cpu"),

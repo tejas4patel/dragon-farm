@@ -1,5 +1,18 @@
 # dragonfarm (development version)
 
+* 4-bit loading for generation, on Windows as well as Linux.
+  `dragon_backend_local()` gains `load_in_4bit`: `"auto"` (the default)
+  quantizes a model to NF4 through bitsandbytes only when its full weights
+  would not fit the GPU, so `dragon_generate("Qwen/Qwen2.5-7B-Instruct", ...)`
+  now works on an 8 GB card (about 5.5 GB of weights, 7.2 GB peak) while a 3B
+  still loads in full precision. `dragon_check()` reports whether 4-bit
+  loading is available and which model it would reach for on this machine,
+  by GPU memory: a 1.5B under 6 GB, a 3B at 6 to 8 GB, a 7B in 4-bit at 8 GB
+  and up. `bitsandbytes` is added to the Python requirements on Linux and
+  Windows. The earlier `dragon_hardware(load_in_4bit = TRUE)` (QLoRA
+  training) is no longer refused on Windows, but training a 7B that way has
+  not been measured yet.
+
 * New: `dragon_documents()` reads PDF, HTML, Markdown, text, Word, spreadsheet
   files, directories of them, and web pages into a *document set*: chunks of
   about 170 words that never cross a heading, each keeping its file and

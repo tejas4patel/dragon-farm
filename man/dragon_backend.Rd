@@ -7,7 +7,12 @@
 \alias{dragon_backend_ollama}
 \title{Inference backends}
 \usage{
-dragon_backend_local(keep_loaded = TRUE, device = "auto", dtype = "auto")
+dragon_backend_local(
+  keep_loaded = TRUE,
+  device = "auto",
+  dtype = "auto",
+  load_in_4bit = "auto"
+)
 
 dragon_backend_server(url, model, api_key = NULL, headers = NULL)
 
@@ -20,6 +25,13 @@ dragon_backend()
 
 \item{device, dtype}{Device and precision for the local worker. See
 \code{\link[=dragon_hardware]{dragon_hardware()}}.}
+
+\item{load_in_4bit}{Load models in 4-bit (NF4 through bitsandbytes) on an
+NVIDIA GPU. \code{"auto"}, the default, quantizes only models whose full
+weights would not fit: a 7B on an 8 GB card, not a 3B. \code{TRUE} forces it,
+\code{FALSE} never does. A 4-bit 7B uses about the memory of a 3B in full
+precision and generates about 40 percent slower per token. The weights
+are downloaded in full (about 15 GB for a 7B) and quantized at load.}
 
 \item{url}{Base URL of the server, ending in \verb{/v1}.}
 

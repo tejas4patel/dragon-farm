@@ -33,6 +33,7 @@ dependencies = [
   "pypdf>=4",
   "python-docx>=1.1",
   "openpyxl>=3.1",
+  "bitsandbytes>=0.45; platform_system != 'Darwin'",
 ]
 
 [project.scripts]
