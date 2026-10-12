@@ -59,6 +59,7 @@
 <span>  logging_steps <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  save_steps <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>  gradient_checkpointing <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  eval_batch_size <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">42</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -114,6 +115,14 @@ batch size is <code>batch_size * grad_accum</code>.</p></dd>
 out of GPU memory.</p></dd>
 
 
+<dt id="arg-eval-batch-size">eval_batch_size<a class="anchor" aria-label="anchor" href="#arg-eval-batch-size"></a></dt>
+<dd><p>Held-out rows scored per forward pass, during
+training and at the end. Defaults to 1: scoring materializes a
+<code>batch x tokens x vocabulary</code> tensor, so at long <code>max_seq_len</code> a larger
+value can run a GPU out of memory after training has already succeeded.
+Raise it for speed on a large GPU.</p></dd>
+
+
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
 <dd><p>Random seed.</p></dd>
 
@@ -162,6 +171,9 @@ out of GPU memory.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $gradient_checkpointing</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $eval_batch_size</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $seed</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 42</span>
