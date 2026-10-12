@@ -1,26 +1,102 @@
 # dragon-farm
 
+[![CRAN status](https://www.r-pkg.org/badges/version/dragonfarm)](https://CRAN.R-project.org/package=dragonfarm)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tejas4patel/dragon-farm/blob/main/inst/remote/dragonfarm_remote.ipynb)
+
 Fine-tune small language models with LoRA from R, by code or by drag and drop.
+
+![The dragon-farm app: load a table, drag its columns into slots, pick a model, train, watch the loss, and compare against the base model.](https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/demo/dragonfarm-demo.gif)
 
 `dragonfarm` takes a table of prompts and replies, teaches a 100M to 3B parameter
 model to answer in your format and your domain, and gives you back an adapter
 or a merged model that loads with plain Hugging Face `transformers`. Training
-runs in a background Python process that the package sets up for you.
+runs in a background Python process that the package sets up for you, on your
+own GPU or on a free cloud one.
+
+## Before and after
+
+`Qwen/Qwen2.5-0.5B-Instruct`, before and after fine-tuning on the package's
+example support tickets (190 training rows; training takes about 2 to 4
+minutes on a laptop RTX 4060 and about 4 minutes on a free Colab T4, after
+the one-time setup). Same ticket, temperature 0:
+
+> **Ticket:** Lumen bulb pack arrived damaged. Opened my Lumen bulb pack
+> today and the casing is split. The packaging looked fine from the outside
+> so it must have happened before shipping.
+
+> **Base model:** I'm sorry to hear that your Lumen bulb pack has been
+> damaged. It's important to take any damage seriously and report it to the
+> manufacturer or seller as soon as possible. Here are some steps you can
+> follow: 1. **Contact the Manufacturer**: Reach out to the company that sold
+> you the Lumen bulb pack. They may be able to provide a replacement or offer
+> a repair service. 2. **Report the Damage**: ... (shortened)
+
+> **After fine-tuning:** I'm sorry your Lumen bulb pack arrived damaged. We
+> will replace it at no cost. Please reply with a photo of the damage and one
+> of the shipping label so we can file the carrier claim on our side. As soon
+> as we have those, we ship a replacement Lumen bulb pack with a prepaid
+> return label for the damaged unit. You do not need to wait for the return
+> to arrive before the new one ships. Typical turnaround is 2 business days.
+
+The example data is small, synthetic, and repetitive (many tickets recur with
+near-identical replies, and the held-out rows have near-copies in the training
+rows), so this shows a model picking up a house style and policy, not
+generalizing to new problems. Treat it as a demonstration of the workflow, and
+measure on your own data before trusting any output.
 
 ## Install
 
 ```r
-# install.packages("pak")
-pak::pak("tejas4patel/dragon-farm")
+install.packages("dragonfarm")   # from CRAN
+library(dragonfarm)
+dragon_check()                   # first run builds the Python environment: 2 to 3 GB
 ```
 
-Then check the machine. The first call builds a Python environment with torch
-and transformers, which downloads 2 to 3 GB and takes a few minutes.
+The development version: `pak::pak("tejas4patel/dragon-farm")`.
+
+## The short version
 
 ```r
 library(dragonfarm)
-dragon_check()
+options(dragonfarm.runs_dir = "~/dragonfarm_runs")   # keep runs after R closes; see Requirements
+
+run <- dragon_dataset(dragon_example_data()) |>
+  dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
+  dragon_train("Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+
+dragon_generate(run, "My thermostat keeps dropping off Wi-Fi.")
+dragon_merge(run, "models/support-0.5b")
 ```
+
+`dragon_train()` returns immediately by default. Runs live on disk, so you can
+close R and come back:
+
+```r
+run <- dragon_run("~/dragonfarm_runs/20260913-143201-qwen2-5-0-5b-instruct")
+dragon_status(run)
+dragon_progress(run)   # one row per logged step
+dragon_wait(run)       # progress bar until it finishes
+dragon_cancel(run)     # stops after the current step and saves a checkpoint
+dragon_resume(run)     # picks up from that checkpoint
+```
+
+## The app
+
+```r
+dragon_app()
+```
+
+Eight panels, left to right: **Data** (drop a file), **Map** (drag its columns
+into Prompt and Response slots), **Model** (pick one and check your GPU),
+**Train** (set a few numbers, or send it to a cloud GPU), **Monitor** (watch
+the loss curve), **Try it** (compare the tuned model with the base model, then
+judge, improve, merge, or publish), **Chat**, and **Pipeline**. Every run
+started in the app is a normal run directory, and the Monitor panel shows the
+R code that reproduces it.
+
+![The Map panel: subject and body dragged into the Prompt slot, reply into Response, with a live preview of what the model will see.](https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/demo/02-map.png)
+
+![The Try it panel: the same ticket answered by the fine-tuned model and by the base model, side by side.](https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/demo/06-compare.png)
 
 ## Requirements
 
@@ -59,43 +135,6 @@ options(dragonfarm.runs_dir = "~/dragonfarm_runs")   # or any path you like
 or set the `DRAGONFARM_RUNS_DIR` environment variable, or pass `runs_dir =`
 to `dragon_train()`, `dragon_bundle()`, `dragon_app()`, and the rest
 directly. See `?dragon_runs_dir`.
-
-## The five-line version
-
-```r
-library(dragonfarm)
-
-run <- dragon_dataset(dragon_example_data()) |>
-  dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
-  dragon_train("Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
-
-dragon_generate(run, "My thermostat keeps dropping off Wi-Fi.")
-dragon_merge(run, "models/support-0.5b")
-```
-
-`dragon_train()` returns immediately by default. Runs live on disk, so you can
-close R and come back:
-
-```r
-run <- dragon_run("dragonfarm_runs/20260913-143201-qwen2.5-0.5b-instruct")
-dragon_status(run)
-dragon_progress(run)   # one row per logged step
-dragon_wait(run)       # progress bar until it finishes
-dragon_cancel(run)     # stops after the current step and saves a checkpoint
-dragon_resume(run)     # picks up from that checkpoint
-```
-
-## The app
-
-```r
-dragon_app()
-```
-
-Six panels, left to right: drop a file, drag its columns into Prompt and
-Response slots, pick a model, set a few numbers, watch the loss curve, and
-compare the tuned model against the base model. Every run started in the app
-is a normal run directory, and the Monitor panel shows the R code that
-reproduces it.
 
 ## Beyond fine-tuning: preference optimization
 
