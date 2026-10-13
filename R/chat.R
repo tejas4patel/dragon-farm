@@ -21,6 +21,12 @@
 #'   system prompt and the most recent turns. `NULL` (the default) never
 #'   drops turns. The token count is a rough estimate (about 4 characters
 #'   per token), not the model's own tokenizer.
+#' @param documents A `dragon_documents` set (see [dragon_documents()]).
+#'   When given, every user turn is answered with the `k` most relevant
+#'   excerpts in front of the model and an instruction to cite them, as in
+#'   [dragon_ask()]. The history keeps the plain turns; `$sources()` returns
+#'   the excerpts behind the last reply.
+#' @param k Excerpts to retrieve per turn when `documents` is set.
 #' @return A `dragon_chat` object with methods:
 #'   `$say(text, on_token = NULL)` sends a user turn and returns the reply
 #'   (streaming pieces to `on_token` when the backend supports it);
@@ -45,7 +51,9 @@
 #' }
 dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max_new_tokens = 256,
                         temperature = 0.7, top_p = 0.9, base = FALSE, runs_dir = dragon_runs_dir(),
-                        context_window = NULL) {
+                        context_window = NULL, documents = NULL, k = 4) {
+  if (!is.null(documents)) documents <- as_documents(documents)
+  if (is.null(x) && !is_server_backend(backend) && !is.null(documents)) x <- default_answer_model()
   target <- if (is_server_backend(backend)) NULL else {
     if (is.null(x)) cli::cli_abort("Say what should answer: a run, adapter, model directory, or model id.")
     t <- resolve_target(x)
@@ -56,6 +64,10 @@ dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max
   self$backend <- backend
   self$target <- target
   self$system <- system
+  self$documents <- documents
+  self$k <- as.integer(check_number(k, "k", min = 1, integer = TRUE))
+  self$last_sources <- NULL
+  self$sources <- function() self$last_sources
   self$context_window <- if (!is.null(context_window)) as.integer(check_number(context_window, "context_window", min = 64, integer = TRUE))
   self$settings <- list(max_new_tokens = as.integer(max_new_tokens), temperature = temperature, top_p = top_p,
                         context_window = self$context_window)
@@ -115,13 +127,28 @@ dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max
 
   self$say <- function(text, on_token = NULL) {
     check_string(text, "text")
-    trim_for_context(text)
+    # With documents, the model sees this turn wrapped in retrieved excerpts;
+    # the history keeps the plain question so transcripts stay readable and
+    # usable as training examples.
+    sent <- text
+    system <- self$system
+    if (!is.null(self$documents)) {
+      hits <- dragon_retrieve(self$documents, text, k = self$k)
+      sent <- documents_prompt(text, hits)
+      system <- documents_system(self$system)
+      self$last_sources <- hits
+    }
+    trim_for_context(sent)
     turn <- c(self$messages, list(list(role = "user", content = text)))
-    convo <- if (!is.null(self$system)) c(list(list(role = "system", content = self$system)), turn) else turn
+    sent_turn <- c(self$messages, list(list(role = "user", content = sent)))
+    convo <- if (!is.null(system)) c(list(list(role = "system", content = system)), sent_turn) else sent_turn
     reply <- backend_generate(self$backend, self$target, list(convo),
                               max_new_tokens = self$settings$max_new_tokens,
                               temperature = self$settings$temperature, top_p = self$settings$top_p,
                               on_token = on_token)[[1]]
+    if (!is.null(self$documents) && !is.null(self$last_sources) && nrow(self$last_sources)) {
+      self$last_sources$cited <- self$last_sources$n %in% parse_citations(reply, nrow(self$last_sources))
+    }
     self$messages <- c(turn, list(list(role = "assistant", content = reply)))
     invisible(reply)
   }

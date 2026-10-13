@@ -1,0 +1,185 @@
+#' Index a document set for retrieval
+#'
+#' Embeds every chunk with a small encoder (by default `BAAI/bge-small-en-v1.5`,
+#' about 130 MB, downloaded once) and stores the vectors next to the chunks.
+#' [dragon_documents()] does this for you unless `index = FALSE`; call this
+#' after editing files, or to switch encoders. Nothing is re-embedded when the
+#' chunks have not changed.
+#'
+#' @param docs A `dragon_documents` object or its directory.
+#' @param model Hugging Face id of a sentence-embedding model.
+#' @param force Re-embed even if the index already matches the chunks.
+#' @return The `dragon_documents` object, reloaded, invisibly.
+#' @export
+dragon_index <- function(docs, model = "BAAI/bge-small-en-v1.5", force = FALSE) {
+  docs <- as_documents(docs)
+  check_string(model, "model")
+  worker_start()
+  res <- worker_request(list(op = "index", dir = docs$dir, model = model, force = isTRUE(force)))
+  idx <- res$index
+  cli::cli_alert_success("Indexed {idx$n_chunks} chunk{?s} of {.strong {docs$name}} with {.val {idx$model}}.")
+  invisible(dragon_documents_load(docs$dir))
+}
+
+#' Find the chunks most relevant to a question
+#'
+#' @param docs A `dragon_documents` object or its directory. Indexed on the
+#'   fly if it has no index yet.
+#' @param query One question, or several.
+#' @param k Chunks to return per query.
+#' @return A data frame with one row per hit: `query` (when several), `n`
+#'   (rank), `id`, `source`, `section`, `text`, `score` (cosine similarity
+#'   times the chunk's weight), `similarity`, and `weight`.
+#' @export
+dragon_retrieve <- function(docs, query, k = 4) {
+  docs <- as_documents(docs)
+  if (!is.character(query) || !length(query) || anyNA(query)) cli::cli_abort("{.arg query} must be a character vector.")
+  check_number(k, "k", min = 1, integer = TRUE)
+  if (is.null(docs$manifest$index)) docs <- dragon_index(docs)
+  worker_start()
+  res <- worker_request(list(op = "retrieve", dir = docs$dir, queries = as.list(query), k = as.integer(k)))
+  chunks <- dragon_chunks(docs)
+  rows <- list()
+  for (qi in seq_along(res$hits)) {
+    for (n in seq_along(res$hits[[qi]])) {
+      h <- res$hits[[qi]][[n]]
+      ch <- chunks[match(h$id, chunks$id), , drop = FALSE]
+      rows[[length(rows) + 1]] <- data.frame(
+        query = query[qi], n = n, id = h$id, source = ch$source, section = ch$section, text = ch$text,
+        score = h$score, similarity = h$similarity, weight = ch$weight, stringsAsFactors = FALSE
+      )
+    }
+  }
+  out <- if (length(rows)) do.call(rbind, rows) else data.frame(
+    query = character(), n = integer(), id = character(), source = character(), section = character(),
+    text = character(), score = numeric(), similarity = numeric(), weight = numeric(), stringsAsFactors = FALSE)
+  if (length(query) == 1L) out$query <- NULL
+  rownames(out) <- NULL
+  out
+}
+
+#' Ask a question of your documents
+#'
+#' Retrieves the `k` most relevant chunks, puts them in front of a language
+#' model as numbered excerpts, and asks it to answer from them with citations.
+#' No training is involved; swap documents and ask again. The model can be
+#' anything [dragon_generate()] accepts: a base model id, a fine-tuned run, or
+#' whatever a server backend serves.
+#'
+#' @param docs A `dragon_documents` object or its directory.
+#' @param question The question.
+#' @param model What answers. Defaults to the model recommended for this
+#'   machine's GPU memory (see [dragon_check()]): a 1.5B under 6 GB, a 3B at
+#'   6 to 8 GB, a 7B in 4-bit at 8 GB and up. Ignored by server backends.
+#' @param k Excerpts to retrieve.
+#' @param system Extra instructions, added to the built-in ones about
+#'   answering only from the excerpts and citing them.
+#' @param backend Where to run inference. See [dragon_backend].
+#' @param max_new_tokens,temperature,top_p Generation settings. Temperature
+#'   0 (the default) is deterministic, which suits factual answers.
+#' @param base When `model` is a run, answer with what it started from instead
+#'   (as in [dragon_generate()]), for before-and-after comparisons.
+#' @return A `dragon_answer`: `$answer`, `$sources` (a data frame of the
+#'   excerpts with `n`, `source`, `section`, `text`, `score`, and `cited`,
+#'   whether the answer refers to it), `$question`, and `$model`. `print()`
+#'   shows the answer with its footnotes.
+#' @export
+#' @examples
+#' if (interactive()) {
+#' docs <- dragon_documents("policies.pdf")
+#' ans <- dragon_ask(docs, "How long is the return window?")
+#' ans
+#' ans$sources
+#' }
+dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backend = dragon_backend(),
+                       max_new_tokens = 300, temperature = 0, top_p = 0.9, base = FALSE) {
+  docs <- as_documents(docs)
+  check_string(question, "question")
+  if (!inherits(backend, "dragon_backend")) cli::cli_abort("{.arg backend} must be a {.cls dragon_backend}.")
+  hits <- dragon_retrieve(docs, question, k = k)
+  target <- NULL
+  model_label <- backend$model %||% ""
+  if (!is_server_backend(backend)) {
+    model <- model %||% default_answer_model()
+    target <- resolve_target(model)
+    if (isTRUE(base)) target$adapter <- NULL
+    model_label <- if (inherits(model, "dragon_run")) model$id else if (is.character(model)) model else target$model
+    if (isTRUE(base)) model_label <- paste0(model_label, " (base)")
+  }
+  convo <- list(
+    list(role = "system", content = documents_system(system)),
+    list(role = "user", content = documents_prompt(question, hits))
+  )
+  reply <- backend_generate(backend, target, list(convo), max_new_tokens = as.integer(max_new_tokens),
+                            temperature = temperature, top_p = top_p)[[1]]
+  reply <- as.character(reply %||% "")
+  hits$cited <- hits$n %in% parse_citations(reply, nrow(hits))
+  structure(list(question = question, answer = reply, sources = hits, model = model_label, documents = docs$name),
+            class = "dragon_answer")
+}
+
+#' @export
+print.dragon_answer <- function(x, ...) {
+  cat(x$answer, "\n")
+  src <- x$sources
+  if (nrow(src)) {
+    cat("\n")
+    for (i in seq_len(nrow(src))) {
+      mark <- if (isTRUE(src$cited[i])) "*" else " "
+      sec <- if (nzchar(src$section[i])) paste0(" › ", src$section[i]) else ""
+      cat(sprintf("[%d]%s %s%s\n", src$n[i], mark, src$source[i], sec))
+    }
+    if (any(src$cited)) cat("* cited in the answer. Excerpt text is in $sources$text.\n")
+  }
+  invisible(x)
+}
+
+# The model dragon_check() recommends for this machine, or the smallest
+# sensible one when the hardware has not been checked and cannot be.
+default_answer_model <- function() {
+  hw <- tryCatch(hardware_info(), error = function(e) NULL)
+  hw$tier$model %||% "Qwen/Qwen2.5-1.5B-Instruct"
+}
+
+documents_system <- function(extra = NULL) {
+  base <- paste(
+    "You answer questions about the user's documents using only the numbered excerpts provided.",
+    "After each sentence that uses an excerpt, cite it like [1] or [2].",
+    "If the excerpts do not contain the answer, say that the documents do not cover it; do not guess.",
+    "Be concise."
+  )
+  if (is.null(extra) || !nzchar(trimws(extra))) base else paste(base, trimws(extra))
+}
+
+documents_prompt <- function(question, hits) {
+  if (!nrow(hits)) return(paste0("No excerpts were found in the documents.\n\nQuestion: ", question))
+  parts <- vapply(seq_len(nrow(hits)), function(i) {
+    where <- if (nzchar(hits$section[i])) paste0(hits$source[i], " › ", hits$section[i]) else hits$source[i]
+    sprintf("[%d] %s\n%s", hits$n[i], where, hits$text[i])
+  }, character(1))
+  paste0("Excerpts from the documents:\n\n", paste(parts, collapse = "\n\n"), "\n\nQuestion: ", question)
+}
+
+# Footnotes under a reply in the app: "[1] file › section", each expandable to
+# the excerpt. Cited ones are bold. NULL when there is nothing to show.
+sources_footnotes <- function(src) {
+  if (is.null(src) || !nrow(src)) return(NULL)
+  items <- lapply(seq_len(nrow(src)), function(i) {
+    where <- if (nzchar(src$section[i])) paste0(src$source[i], " › ", src$section[i]) else src$source[i]
+    label <- sprintf("[%d] %s", src$n[i], where)
+    shiny::tags$details(class = "source",
+      shiny::tags$summary(if (isTRUE(src$cited[i])) shiny::strong(label) else label),
+      shiny::div(class = "source-text", src$text[i])
+    )
+  })
+  shiny::div(class = "sources", shiny::span(class = "role", "sources"), items)
+}
+
+# Which [n] markers an answer contains, within 1..n_max. Handles "[1]", "[1, 3]", "[2][3]".
+parse_citations <- function(text, n_max) {
+  if (!n_max || is.null(text) || !nzchar(text)) return(integer())
+  groups <- regmatches(text, gregexpr("\\[[0-9][0-9 ,]*\\]", text))[[1]]
+  nums <- unlist(lapply(groups, function(g) as.integer(strsplit(gsub("[^0-9,]", "", g), ",")[[1]])))
+  nums <- nums[!is.na(nums) & nums >= 1 & nums <= n_max]
+  sort(unique(nums))
+}

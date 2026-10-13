@@ -15,6 +15,7 @@ mod_tryit_ui <- function(id) {
           shiny::numericInput(ns("temperature"), "Temperature", value = 0.3, min = 0, max = 2, step = 0.1)
         ),
         shiny::checkboxInput(ns("compare"), "Also show the base model's reply", value = TRUE),
+        shiny::selectInput(ns("documents"), "Answer from documents", choices = c("No, just the prompt" = ""), width = "100%"),
         shiny::actionButton(ns("go"), "Generate", class = "btn-primary"),
         shiny::p(class = "text-muted small mt-2", "The local worker keeps the model loaded between requests, so only the first one is slow.")
       ),
@@ -109,27 +110,45 @@ mod_tryit_server <- function(id, state, runs_dir) {
       }
       r <- run()
       sys <- if (nzchar(trimws(input$system %||% ""))) input$system
+      docs <- if (!is.null(input$documents) && nzchar(input$documents)) {
+        tryCatch(dragon_documents_load(input$documents), error = function(e) { notify_error(e); NULL })
+      }
       replies$tuned <- NULL
       replies$base <- NULL
+      # With a document set chosen, both replies come from dragon_ask(): the
+      # same retrieved excerpts, with sources shown under each reply.
+      one <- function(base) {
+        if (is.null(docs)) {
+          dragon_generate(r, prompt, system = sys, max_new_tokens = input$max_new_tokens, temperature = input$temperature, base = base)
+        } else {
+          dragon_ask(docs, prompt, model = r, system = sys, max_new_tokens = input$max_new_tokens,
+                     temperature = input$temperature, base = base)
+        }
+      }
       shiny::withProgress(message = "Generating with the fine-tuned model", value = 0.3, {
-        replies$tuned <- tryCatch(
-          dragon_generate(r, prompt, system = sys, max_new_tokens = input$max_new_tokens, temperature = input$temperature),
-          error = function(e) { notify_error(e); "(failed)" }
-        )
+        replies$tuned <- tryCatch(one(FALSE), error = function(e) { notify_error(e); "(failed)" })
         if (isTRUE(input$compare)) {
           shiny::incProgress(0.4, message = "Generating with the base model")
-          replies$base <- tryCatch(
-            dragon_generate(r, prompt, system = sys, max_new_tokens = input$max_new_tokens, temperature = input$temperature, base = TRUE),
-            error = function(e) { notify_error(e); "(failed)" }
-          )
+          replies$base <- tryCatch(one(TRUE), error = function(e) { notify_error(e); "(failed)" })
         }
       })
     })
 
-    reply_ui <- function(text) {
-      if (is.null(text)) return(shiny::p(class = "hint", "Nothing generated yet."))
-      shiny::div(class = "bubble assistant", shiny::div(class = "content", text))
+    reply_ui <- function(x) {
+      if (is.null(x)) return(shiny::p(class = "hint", "Nothing generated yet."))
+      if (inherits(x, "dragon_answer")) {
+        return(shiny::div(class = "bubble assistant", shiny::div(class = "content", x$answer), sources_footnotes(x$sources)))
+      }
+      shiny::div(class = "bubble assistant", shiny::div(class = "content", x))
     }
+
+    shiny::observe({
+      runs()   # re-list when anything under runs_dir changes
+      sets <- tryCatch(dragon_documents_list(runs_dir), error = function(e) NULL)
+      choices <- c("No, just the prompt" = "")
+      if (!is.null(sets) && nrow(sets)) choices <- c(choices, stats::setNames(sets$dir, sprintf("%s (%d chunks)", sets$name, sets$chunks)))
+      shiny::updateSelectInput(session, "documents", choices = choices, selected = shiny::isolate(input$documents) %||% "")
+    })
     output$tuned <- shiny::renderUI(reply_ui(replies$tuned))
     output$base <- shiny::renderUI({
       if (!isTRUE(input$compare)) return(shiny::p(class = "hint", "Comparison is off."))

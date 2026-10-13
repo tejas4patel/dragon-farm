@@ -41,6 +41,8 @@ mod_chat_ui <- function(id) {
         ),
         shiny::numericInput(ns("context_window"), "Context window (tokens, optional)", value = NA, min = 64, step = 64),
         shiny::p(class = "hint", "Leave blank for no limit. When set, the oldest turns are dropped automatically to stay under it."),
+        shiny::selectInput(ns("documents"), "Answer from documents", choices = c("No, plain conversation" = ""), width = "100%"),
+        shiny::p(class = "hint", "Document sets made with dragon_documents(). Each turn is answered from the most relevant excerpts, with sources under the reply."),
         shiny::checkboxInput(ns("compare"), "Compare with a second backend", value = FALSE)
       ),
       shiny::conditionalPanel(condition = sprintf("input['%s']", ns("compare")), chat_backend_inputs(ns, "_b", "Second backend")),
@@ -154,12 +156,30 @@ mod_chat_server <- function(id, state, runs_dir) {
         x <- dragon_run(file.path(runs_dir, run_id))
       }
       sys <- if (nzchar(trimws(input$system %||% ""))) input$system
+      docs <- documents_choice()
       ch <- dragon_chat(x, system = sys, backend = bk, max_new_tokens = input$max_new_tokens %||% 256,
                         temperature = input$temperature %||% 0.7, base = isTRUE(input[[paste0("base", suffix)]]),
-                        runs_dir = runs_dir, context_window = context_window_input())
+                        runs_dir = runs_dir, context_window = context_window_input(), documents = docs)
       ch$messages <- hist
       ch
     }
+
+    # Document sets available for "Answer from documents": refreshed whenever
+    # the runs directory changes, since sets live under runs_dir/documents.
+    shiny::observe({
+      runs()   # re-list when anything under runs_dir changes
+      sets <- tryCatch(dragon_documents_list(runs_dir), error = function(e) NULL)
+      choices <- c("No, plain conversation" = "")
+      if (!is.null(sets) && nrow(sets)) choices <- c(choices, stats::setNames(sets$dir, sprintf("%s (%d chunks)", sets$name, sets$chunks)))
+      shiny::updateSelectInput(session, "documents", choices = choices, selected = shiny::isolate(input$documents) %||% "")
+    })
+    documents_choice <- function() {
+      d <- input$documents
+      if (is.null(d) || !nzchar(d)) return(NULL)
+      tryCatch(dragon_documents_load(d), error = function(e) { notify_error(e); NULL })
+    }
+    # Sources behind each assistant reply, keyed by its position in the history.
+    sources_by_index <- shiny::reactiveVal(list())
     build_chat <- function() build_chat_for("", backend(), history())
     build_chat_b <- function() build_chat_for("_b", backend_b(), history_b())
 
@@ -208,6 +228,10 @@ mod_chat_server <- function(id, state, runs_dir) {
       history(ch$history())
       chat_obj(ch)
       context_info(ch$context_usage())
+      src <- ch$sources()
+      if (!is.null(src) && nrow(src)) {
+        s <- sources_by_index(); s[[as.character(length(ch$history()))]] <- src; sources_by_index(s)
+      }
 
       if (isTRUE(input$compare)) {
         chb <- tryCatch(build_chat_b(), error = function(e) { notify_error(e); NULL })
@@ -231,6 +255,7 @@ mod_chat_server <- function(id, state, runs_dir) {
       history(list())
       chat_obj(NULL)
       context_info(NULL)
+      sources_by_index(list())
       history_b(list())
       chat_obj_b(NULL)
     })
@@ -267,11 +292,12 @@ mod_chat_server <- function(id, state, runs_dir) {
       )
     }
 
-    render_bubbles <- function(h, editable, v = list()) {
+    render_bubbles <- function(h, editable, v = list(), sources = list()) {
       if (!length(h)) return(shiny::p(class = "hint", "Nothing yet. Say something below."))
       shiny::tagList(lapply(seq_along(h), function(i) {
         m <- h[[i]]
         controls <- NULL
+        footnotes <- if (m$role == "assistant") sources_footnotes(sources[[as.character(i)]])
         if (editable && m$role == "assistant") {
           badge <- v[[as.character(i)]]
           controls <- shiny::div(class = "fb-row",
@@ -285,11 +311,12 @@ mod_chat_server <- function(id, state, runs_dir) {
         shiny::div(class = paste("bubble", m$role),
           shiny::span(class = "role", if (m$role == "assistant") "model" else "you"),
           shiny::div(class = "content", m$content),
+          footnotes,
           controls
         )
       }))
     }
-    output$thread <- shiny::renderUI(render_bubbles(history(), editable = TRUE, v = verdicts()))
+    output$thread <- shiny::renderUI(render_bubbles(history(), editable = TRUE, v = verdicts(), sources = sources_by_index()))
     output$thread_b <- shiny::renderUI(render_bubbles(history_b(), editable = FALSE))
 
     output$panes <- shiny::renderUI({

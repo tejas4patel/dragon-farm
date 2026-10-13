@@ -30,10 +30,13 @@
 #'   so most are shorter.
 #' @param min_words Sections shorter than this are folded into the previous
 #'   chunk.
+#' @param index Build the retrieval index right away (see [dragon_index()]),
+#'   so [dragon_ask()] works immediately. The first call downloads the small
+#'   embedding model. `FALSE` postpones it; retrieval then indexes on first use.
 #' @return A `dragon_documents` object: the directory, the name, and the
 #'   manifest. `print()` lists the sources; [dragon_chunks()] returns the
 #'   chunks as a data frame.
-#' @seealso [dragon_chunks()], [dragon_documents_load()], [dragon_documents_list()]
+#' @seealso [dragon_ask()], [dragon_chunks()], [dragon_documents_load()], [dragon_documents_list()]
 #' @export
 #' @examples
 #' if (interactive()) {
@@ -42,7 +45,7 @@
 #' head(dragon_chunks(docs))
 #' }
 dragon_documents <- function(paths, name = NULL, runs_dir = dragon_runs_dir(),
-                             max_words = 170, min_words = 35) {
+                             max_words = 170, min_words = 35, index = TRUE) {
   if (!is.character(paths) || !length(paths) || anyNA(paths) || !all(nzchar(paths))) {
     cli::cli_abort("{.arg paths} must be a character vector of files, directories, or URLs.")
   }
@@ -76,6 +79,7 @@ dragon_documents <- function(paths, name = NULL, runs_dir = dragon_runs_dir(),
   cli::cli_alert_success(
     "Document set {.strong {name}}: {summary$n_sources} source{?s}, {summary$n_chunks} chunk{?s}{if (summary$n_reused > 0) sprintf(' (%d unchanged)', summary$n_reused) else ''}."
   )
+  if (isTRUE(index)) docs <- dragon_index(docs)
   docs
 }
 

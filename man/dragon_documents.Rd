@@ -9,7 +9,8 @@ dragon_documents(
   name = NULL,
   runs_dir = dragon_runs_dir(),
   max_words = 170,
-  min_words = 35
+  min_words = 35,
+  index = TRUE
 )
 }
 \arguments{
@@ -27,6 +28,10 @@ so most are shorter.}
 
 \item{min_words}{Sections shorter than this are folded into the previous
 chunk.}
+
+\item{index}{Build the retrieval index right away (see \code{\link[=dragon_index]{dragon_index()}}),
+so \code{\link[=dragon_ask]{dragon_ask()}} works immediately. The first call downloads the small
+embedding model. \code{FALSE} postpones it; retrieval then indexes on first use.}
 }
 \value{
 A \code{dragon_documents} object: the directory, the name, and the
@@ -63,5 +68,5 @@ head(dragon_chunks(docs))
 }
 }
 \seealso{
-\code{\link[=dragon_chunks]{dragon_chunks()}}, \code{\link[=dragon_documents_load]{dragon_documents_load()}}, \code{\link[=dragon_documents_list]{dragon_documents_list()}}
+\code{\link[=dragon_ask]{dragon_ask()}}, \code{\link[=dragon_chunks]{dragon_chunks()}}, \code{\link[=dragon_documents_load]{dragon_documents_load()}}, \code{\link[=dragon_documents_list]{dragon_documents_list()}}
 }

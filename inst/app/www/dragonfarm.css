@@ -54,6 +54,15 @@
 .bubble.system { background: var(--df-amber-soft); }
 .bubble.user { background: #EEF1EF; }
 .bubble.assistant { background: var(--df-accent-soft); }
+/* Sources under a reply answered from documents: one expandable line per excerpt. */
+.bubble .sources { margin-top: 8px; padding-top: 6px; border-top: 1px dashed rgba(0,0,0,.12); white-space: normal; }
+.bubble .sources .role { margin-bottom: 4px; }
+.bubble details.source { font-size: 0.8rem; margin: 2px 0; }
+.bubble details.source summary { cursor: pointer; color: var(--df-muted); list-style: none; }
+.bubble details.source summary::before { content: "\25B8 "; }
+.bubble details.source[open] summary::before { content: "\25BE "; }
+.bubble details.source summary strong { color: inherit; }
+.bubble .source-text { margin: 4px 0 6px 14px; padding: 6px 8px; background: rgba(255,255,255,.6); border-radius: 6px; white-space: pre-wrap; font-size: 0.78rem; }
 .bubble.chosen { background: #E3F0E6; }
 .bubble.rejected { background: #F6E0E0; }
 .bubble.reference { background: #EFE7DA; }

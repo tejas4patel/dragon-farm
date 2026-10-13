@@ -14,7 +14,9 @@ dragon_chat(
   top_p = 0.9,
   base = FALSE,
   runs_dir = dragon_runs_dir(),
-  context_window = NULL
+  context_window = NULL,
+  documents = NULL,
+  k = 4
 )
 
 dragon_chat_load(path, x = NULL, backend = dragon_backend())
@@ -41,6 +43,14 @@ oldest user/assistant pair and tries again until it fits, keeping the
 system prompt and the most recent turns. \code{NULL} (the default) never
 drops turns. The token count is a rough estimate (about 4 characters
 per token), not the model's own tokenizer.}
+
+\item{documents}{A \code{dragon_documents} set (see \code{\link[=dragon_documents]{dragon_documents()}}).
+When given, every user turn is answered with the \code{k} most relevant
+excerpts in front of the model and an instruction to cite them, as in
+\code{\link[=dragon_ask]{dragon_ask()}}. The history keeps the plain turns; \verb{$sources()} returns
+the excerpts behind the last reply.}
+
+\item{k}{Excerpts to retrieve per turn when \code{documents} is set.}
 
 \item{path}{A transcript written by \verb{$save()}.}
 }

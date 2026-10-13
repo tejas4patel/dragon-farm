@@ -1,5 +1,18 @@
 # dragonfarm (development version)
 
+* New: ask questions of your documents, no training needed. `dragon_index()`
+  embeds a document set with a small encoder (`BAAI/bge-small-en-v1.5` by
+  default, kept warm in the inference worker), `dragon_retrieve()` returns
+  the most relevant chunks, and `dragon_ask()` puts them in front of a model
+  as numbered excerpts and returns the answer with its sources, marking which
+  were cited. The model defaults to the one `dragon_check()` recommends for
+  the GPU and can be any run, model id, or server backend. `dragon_chat()`
+  gains `documents` and `k`: each turn is answered from retrieved excerpts
+  while the transcript keeps the plain questions, and `$sources()` shows the
+  excerpts behind the last reply. `dragon_documents()` now indexes right away
+  (`index = FALSE` to postpone). Changelog-like sources are down-weighted at
+  retrieval time.
+
 * 4-bit loading for generation, on Windows as well as Linux.
   `dragon_backend_local()` gains `load_in_4bit`: `"auto"` (the default)
   quantizes a model to NF4 through bitsandbytes only when its full weights

@@ -136,6 +136,7 @@ def generate_stream(tok, model, hw, req):
 
 def main():
     cache = ModelCache()
+    retriever = None   # created on first use; holds the small embedding model and loaded indexes
     emit({"ok": True, "ready": True})
     for line in sys.stdin:
         line = line.strip()
@@ -148,7 +149,18 @@ def main():
                 emit({"ok": True, "pong": True, "loaded": len(cache.items)})
             elif op == "unload":
                 cache.clear()
+                retriever = None
                 emit({"ok": True, "loaded": 0})
+            elif op in ("index", "retrieve"):
+                from .retrieval import DEFAULT_MODEL, Retriever
+
+                retriever = retriever or Retriever()
+                if op == "index":
+                    info = retriever.index(req["dir"], req.get("model") or DEFAULT_MODEL, bool(req.get("force")))
+                    emit({"ok": True, "index": info})
+                else:
+                    hits = retriever.retrieve(req["dir"], req["queries"], k=int(req.get("k", 4)))
+                    emit({"ok": True, "hits": hits})
             elif op == "quit":
                 emit({"ok": True, "bye": True})
                 break

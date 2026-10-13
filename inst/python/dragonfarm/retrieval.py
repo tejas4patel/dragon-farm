@@ -1,0 +1,218 @@
+"""Embedding index over a document set, and retrieval from it.
+
+    python -m dragonfarm.retrieval index --dir SET [--model ID] [--force]
+    python -m dragonfarm.retrieval retrieve --dir SET --query TEXT [-k 4]
+
+The index is plain files next to the chunks:
+
+    index/embeddings.npy   float16, one row per chunk, L2-normalised
+    index/ids.json         chunk ids in row order
+    manifest.json          gains an "index" block: model, pooling, dim, built_at,
+                           and a signature of the chunk ids it was built from
+
+Embeddings come from a small encoder through plain transformers (mean pooling
+over the last hidden state), so nothing beyond what dragonfarm already
+installs is needed. Scores are cosine similarity times the chunk's weight
+(0.7 for changelog-like sources), so a changelog line has to be clearly
+better to outrank the page that answers.
+
+The worker keeps the encoder and the loaded indexes in memory between calls;
+the command line builds or queries once and exits.
+"""
+
+import argparse
+import hashlib
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+DEFAULT_MODEL = "BAAI/bge-small-en-v1.5"
+# bge models were trained with this instruction on the query side only.
+QUERY_PREFIX = {"bge": "Represent this sentence for searching relevant passages: "}
+
+
+def chunk_signature(ids):
+    return hashlib.sha256("\n".join(ids).encode("utf-8")).hexdigest()[:16]
+
+
+class Encoder:
+    """A sentence encoder: tokenizer + model, mean pooled, normalised."""
+
+    def __init__(self, model_id=DEFAULT_MODEL, device=None, max_length=256):
+        import torch
+        from transformers import AutoModel, AutoTokenizer
+
+        self.model_id = model_id
+        self.max_length = max_length
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.tok = AutoTokenizer.from_pretrained(model_id)
+        self.model = AutoModel.from_pretrained(model_id).to(self.device).eval()
+        self.query_prefix = next((p for key, p in QUERY_PREFIX.items() if key in model_id.lower()), "")
+
+    def encode(self, texts, batch_size=32, prefix=""):
+        import torch
+
+        out = []
+        for i in range(0, len(texts), batch_size):
+            batch = [prefix + t for t in texts[i:i + batch_size]]
+            enc = self.tok(batch, padding=True, truncation=True, max_length=self.max_length,
+                           return_tensors="pt").to(self.device)
+            with torch.no_grad():
+                hidden = self.model(**enc).last_hidden_state
+            mask = enc["attention_mask"].unsqueeze(-1).to(hidden.dtype)
+            pooled = (hidden * mask).sum(1) / mask.sum(1).clamp(min=1)
+            out.append(torch.nn.functional.normalize(pooled, dim=-1).float().cpu())
+        return torch.cat(out) if out else torch.zeros((0, self.model.config.hidden_size))
+
+    def encode_queries(self, texts):
+        return self.encode(texts, prefix=self.query_prefix)
+
+
+def _read_manifest(set_dir):
+    with open(Path(set_dir) / "manifest.json", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _write_manifest(set_dir, manifest):
+    with open(Path(set_dir) / "manifest.json", "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+
+def _read_chunks(set_dir):
+    with open(Path(set_dir) / "chunks.jsonl", encoding="utf-8") as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
+def chunk_text_for_index(c):
+    """What gets embedded: the section heading gives short chunks their topic."""
+    section = (c.get("section") or "").strip()
+    return (section + ". " + c["text"]) if section else c["text"]
+
+
+def build_index(set_dir, encoder=None, model_id=DEFAULT_MODEL, force=False, log=None):
+    """Embed every chunk of a set. Skips the work when the index already matches the chunks."""
+    import numpy as np
+
+    log = log or (lambda *_: None)
+    set_dir = Path(set_dir)
+    manifest = _read_manifest(set_dir)
+    chunks = _read_chunks(set_dir)
+    ids = [c["id"] for c in chunks]
+    signature = chunk_signature(ids)
+    existing = manifest.get("index") or {}
+    if (not force and existing.get("signature") == signature and existing.get("model") == model_id
+            and (set_dir / "index" / "embeddings.npy").exists()):
+        log(f"index up to date ({len(ids)} chunks, {model_id})")
+        return existing
+    enc = encoder or Encoder(model_id)
+    t0 = time.time()
+    vectors = enc.encode([chunk_text_for_index(c) for c in chunks]).numpy().astype("float16")
+    (set_dir / "index").mkdir(exist_ok=True)
+    np.save(set_dir / "index" / "embeddings.npy", vectors)
+    with open(set_dir / "index" / "ids.json", "w", encoding="utf-8") as f:
+        json.dump(ids, f)
+    info = {"model": model_id, "pooling": "mean", "dim": int(vectors.shape[1]) if len(ids) else 0,
+            "n_chunks": len(ids), "signature": signature,
+            "built_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "seconds": round(time.time() - t0, 1)}
+    manifest["index"] = info
+    _write_manifest(set_dir, manifest)
+    log(f"indexed {len(ids)} chunks with {model_id} in {info['seconds']}s")
+    return info
+
+
+class LoadedIndex:
+    def __init__(self, set_dir):
+        import numpy as np
+
+        set_dir = Path(set_dir)
+        self.dir = set_dir
+        self.manifest = _read_manifest(set_dir)
+        self.info = self.manifest.get("index")
+        if not self.info or not (set_dir / "index" / "embeddings.npy").exists():
+            raise RuntimeError(f"{set_dir} has no index yet; run dragon_index() first")
+        self.vectors = np.load(set_dir / "index" / "embeddings.npy").astype("float32")
+        with open(set_dir / "index" / "ids.json", encoding="utf-8") as f:
+            self.ids = json.load(f)
+        chunks = {c["id"]: c for c in _read_chunks(set_dir)}
+        if [i for i in self.ids if i not in chunks]:
+            raise RuntimeError(f"the index in {set_dir} no longer matches its chunks; run dragon_index() again")
+        self.chunks = [chunks[i] for i in self.ids]
+        self.weights = np.array([float(c.get("weight", 1.0)) for c in self.chunks], dtype="float32")
+        self.stamp = os.path.getmtime(set_dir / "index" / "embeddings.npy")
+
+    def stale(self):
+        try:
+            return os.path.getmtime(self.dir / "index" / "embeddings.npy") != self.stamp
+        except OSError:
+            return True
+
+    def search(self, query_vectors, k=4):
+        """Top-k chunks per query: list of lists of {id, score, similarity}."""
+        import numpy as np
+
+        if not len(self.ids):
+            return [[] for _ in range(len(query_vectors))]
+        sims = query_vectors.numpy() @ self.vectors.T           # cosine, since both sides are normalised
+        scores = sims * self.weights[None, :]
+        out = []
+        k = max(1, min(int(k), len(self.ids)))
+        for row, sim_row in zip(scores, sims):
+            top = np.argsort(-row)[:k]
+            out.append([{"id": self.ids[i], "score": float(row[i]), "similarity": float(sim_row[i])} for i in top])
+        return out
+
+
+class Retriever:
+    """Encoder plus loaded indexes, kept warm by the worker."""
+
+    def __init__(self):
+        self.encoders = {}
+        self.indexes = {}
+
+    def encoder(self, model_id):
+        if model_id not in self.encoders:
+            self.encoders[model_id] = Encoder(model_id)
+        return self.encoders[model_id]
+
+    def index(self, set_dir, model_id=DEFAULT_MODEL, force=False):
+        info = build_index(set_dir, encoder=self.encoder(model_id), model_id=model_id, force=force)
+        self.indexes.pop(str(Path(set_dir)), None)
+        return info
+
+    def loaded(self, set_dir):
+        key = str(Path(set_dir))
+        idx = self.indexes.get(key)
+        if idx is None or idx.stale():
+            idx = self.indexes[key] = LoadedIndex(set_dir)
+        return idx
+
+    def retrieve(self, set_dir, queries, k=4):
+        idx = self.loaded(set_dir)
+        enc = self.encoder(idx.info["model"])
+        return idx.search(enc.encode_queries(list(queries)), k=k)
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(prog="python -m dragonfarm.retrieval")
+    sub = ap.add_subparsers(dest="command", required=True)
+    b = sub.add_parser("index")
+    b.add_argument("--dir", required=True)
+    b.add_argument("--model", default=DEFAULT_MODEL)
+    b.add_argument("--force", action="store_true")
+    r = sub.add_parser("retrieve")
+    r.add_argument("--dir", required=True)
+    r.add_argument("--query", required=True, action="append")
+    r.add_argument("-k", type=int, default=4)
+    a = ap.parse_args(argv)
+    if a.command == "index":
+        info = build_index(a.dir, model_id=a.model, force=a.force,
+                           log=lambda m: print(f"[dragonfarm] {m}", file=sys.stderr, flush=True))
+        print(json.dumps(info))
+    else:
+        print(json.dumps(Retriever().retrieve(a.dir, a.query, k=a.k)))
+
+
+if __name__ == "__main__":
+    main()
