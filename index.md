@@ -13,18 +13,19 @@ Copy
 [Get started](https://dragonfarm.dev/articles/quickstart.md) [View on
 GitHub](https://github.com/tejas4patel/dragon-farm)
 
-![](data:image/svg+xml;base64,PHN2ZyBpZD0iZGYtc3RlcHBlciIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJUaGUgc2l4IHN0ZXBzOiBEYXRhLCBNYXAsIE1vZGVsLCBUcmFpbiwgTW9uaXRvciwgVHJ5IGl0Ij48L3N2Zz4=)
+![](data:image/svg+xml;base64,PHN2ZyBpZD0iZGYtc3RlcHBlciIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJUaGUgc2l4IHN0ZXBzOiBEb2N1bWVudHMsIEFzaywgVGVhY2gsIFRyYWluLCBNb25pdG9yLCBUcnkgaXQiPjwvc3ZnPg==)
 
 *dragon_app()*
 
-![Step 1, Data: the example support tickets loaded into the
-app](demo/01-data.png)![Step 2, Map: subject and body dragged into the
-Prompt slot, reply into Response](demo/02-map.png)![Step 3, Model: a
-base model chosen and the GPU detected](demo/03-model.png)![Step 4,
-Train: training settings and the Start training
-button](demo/04-train.png)![Step 5, Monitor: the loss curve of a
+![Step 1, Documents: a set of PDFs and pages read into
+chunks](demo/01-documents.png)![Step 2, Ask: an answer with numbered
+sources under it](demo/02-ask.png)![Step 3, Teach: generated questions
+grouped by chunk, with checkboxes and the reasons for rejected
+ones](demo/03-teach.png)![Step 4, Train: training settings with the
+training rows built from the reviewed
+questions](demo/04-train.png)![Step 5, Monitor: the loss curve of a
 finished run](demo/05-monitor.png)![Step 6, Try it: the fine-tuned and
-base model replies side by side](demo/06-compare.png)
+base model replies side by side, each with sources](demo/06-tryit.png)
 
 Same model, same ticket
 

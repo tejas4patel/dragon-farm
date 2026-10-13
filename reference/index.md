@@ -20,6 +20,8 @@ questions, build the training set.
   : Reopen a saved document set
 - [`dragon_documents_list()`](https://dragonfarm.dev/reference/dragon_documents_list.md)
   : List saved document sets
+- [`dragon_example_documents()`](https://dragonfarm.dev/reference/dragon_example_documents.md)
+  : Example documents
 - [`dragon_chunks()`](https://dragonfarm.dev/reference/dragon_chunks.md)
   : The chunks of a document set
 - [`dragon_index()`](https://dragonfarm.dev/reference/dragon_index.md) :
