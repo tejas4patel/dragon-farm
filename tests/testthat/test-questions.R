@@ -16,6 +16,11 @@ test_that("question sets load, print, list, and save review decisions", {
   expect_true(any(grepl("2 kept \\(67%\\)", out)))
   expect_true(any(grepl("refers to the passage \\(1\\)", out)))
 
+  # a subset prints as a plain table, not as a summary of a question set
+  sub_out <- capture.output(print(qa[!qa$keep, c("question", "reason")]))
+  expect_true(any(grepl("refers to the passage", sub_out)))
+  expect_false(any(grepl("kept", sub_out)))
+
   lst <- dragon_questions_list(f$dir)
   expect_equal(nrow(lst), 1L)
   expect_equal(lst$kept, 2L); expect_equal(lst$generator, "Qwen/Qwen2.5-7B-Instruct")

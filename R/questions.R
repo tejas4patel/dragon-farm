@@ -236,6 +236,11 @@ dragon_questions_dataset <- function(qa, docs = NULL, k = 4) {
 
 #' @export
 print.dragon_questions <- function(x, ...) {
+  # A subset such as qa[!qa$keep, c("question", "reason")] loses the file
+  # attributes and usually some columns; show it as the plain table it is.
+  if (is.null(attr(x, "path")) || !all(c("question", "answer", "keep") %in% names(x))) {
+    return(print(as.data.frame(unclass(x), stringsAsFactors = FALSE), ...))
+  }
   n <- nrow(x); k <- sum(x$keep)
   m <- attr(x, "meta")
   cli::cli_h3("{n} question{?s} from {basename(attr(x, 'documents') %||% 'documents')}{if (!is.null(m$generator)) paste0(', written by ', m$generator) else ''}")
