@@ -129,7 +129,10 @@ mod_mapping_server <- function(id, state, nav_to) {
       p <- unescape_newlines(input$prompt_tpl %||% "")
       s <- unescape_newlines(input$system_tpl %||% "")
       sys <- if (nzchar(trimws(s))) s
-      if (!nzchar(trimws(p))) return(NULL)
+      # A dataset that arrives already mapped (the Documents tab's reviewed questions)
+      # stays mapped until a template is typed here; otherwise this module would
+      # clear state$mapped the moment the dataset changed.
+      if (!nzchar(trimws(p))) return(if (!is.null(ds$mapping)) ds else NULL)
       if (identical(mode(), "prompts")) {
         ref <- unescape_newlines(input$reference_tpl %||% "")
         return(tryCatch(

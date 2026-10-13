@@ -1,5 +1,10 @@
 # dragonfarm (development version)
 
+* `dragon_example_documents()`: three short policy documents for the
+  fictional smart-home company behind the example tickets, so the document
+  route can be tried before bringing your own files. The Documents tab has a
+  "Load the example policies" button.
+
 * New: documents to training data. `dragon_questions()` has a model write
   questions and answers from each chunk of a document set (the local model
   recommended for the machine, in the background; or a teacher such as

@@ -24,6 +24,20 @@ test_that("the mapping module produces a mapped dataset", {
   })
 })
 
+test_that("an already-mapped dataset passes through the mapping module untouched", {
+  ds <- dragon_map(dragon_dataset(toy_df(5)), prompt = "subject", response = "reply")
+  state <- shiny::reactiveValues(dataset = ds, mapped = NULL)
+  shiny::testServer(dragonfarm:::mod_mapping_server, args = list(state = state, nav_to = function(p) NULL), {
+    session$setInputs(prompt_tpl = "", response_tpl = "", system_tpl = "")
+    session$flushReact()
+    expect_s3_class(state$mapped, "dragon_dataset")
+    expect_match(state$mapped$mapping$prompt, "subject")
+    session$setInputs(prompt_tpl = "{body}")          # typing a template takes over
+    session$flushReact()
+    expect_match(state$mapped$mapping$prompt, "body")
+  })
+})
+
 test_that("the train module refuses to launch without inputs", {
   state <- shiny::reactiveValues(dataset = NULL, mapped = NULL, model = NULL, run = NULL)
   shiny::testServer(dragonfarm:::mod_train_server, args = list(state = state, nav_to = function(p) NULL), {

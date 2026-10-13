@@ -10,16 +10,16 @@
 <a class="df-btn df-btn-ghost" href="https://github.com/tejas4patel/dragon-farm">View on GitHub</a>
 </div>
 <div class="df-stage">
-<svg id="df-stepper" role="img" aria-label="The six steps: Data, Map, Model, Train, Monitor, Try it"></svg>
+<svg id="df-stepper" role="img" aria-label="The six steps: Documents, Ask, Teach, Train, Monitor, Try it"></svg>
 <div class="df-screen">
 <div class="df-chrome"><span></span><span></span><span></span><em>dragon_app()</em></div>
 <div class="df-shots">
-<img class="on" src="demo/01-data.png" alt="Step 1, Data: the example support tickets loaded into the app">
-<img src="demo/02-map.png" alt="Step 2, Map: subject and body dragged into the Prompt slot, reply into Response">
-<img src="demo/03-model.png" alt="Step 3, Model: a base model chosen and the GPU detected">
-<img src="demo/04-train.png" alt="Step 4, Train: training settings and the Start training button">
+<img class="on" src="demo/01-documents.png" alt="Step 1, Documents: a set of PDFs and pages read into chunks">
+<img src="demo/02-ask.png" alt="Step 2, Ask: an answer with numbered sources under it">
+<img src="demo/03-teach.png" alt="Step 3, Teach: generated questions grouped by chunk, with checkboxes and the reasons for rejected ones">
+<img src="demo/04-train.png" alt="Step 4, Train: training settings with the training rows built from the reviewed questions">
 <img src="demo/05-monitor.png" alt="Step 5, Monitor: the loss curve of a finished run">
-<img src="demo/06-compare.png" alt="Step 6, Try it: the fine-tuned and base model replies side by side">
+<img src="demo/06-tryit.png" alt="Step 6, Try it: the fine-tuned and base model replies side by side, each with sources">
 </div>
 </div>
 <p class="df-stagecap" id="df-cap" aria-live="polite"></p>

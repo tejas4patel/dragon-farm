@@ -46,12 +46,12 @@
     var shots = Array.prototype.slice.call(document.querySelectorAll(".df-shots img"));
     var cap = document.getElementById("df-cap");
     var captions = [
-      "Load a table, or start from the example tickets.",
-      "Drag one or more columns into the Prompt and Response slots.",
-      "Pick a base model and check your GPU.",
-      "Set a few numbers and press Start training.",
+      "Drop in PDFs, Word files, pages, or spreadsheets. They are read, chunked, and indexed.",
+      "Ask a question and get an answer with numbered sources. Nothing is trained yet.",
+      "A model writes questions from each chunk; filters flag the weak ones; you tick what to keep.",
+      "Pick a base model, set a few numbers, press Start training.",
       "Watch the loss curve while it trains.",
-      "Compare the fine-tuned model with the base model.",
+      "Compare the fine-tuned model with the base model, both answering from your documents.",
     ];
     var narrow = window.innerWidth < 640;
     var opts = narrow

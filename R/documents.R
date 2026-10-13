@@ -83,6 +83,29 @@ dragon_documents <- function(paths, name = NULL, runs_dir = dragon_runs_dir(),
   docs
 }
 
+#' Example documents
+#'
+#' Three short Markdown files of support policies for a fictional smart-home
+#' company (returns and warranty; Wi-Fi, the app, and automations; orders,
+#' billing, and support), about a thousand words in all. They pair with
+#' [dragon_example_data()]: the example tickets are answered from these
+#' policies. Use them to try [dragon_documents()], [dragon_ask()], and
+#' [dragon_questions()] before bringing your own files.
+#'
+#' @return The directory containing the files.
+#' @export
+#' @examples
+#' list.files(dragon_example_documents())
+#' if (interactive()) {
+#' docs <- dragon_documents(dragon_example_documents(), name = "policies")
+#' dragon_ask(docs, "How long is the return window?")
+#' }
+dragon_example_documents <- function() {
+  d <- system.file("extdata", "policies", package = "dragonfarm")
+  if (!nzchar(d)) cli::cli_abort("The example documents are missing. Is dragonfarm installed correctly?")
+  d
+}
+
 #' Reopen a saved document set
 #'
 #' @param dir The set's directory, as printed by [dragon_documents()], or a

@@ -3,7 +3,7 @@
 [![CRAN status](https://www.r-pkg.org/badges/version/dragonfarm)](https://CRAN.R-project.org/package=dragonfarm)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tejas4patel/dragon-farm/blob/main/inst/remote/dragonfarm_remote.ipynb)
 
-![dragonfarm: fine-tune a language model from R in minutes. Six steps: Data, Map, Model, Train, Monitor, Try it.](https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/banner.svg)
+![dragonfarm: fine-tune a language model from R in minutes. Six steps: Documents, Ask, Teach, Train, Monitor, Try it.](https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/banner.svg)
 
 `dragonfarm` takes a table of prompts and replies, teaches a 100M to 3B parameter
 model to answer in your format and your domain, and gives you back an adapter
@@ -11,22 +11,26 @@ or a merged model that loads with plain Hugging Face `transformers`. Training
 runs in a background Python process that the package sets up for you, on your
 own GPU or on a free cloud one.
 
-![The app, step by step: load a table, drag columns into slots, pick a model, train, watch the loss, compare against the base model.](https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/demo/dragonfarm-demo.gif)
+![The app, step by step: drop in documents, ask them with sources, review generated questions, train, watch the loss, compare against the base model.](https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/demo/dragonfarm-demo.gif)
 
-The app walks through six numbered steps, the same ones as in the GIF:
+The app opens on documents and walks through the same six steps as the GIF:
 
-1. **Data**: load a table (CSV, TSV, JSON, JSONL, or Parquet, which needs the
-   `arrow` package) or the example tickets.
-2. **Map**: drag one or more columns into the Prompt and Response slots.
-   Several columns in one slot are joined with a blank line, and a System
-   slot is optional.
-3. **Model**: pick a base model and check your GPU.
-4. **Train**: set a few numbers and press Start training, or send the run to a
-   cloud GPU.
+1. **Documents**: drop in PDFs, Word files, HTML, Markdown, text, or
+   spreadsheets, or add web pages. They are read, chunked, and indexed.
+2. **Ask**: ask a question and get an answer with numbered sources. Nothing
+   is trained yet; for many uses this is already enough.
+3. **Teach**: a model writes questions and answers from each chunk, filters
+   flag the weak ones, and you tick what to keep. Expect to keep about half.
+4. **Train**: pick a base model, set a few numbers, press Start training (or
+   send the run to a cloud GPU). Each prompt carries the retrieved excerpts.
 5. **Monitor**: watch the loss curve; the panel also shows the R code that
    reproduces the run.
-6. **Try it**: compare the fine-tuned model with the base model, then judge,
-   merge, or publish it.
+6. **Try it**: compare the fine-tuned model with the base model, both
+   answering from your documents; then chat, judge, merge, or publish.
+
+Already have a table of prompts and replies? One link switches the app to
+the table route: load the table, drag its columns into Prompt and Response
+slots, and carry on from Model.
 
 ## Install
 

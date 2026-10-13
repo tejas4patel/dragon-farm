@@ -45,7 +45,10 @@ mod_documents_top_ui <- function(ns) {
       ),
       shiny::uiOutput(ns("pending")),
       shiny::textInput(ns("name"), "Name this set", value = "my-documents", width = "100%"),
-      shiny::actionButton(ns("build"), "Read and index", class = "btn-primary"),
+      shiny::div(class = "cloud-actions",
+        shiny::actionButton(ns("build"), "Read and index", class = "btn-primary"),
+        shiny::actionButton(ns("example"), "Load the example policies", class = "btn-outline-primary")
+      ),
       shiny::p(class = "hint", "Files are copied into the set's folder under the runs directory, so the set survives this session. Reading the same set again picks up only what changed."),
       shiny::hr(),
       shiny::selectInput(ns("saved"), "Or open a saved set", choices = c("Choose a set" = ""), width = "100%"),
@@ -163,6 +166,18 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       pending_files(pending_files()[0, , drop = FALSE])
       pending_urls(character())
       shiny::showNotification(sprintf("%s: %d chunks ready to ask.", docs$name, docs$manifest$n_chunks), type = "message", duration = 5)
+    })
+
+    shiny::observeEvent(input$example, {
+      shiny::withProgress(message = "Reading and indexing the example policies.", value = 0.4, {
+        docs <- tryCatch(dragon_documents(dragon_example_documents(), name = "example-policies", runs_dir = runs_dir),
+                         error = function(e) { notify_error(e); NULL })
+      })
+      if (is.null(docs)) return()
+      state$documents <- docs
+      answer(NULL)
+      if (is.null(state$hardware)) state$hardware <- tryCatch(hardware_info(), error = function(e) NULL)
+      shiny::updateTextAreaInput(session, "question", value = "How long is the return window?")
     })
 
     output$summary <- shiny::renderUI({

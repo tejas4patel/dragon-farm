@@ -39,6 +39,14 @@ test_that("a saved set loads, prints, lists, and exposes its chunks", {
   expect_equal(nrow(dragon_documents_list(tempfile())), 0L)
 })
 
+test_that("the example documents ship with the package", {
+  d <- dragon_example_documents()
+  files <- list.files(d, pattern = "[.]md$")
+  expect_length(files, 3)
+  txt <- readLines(file.path(d, "returns-and-warranty.md"), warn = FALSE)
+  expect_true(any(grepl("^# ", txt)) && any(grepl("30 days", txt)))
+})
+
 test_that("loading something that is not a set fails clearly", {
   expect_error(dragon_documents_load(tempdir()), "not a document set")
   expect_error(dragon_chunks(42), "dragon_documents")
