@@ -32,7 +32,7 @@ test_that("an already-mapped dataset passes through the mapping module untouched
     session$flushReact()
     expect_s3_class(state$mapped, "dragon_dataset")
     expect_match(state$mapped$mapping$prompt, "subject")
-    session$setInputs(prompt_tpl = "{body}")          # typing a template takes over
+    session$setInputs(prompt_tpl = "{body}", response_tpl = "reply")   # typing templates takes over
     session$flushReact()
     expect_match(state$mapped$mapping$prompt, "body")
   })

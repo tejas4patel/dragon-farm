@@ -39,6 +39,7 @@ reference:
   - dragon_documents
   - dragon_documents_load
   - dragon_documents_list
+  - dragon_example_documents
   - dragon_chunks
   - dragon_index
   - dragon_retrieve
