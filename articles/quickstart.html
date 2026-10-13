@@ -79,13 +79,22 @@ once, on the example documents that ship with the package: read
 documents, ask them questions, have a model write training questions,
 review them, fine-tune, compare. The same six steps are the tabs of the
 app (<code><a href="../reference/dragon_app.html">dragon_app()</a></code>).</p>
+<p>Every output shown below is from one real run of this page on a
+laptop with an 8 GB GPU (an RTX 4060), on 2026-10-13. Your numbers will
+differ; the shape will not.</p>
 <p>If your data is already a table of prompts and replies, skip to <a href="#the-table-route">the table route</a> at the end.</p>
 <div class="section level2">
 <h2 id="check-the-machine">1. Check the machine<a class="anchor" aria-label="anchor" href="#check-the-machine"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dragonfarm.dev">dragonfarm</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/dragon_check.html">dragon_check</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/dragon_check.html">dragon_check</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; ✔ Python: '.../python.exe'</span></span>
+<span><span class="co">#&gt; ✔ torch 2.14.1+cu130 · transformers 5.19.0 · peft 0.21.2</span></span>
+<span><span class="co">#&gt; ✔ Device: CUDA 13.0 · NVIDIA GeForce RTX 4060 Laptop GPU · 8 GB · bf16 yes</span></span>
+<span><span class="co">#&gt; ✔ 4-bit loading available (bitsandbytes 0.50.2).</span></span>
+<span><span class="co">#&gt; ℹ Default model for answering and question generation here: "Qwen/Qwen2.5-7B-Instruct" in 4-bit (8 GB and up: 7B in 4-bit).</span></span>
+<span><span class="co">#&gt; ℹ No Hugging Face token. Open models work; gated ones need `HF_TOKEN`.</span></span></code></pre></div>
 <p>The first call builds a Python environment with torch and
 transformers. That is a 2 to 3 GB download and takes a few minutes;
 later calls take a second. The report names the device, whether 4-bit
@@ -102,12 +111,14 @@ under a temporary folder and vanish with the session:</p>
 </h2>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">docs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_documents.html">dragon_documents</a></span><span class="op">(</span><span class="fu"><a href="../reference/dragon_example_documents.html">dragon_example_documents</a></span><span class="op">(</span><span class="op">)</span>, name <span class="op">=</span> <span class="st">"policies"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; ✔ Document set policies: 3 sources, 11 chunks.</span></span>
+<span><span class="co">#&gt; ✔ Indexed 11 chunks of policies with "BAAI/bge-small-en-v1.5".</span></span>
 <span><span class="va">docs</span></span>
-<span><span class="co">#&gt; Document set policies</span></span>
-<span><span class="co">#&gt; • returns-and-warranty.md: 3 chunks, 328 words</span></span>
-<span><span class="co">#&gt; • connectivity-and-app.md: 3 chunks, 360 words</span></span>
-<span><span class="co">#&gt; • orders-and-support.md: 3 chunks, 389 words</span></span>
-<span><span class="co">#&gt; 9 chunks of about 170 words; index: BAAI/bge-small-en-v1.5</span></span></code></pre></div>
+<span><span class="co">#&gt; ── Document set policies</span></span>
+<span><span class="co">#&gt; • connectivity-and-app.md: 4 chunks, 324 words</span></span>
+<span><span class="co">#&gt; • orders-and-support.md: 4 chunks, 353 words</span></span>
+<span><span class="co">#&gt; • returns-and-warranty.md: 3 chunks, 298 words</span></span>
+<span><span class="co">#&gt; 11 chunks of about 170 words; index: BAAI/bge-small-en-v1.5</span></span></code></pre></div>
 <p>The example is three short Markdown files of support policies for a
 fictional smart-home company (the same company as the example tickets).
 Your own PDF, HTML, Word, text, and spreadsheet files, folders of them,
@@ -123,18 +134,21 @@ MB). Reading the same set again re-reads only files that changed.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ans</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_ask.html">dragon_ask</a></span><span class="op">(</span><span class="va">docs</span>, <span class="st">"How long is the return window?"</span><span class="op">)</span></span>
 <span><span class="va">ans</span></span>
-<span><span class="co">#&gt; Any device can be returned within 30 days of delivery, opened or unopened, for a full refund [1].</span></span>
+<span><span class="co">#&gt; The return window is 30 days from the delivery date [1].</span></span>
 <span><span class="co">#&gt;</span></span>
-<span><span class="co">#&gt; [1]* returns-and-warranty.md › Returns</span></span>
-<span><span class="co">#&gt; [2]  returns-and-warranty.md › Damaged on arrival</span></span>
-<span><span class="co">#&gt; [3]  orders-and-support.md › Cancelling an order</span></span>
-<span><span class="co">#&gt; [4]  returns-and-warranty.md › Warranty</span></span>
+<span><span class="co">#&gt; [1]* returns-and-warranty.md › Returns, refunds, and warranty</span></span>
+<span><span class="co">#&gt; [2]  orders-and-support.md › Duplicate or unexpected charges: refunds</span></span>
+<span><span class="co">#&gt; [3]  returns-and-warranty.md › Returns: refunds and setup</span></span>
+<span><span class="co">#&gt; [4]  orders-and-support.md › Account data</span></span>
 <span><span class="co">#&gt; * cited in the answer. Excerpt text is in $sources$text.</span></span></code></pre></div>
 <p>The most relevant chunks go in front of the model as numbered
 excerpts, with an instruction to answer only from them and to cite them.
-The first question in a session loads the model (about a minute for a 7B
-in 4-bit); later ones take seconds. For many uses this step is the whole
-job: nothing is trained, and you can swap the documents and ask again.
+The first question in a session loads the model: this one took 48
+seconds with the 7B in 4-bit when its weights were already cached on
+disk, and about five minutes the first time after a reboot, when 15 GB
+had to be read from disk first. Later questions take a few seconds. For
+many uses this step is the whole job: nothing is trained, and you can
+swap the documents and ask again.
 <code>dragon_chat(documents = docs)</code> does the same with memory
 across turns.</p>
 </div>
@@ -143,48 +157,65 @@ across turns.</p>
 </h2>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">qa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_questions.html">dragon_questions</a></span><span class="op">(</span><span class="va">docs</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 27 questions written, 16 kept by the filters (59%). Review them before training.</span></span>
-<span><span class="va">qa</span></span></code></pre></div>
+<span><span class="co">#&gt; ℹ Writing questions with "Qwen/Qwen2.5-7B-Instruct" in the background.</span></span>
+<span><span class="co">#&gt; ✔ 33 questions written, 29 kept by the filters (88%). Review them before training.</span></span>
+<span><span class="co">#&gt; Rejected: answer not grounded (2), refers to the passage (2).</span></span></code></pre></div>
 <p>For every chunk a model writes three self-contained questions and
 answers them from that chunk alone; deterministic filters then mark
 pairs that are not grounded in the chunk, name things it does not, refer
 to “the passage”, or repeat another question. Nothing is thrown away:
-each pair has <code>keep</code> and a <code>reason</code>. On a CPU,
-pass a small generator such as
+each pair has <code>keep</code> and a <code>reason</code>. This took two
+and a half minutes for the eleven chunks with the 7B. On a CPU, pass a
+small generator such as
 <code>generator = "Qwen/Qwen2.5-0.5B-Instruct"</code> and expect to keep
-few; on a GPU the default is the machine’s recommended model, and a
-stronger teacher such as <code><a href="../reference/dragon_llm_anthropic.html">dragon_llm_anthropic()</a></code> keeps
-more.</p>
+far fewer; a stronger teacher such as
+<code><a href="../reference/dragon_llm_anthropic.html">dragon_llm_anthropic()</a></code> keeps more.</p>
 <p>Now read them. This is the step that decides whether the fine-tune is
-worth having: in our tests, roughly a fifth of the pairs that passed the
-filters were still wrong or trivial, and a model trained on unreviewed
-pairs learned to sound sure when it was wrong.</p>
+worth having: on larger, messier documents about a fifth of the pairs
+that passed the filters were still wrong or trivial, and a model trained
+on unreviewed pairs learned to sound sure when it was wrong. (The
+example policies are short and tidy, which is why 88 percent passed
+here.)</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">qa</span><span class="op">[</span><span class="op">!</span><span class="va">qa</span><span class="op">$</span><span class="va">keep</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"question"</span>, <span class="st">"reason"</span><span class="op">)</span><span class="op">]</span>     <span class="co"># what was rejected, and why</span></span>
-<span><span class="va">qa</span><span class="op">$</span><span class="va">keep</span><span class="op">[</span><span class="va">qa</span><span class="op">$</span><span class="va">id</span> <span class="op">==</span> <span class="st">"p0007"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">TRUE</span>          <span class="co"># rescue one you like</span></span>
+<code class="sourceCode R"><span><span class="va">qa</span><span class="op">[</span><span class="op">!</span><span class="va">qa</span><span class="op">$</span><span class="va">keep</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"question"</span>, <span class="st">"reason"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt;                                                                                            question                     reason</span></span>
+<span><span class="co">#&gt; 1                  How long should a customer wait before escalating an unresolved Wi-Fi drop issue? answer not grounded (0.50)</span></span>
+<span><span class="co">#&gt; 2               What are the first three steps to troubleshoot Wi-Fi drops according to the passage?      refers to the passage</span></span>
+<span><span class="co">#&gt; 3                              What does the passage indicate about the content of support policies?      refers to the passage</span></span>
+<span><span class="co">#&gt; 4 How long should a customer wait before a single charge appears after an authorization and capture? answer not grounded (0.46)</span></span>
+<span><span class="co"># qa$keep[qa$id == "p0005"] &lt;- TRUE        # to rescue one after reading it</span></span>
 <span><span class="fu"><a href="../reference/dragon_questions_load.html">dragon_questions_save</a></span><span class="op">(</span><span class="va">qa</span><span class="op">)</span>                  <span class="co"># decisions stay with the set</span></span></code></pre></div>
-<p>In the app this is the Teach card: tick and untick, Save decisions,
-Continue to Model.</p>
+<p>The first rejected question is a reasonable one whose answer the
+filter scored as only half grounded; reading it, you might well rescue
+it. The two that say “the passage” would not make sense to a user, so
+they stay out. This run kept the filters’ verdicts as they were. In the
+app this is the Teach card: tick and untick, Save decisions, Continue to
+Model.</p>
 </div>
 <div class="section level2">
 <h2 id="fine-tune">5. Fine-tune<a class="anchor" aria-label="anchor" href="#fine-tune"></a>
 </h2>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_questions_dataset.html">dragon_questions_dataset</a></span><span class="op">(</span><span class="va">qa</span>, <span class="va">docs</span><span class="op">)</span>   <span class="co"># kept pairs, with retrieved excerpts in every prompt</span></span>
+<span><span class="va">ds</span></span>
+<span><span class="co">#&gt; &lt;dragon_dataset&gt; policies questions: 29 rows, 4 columns</span></span>
+<span><span class="co">#&gt; Prompt: "Documentation excerpts:\n{context}\n\nQuestion: {question}"</span></span>
+<span><span class="co">#&gt; Response: "{`answer`}"</span></span>
 <span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_train.html">dragon_train</a></span><span class="op">(</span><span class="va">ds</span>, <span class="st">"HuggingFaceTB/SmolLM2-135M-Instruct"</span>,</span>
 <span>                    lora <span class="op">=</span> <span class="fu"><a href="../reference/dragon_lora.html">dragon_lora</a></span><span class="op">(</span>r <span class="op">=</span> <span class="fl">8</span>, alpha <span class="op">=</span> <span class="fl">16</span><span class="op">)</span>,</span>
 <span>                    args <span class="op">=</span> <span class="fu"><a href="../reference/dragon_train_args.html">dragon_train_args</a></span><span class="op">(</span>epochs <span class="op">=</span> <span class="fl">2</span>, batch_size <span class="op">=</span> <span class="fl">2</span>, grad_accum <span class="op">=</span> <span class="fl">4</span>, max_seq_len <span class="op">=</span> <span class="fl">1024</span><span class="op">)</span>,</span>
-<span>                    wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span>                    wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; ✔ Launched run 20261013-181855-smollm2-135m-instruct (28 training rows, 1 held out).</span></span>
+<span><span class="co">#&gt; ✔ Run 20261013-181855-smollm2-135m-instruct succeeded. Eval loss 0.42, perplexity 1.52.</span></span></code></pre></div>
 <p>Each training prompt is the excerpts retrieved for that question,
 then the question; the answer is the response. The model learns the
 style and how to use excerpts, and the documents stay the source of
-truth, so they can change later without retraining. The 135M model
-trains on a CPU in a few minutes; on a GPU,
-<code>Qwen/Qwen2.5-0.5B-Instruct</code> is the better default. With
-<code>wait = TRUE</code> you get a progress bar; without it the function
-returns at once and <code>dragon_status(run)</code>,
-<code>dragon_progress(run)</code>, and <code>dragon_wait(run)</code>
-follow along. Runs survive the session:
+truth, so they can change later without retraining. This run took a
+little over two minutes on the laptop GPU; the 135M model also trains on
+a CPU, more slowly. With <code>wait = TRUE</code> you get a progress
+bar; without it the function returns at once and
+<code>dragon_status(run)</code>, <code>dragon_progress(run)</code>, and
+<code>dragon_wait(run)</code> follow along. Runs survive the session:
 <code>dragon_run("~/dragonfarm_runs/&lt;id&gt;")</code> reopens one.</p>
 </div>
 <div class="section level2">
@@ -192,17 +223,27 @@ follow along. Runs survive the session:
 </h2>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/dragon_ask.html">dragon_ask</a></span><span class="op">(</span><span class="va">docs</span>, <span class="st">"Can I return a device I have already set up?"</span>, model <span class="op">=</span> <span class="va">run</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/dragon_ask.html">dragon_ask</a></span><span class="op">(</span><span class="va">docs</span>, <span class="st">"Can I return a device I have already set up?"</span>, model <span class="op">=</span> <span class="va">run</span>, base <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>   <span class="co"># what it started from</span></span>
-<span><span class="fu"><a href="../reference/dragon_evaluate.html">dragon_evaluate</a></span><span class="op">(</span><span class="va">run</span><span class="op">)</span>                        <span class="co"># held-out loss and sample replies</span></span>
+<span><span class="co">#&gt; Yes, you can return a device you have already set up. The device is still in</span></span>
+<span><span class="co">#&gt; the app, and you can use the app to set up the device.</span></span>
+<span><span class="co">#&gt; [1]  returns-and-warranty.md › Returns: refunds and setup</span></span>
+<span><span class="co">#&gt; [2]  returns-and-warranty.md › Returns, refunds, and warranty</span></span>
+<span><span class="co">#&gt; ...</span></span>
+<span><span class="fu"><a href="../reference/dragon_evaluate.html">dragon_evaluate</a></span><span class="op">(</span><span class="va">run</span><span class="op">)</span>                        <span class="co"># held-out loss and a sample reply</span></span>
 <span><span class="va">chat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_chat.html">dragon_chat</a></span><span class="op">(</span><span class="va">run</span>, documents <span class="op">=</span> <span class="va">docs</span><span class="op">)</span>  <span class="co"># a conversation, answering from the documents</span></span>
 <span><span class="va">chat</span><span class="op">$</span><span class="fu">say</span><span class="op">(</span><span class="st">"A customer wants to return an opened device."</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/dragon_merge.html">dragon_merge</a></span><span class="op">(</span><span class="va">run</span>, <span class="st">"models/policies-135m"</span><span class="op">)</span>   <span class="co"># a standalone model for plain transformers</span></span></code></pre></div>
-<p>A 135M model trained on sixteen pairs will not impress you; this run
-is to see the parts move. Use a bigger base model, your own documents,
-and a reviewed set of a few hundred pairs for a result you would keep.
-The measured numbers behind each step, and what to expect from each
-model size, are in <a href="https://dragonfarm.dev/articles/documents.html">From your
-documents to your model</a>.</p>
+<p>Be honest with yourself about what you just built. A 135M model
+trained on twenty-nine pairs for eight optimizer steps gets the gist
+(“yes, you can return it”) and then drifts; its held-out loss of 0.42 is
+over a single held-out row. This run exists to see the parts move in a
+few minutes, not to produce a model you would keep. Three things change
+the result: a bigger base model (<code>Qwen/Qwen2.5-0.5B-Instruct</code>
+on a GPU, which the README demo uses), your own documents, and a
+reviewed set of a few hundred pairs. The measured numbers behind each
+step, and what to expect from each model size, are in <a href="https://dragonfarm.dev/articles/documents.html">From your
+documents to your model</a>. Meanwhile, step 3 already answered this
+question correctly from the documents with no training at all, which is
+the point of doing it first.</p>
 </div>
 <div class="section level2">
 <h2 id="the-table-route">The table route<a class="anchor" aria-label="anchor" href="#the-table-route"></a>
@@ -214,11 +255,13 @@ a table instead. The bundled example tickets have <code>subject</code>,
 <code class="sourceCode R"><span><span class="va">ds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="fu"><a href="../reference/dragon_example_data.html">dragon_example_data</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/dragon_map.html">dragon_map</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"{subject}\n\n{body}"</span>, response <span class="op">=</span> <span class="st">"reply"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/dragon_preview.html">dragon_preview</a></span><span class="op">(</span><span class="va">ds</span>, n <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>                   <span class="co"># the first row exactly as the model sees it</span></span>
-<span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_train.html">dragon_train</a></span><span class="op">(</span><span class="va">ds</span>, <span class="st">"HuggingFaceTB/SmolLM2-135M-Instruct"</span>, wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_train.html">dragon_train</a></span><span class="op">(</span><span class="va">ds</span>, <span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span>, wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/dragon_generate.html">dragon_generate</a></span><span class="op">(</span><span class="va">run</span>, <span class="st">"Charged twice for Sentry doorbell\n\nMy card shows two charges for one order."</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/dragon_map.html">dragon_map()</a></code> takes column names or templates that
 combine columns, and an optional <code>system =</code>. Everything after
-that is the same: evaluate, chat, merge, publish. In the app, “Have a
+that is the same: evaluate, chat, merge, publish. The 0.5B model trains
+on the 190 tickets in two to four minutes on a laptop GPU (the 135M
+works on a CPU but its replies on this task ramble). In the app, “Have a
 table of prompts and replies instead?” on the Documents tab switches to
 this route, where the Map step is drag and drop.</p>
 </div>
