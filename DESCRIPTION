@@ -1,6 +1,6 @@
 Package: dragonfarm
 Title: Fine-Tune Small Language Models with LoRA from R
-Version: 0.3.4
+Version: 0.3.4.9000
 Authors@R:
     person("Tejas", "Patel", role = c("aut", "cre"), email = "algocrat@gmail.com")
 Description: Fine-tune small (100M to 3B parameter) causal language models
@@ -44,6 +44,6 @@ VignetteBuilder: knitr
 Config/testthat/edition: 3
 SystemRequirements: 'Python' (>= 3.10). The 'uv' tool is installed
     automatically by 'reticulate' to build the 'Python' environment.
-URL: https://github.com/tejas4patel/dragon-farm
+URL: https://dragonfarm.dev, https://github.com/tejas4patel/dragon-farm
 BugReports: https://github.com/tejas4patel/dragon-farm/issues
 Config/roxygen2/version: 8.1.0
