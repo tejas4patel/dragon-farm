@@ -69,3 +69,37 @@ test_that("the app builds for both routes", {
   expect_equal(titles[["model"]], "3 Model")
   expect_equal(titles[["pipeline"]], "8 Pipeline")
 })
+
+test_that("the Teach card reviews a question set and hands a dataset to Model", {
+  runs_dir <- tempfile("runs-")
+  f <- write_fake_set(root = runs_dir)
+  qpath <- write_fake_questions(f$dir)
+  state <- shiny::reactiveValues(documents = dragon_documents_load(f$dir), route = "documents", hardware = NULL,
+                                 dataset = NULL, mapped = NULL)
+  visited <- character()
+  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4) do.call(rbind, lapply(query, function(q) data.frame(
+    query = q, n = 1L, id = "abc-000", source = "policy.pdf", section = "Returns", text = "Thirty days.",
+    score = 0.9, similarity = 0.9, weight = 1, stringsAsFactors = FALSE))))
+  shiny::testServer(dragonfarm:::mod_documents_server,
+    args = list(state = state, nav_to = function(p) visited <<- c(visited, p), runs_dir = runs_dir), {
+    session$flushReact()
+    session$setInputs(qset = qpath)
+    qa <- questions()
+    expect_s3_class(qa, "dragon_questions")
+    html <- output$review$html
+    expect_match(html, "2 of 3 kept")
+    expect_match(html, "refers to the passage")
+    expect_match(html, "policy.pdf . Returns")
+
+    # untick the kept warranty pair, rescue the rejected one, save
+    session$setInputs(`keep_abc-000` = c("p0001", "p0002"), `keep_abc-001` = character())
+    session$setInputs(save_review = 1)
+    saved <- dragon_questions_load(qpath)
+    expect_equal(saved$keep, c(TRUE, TRUE, FALSE))
+
+    session$setInputs(to_model = 1)
+    expect_s3_class(state$mapped, "dragon_dataset")
+    expect_equal(nrow(state$mapped$data), 2L)
+    expect_equal(visited, "model")
+  })
+})

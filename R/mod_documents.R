@@ -7,6 +7,28 @@ DOCUMENT_EXTENSIONS <- c(".pdf", ".html", ".htm", ".md", ".markdown", ".txt", ".
 
 mod_documents_ui <- function(id) {
   ns <- shiny::NS(id)
+  shiny::tagList(
+    mod_documents_top_ui(ns),
+    bslib::card(
+      bslib::card_header("Teach: questions and answers from these documents"),
+      shiny::p(class = "hint", "A model writes questions each chunk can answer, filters mark the weak ones, and you review before anything trains. Expect to keep roughly half; the review is the point."),
+      bslib::layout_columns(
+        col_widths = c(4, 2, 3, 3),
+        shiny::selectInput(ns("generator"), "Written by", choices = c("Recommended local model" = ""), width = "100%"),
+        shiny::numericInput(ns("per_chunk"), "Per chunk", value = 3, min = 1, max = 6, step = 1),
+        shiny::checkboxInput(ns("include_quotes"), "Include quoted passages", value = FALSE),
+        shiny::selectInput(ns("qset"), "Or review an earlier set", choices = c("Choose" = ""), width = "100%")
+      ),
+      shiny::div(class = "cloud-actions",
+        shiny::actionButton(ns("generate"), "Generate questions", class = "btn-primary"),
+        shiny::uiOutput(ns("gen_status"), inline = TRUE)
+      ),
+      shiny::uiOutput(ns("review"))
+    )
+  )
+}
+
+mod_documents_top_ui <- function(ns) {
   bslib::layout_columns(
     col_widths = c(5, 7),
     bslib::card(
@@ -192,6 +214,152 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
     shiny::observeEvent(input$table_route, {
       state$route <- "table"
       nav_to("data")
+    })
+
+    # Teach: generate in the background, poll the progress file, then review. ----
+    job <- shiny::reactiveVal(NULL)
+    questions <- shiny::reactiveVal(NULL)   # the dragon_questions data frame under review
+
+    shiny::observe({
+      state$hardware
+      choices <- c("Recommended local model" = "")
+      if (nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) choices <- c(choices, "Claude API (ANTHROPIC_API_KEY)" = "anthropic")
+      choices <- c(choices, stats::setNames(dragon_presets()$id, dragon_presets()$id),
+                   "Qwen/Qwen2.5-3B-Instruct" = "Qwen/Qwen2.5-3B-Instruct", "Qwen/Qwen2.5-7B-Instruct (4-bit on 8 GB)" = "Qwen/Qwen2.5-7B-Instruct")
+      shiny::updateSelectInput(session, "generator", choices = choices, selected = shiny::isolate(input$generator) %||% "")
+    })
+    shiny::observe({
+      docs <- state$documents
+      choices <- c("Choose" = "")
+      if (!is.null(docs)) {
+        lst <- tryCatch(dragon_questions_list(docs), error = function(e) NULL)
+        if (!is.null(lst) && nrow(lst)) {
+          choices <- c(choices, stats::setNames(lst$file, sprintf("%s: %d pairs, %s kept (%s)", lst$stamp, lst$pairs,
+                                                                  ifelse(is.na(lst$kept), "?", lst$kept), ifelse(is.na(lst$generator), "?", lst$generator))))
+        }
+      }
+      shiny::updateSelectInput(session, "qset", choices = choices, selected = "")
+    })
+    shiny::observeEvent(input$qset, {
+      p <- input$qset
+      if (is.null(p) || !nzchar(p)) return()
+      qa <- tryCatch(dragon_questions_load(p), error = function(e) { notify_error(e); NULL })
+      if (!is.null(qa)) questions(qa)
+    })
+
+    shiny::observeEvent(input$generate, {
+      docs <- state$documents
+      if (is.null(docs)) { shiny::showNotification("Read some documents first.", type = "warning"); return() }
+      if (!is.null(job()) && isTRUE(dragon_questions_progress(job())$alive)) {
+        shiny::showNotification("Questions are already being written.", type = "warning"); return()
+      }
+      gen <- input$generator %||% ""
+      n <- as.integer(input$per_chunk %||% 3)
+      if (identical(gen, "anthropic")) {
+        shiny::withProgress(message = "Asking the Claude API for questions on each chunk.", value = 0.4, {
+          qa <- tryCatch(dragon_questions(docs, generator = dragon_llm_anthropic(), n_per_chunk = n,
+                                          include_quotes = isTRUE(input$include_quotes)),
+                         error = function(e) { notify_error(e); NULL })
+        })
+        if (!is.null(qa)) questions(qa)
+        return()
+      }
+      j <- tryCatch(dragon_questions(docs, generator = if (nzchar(gen)) gen else NULL, n_per_chunk = n,
+                                     include_quotes = isTRUE(input$include_quotes), wait = FALSE),
+                    error = function(e) { notify_error(e); NULL })
+      if (!is.null(j)) { job(j); questions(NULL) }
+    })
+
+    progress <- shiny::reactive({
+      j <- job()
+      if (is.null(j)) return(NULL)
+      p <- dragon_questions_progress(j)
+      if (!p$state %in% c("done", "failed")) shiny::invalidateLater(2000, session)
+      p
+    })
+    shiny::observeEvent(progress(), {
+      p <- progress()
+      if (is.null(p) || !identical(p$state, "done")) return()
+      qa <- tryCatch(dragon_questions_load(job()$out), error = function(e) { notify_error(e); NULL })
+      if (!is.null(qa)) questions(qa)
+      job(NULL)
+    }, ignoreNULL = TRUE)
+
+    output$gen_status <- shiny::renderUI({
+      p <- progress()
+      if (is.null(p)) return(NULL)
+      if (identical(p$state, "failed")) {
+        return(shiny::span(class = "text-danger small", "Generation failed. ", shiny::code(basename(job()$log)), " has the details."))
+      }
+      if (identical(p$state, "loading") || is.na(p$total)) return(shiny::span(class = "hint", "Loading the model..."))
+      shiny::span(class = "hint", sprintf("%d of %d chunks done: %d pairs so far, %d kept by the filters.", p$done, p$total, p$pairs, p$kept))
+    })
+
+    # Review: pairs grouped by chunk; a checkbox per pair, rejected ones
+    # unticked with their reason. Decisions are saved back to the file.
+    output$review <- shiny::renderUI({
+      qa <- questions()
+      if (is.null(qa)) return(NULL)
+      if (!nrow(qa)) return(shiny::p(class = "hint", "The model wrote nothing usable. Try a larger generator."))
+      groups <- split(seq_len(nrow(qa)), factor(qa$chunk_id, levels = unique(qa$chunk_id)))
+      blocks <- lapply(groups, function(idx) {
+        where <- paste0(qa$source[idx[1]], if (nzchar(qa$section[idx[1]])) paste0(" › ", qa$section[idx[1]]) else "")
+        names_html <- lapply(idx, function(i) {
+          shiny::div(class = paste("qa", if (!qa$keep[i]) "rejected"),
+            shiny::div(class = "q", qa$question[i]),
+            shiny::div(class = "a", qa$answer[i]),
+            if (!is.na(qa$reason[i])) shiny::span(class = "why", qa$reason[i])
+          )
+        })
+        shiny::tags$details(open = NA, class = "qa-chunk",
+          shiny::tags$summary(shiny::strong(where), sprintf(" (%d of %d kept)", sum(qa$keep[idx]), length(idx))),
+          shiny::checkboxGroupInput(ns(paste0("keep_", qa$chunk_id[idx[1]])), label = NULL,
+                                    choiceNames = names_html, choiceValues = qa$id[idx], selected = qa$id[idx][qa$keep[idx]])
+        )
+      })
+      shiny::tagList(
+        shiny::div(class = "kv mt-3", shiny::span("Review"),
+          shiny::strong(sprintf("%d of %d kept", sum(qa$keep), nrow(qa))),
+          if (!is.null(attr(qa, "meta")$generator)) shiny::span(class = "text-muted small", paste0("  written by ", attr(qa, "meta")$generator))),
+        shiny::div(class = "cloud-actions",
+          shiny::actionButton(ns("save_review"), "Save decisions", class = "btn-outline-primary"),
+          shiny::actionButton(ns("to_model"), "Continue to Model", class = "btn-primary"),
+          shiny::span(class = "hint", "Continue builds the training set from the ticked pairs, with retrieved excerpts in every prompt, and skips the Data and Map steps.")
+        ),
+        blocks
+      )
+    })
+
+    reviewed <- function() {
+      qa <- questions()
+      if (is.null(qa)) return(NULL)
+      for (cid in unique(qa$chunk_id)) {
+        sel <- input[[paste0("keep_", cid)]]
+        if (is.null(sel)) sel <- character()   # all unticked
+        qa$keep[qa$chunk_id == cid] <- qa$id[qa$chunk_id == cid] %in% sel
+      }
+      qa
+    }
+    shiny::observeEvent(input$save_review, {
+      qa <- reviewed()
+      if (is.null(qa)) return()
+      qa <- tryCatch(dragon_questions_save(qa), error = function(e) { notify_error(e); NULL })
+      if (!is.null(qa)) { questions(qa); shiny::showNotification(sprintf("Saved: %d of %d kept.", sum(qa$keep), nrow(qa)), type = "message") }
+    })
+    shiny::observeEvent(input$to_model, {
+      qa <- reviewed()
+      if (is.null(qa)) return()
+      if (!any(qa$keep)) { shiny::showNotification("Tick at least a few pairs first.", type = "warning"); return() }
+      qa <- tryCatch(dragon_questions_save(qa), error = function(e) { notify_error(e); NULL })
+      if (is.null(qa)) return()
+      shiny::withProgress(message = "Retrieving excerpts for every kept question.", value = 0.5, {
+        ds <- tryCatch(dragon_questions_dataset(qa, state$documents), error = function(e) { notify_error(e); NULL })
+      })
+      if (is.null(ds)) return()
+      state$dataset <- ds
+      state$mapped <- ds
+      shiny::showNotification(sprintf("%d training rows ready. Pick a model next.", nrow(ds$data)), type = "message")
+      nav_to("model")
     })
   })
 }

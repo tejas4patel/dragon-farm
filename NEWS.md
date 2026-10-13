@@ -1,5 +1,18 @@
 # dragonfarm (development version)
 
+* New: documents to training data. `dragon_questions()` has a model write
+  questions and answers from each chunk of a document set (the local model
+  recommended for the machine, in the background; or a teacher such as
+  `dragon_llm_anthropic()`), runs simple deterministic filters, and returns
+  every pair with `keep` and a `reason`, because the measured yield of usable
+  pairs is 20 to 60 percent depending on the model and a review step is not
+  optional. `dragon_questions_save()` records your decisions;
+  `dragon_questions_dataset()` builds the training set with retrieved
+  excerpts placed in front of each question, the setup that beat a plain
+  fine-tune in the prototypes. The Documents tab gains a **Teach** card:
+  generate, watch the yield grow, review pairs grouped by chunk, tick and
+  untick, then Continue to Model, which skips Data and Map.
+
 * The app now starts with documents. A new **Documents** tab is tab 1: drop
   files or add web pages, press Read and index, ask questions and see the
   sources, then continue in Chat with the same set. The default route runs
