@@ -33,6 +33,19 @@ reference:
   - dragon_check
   - dragon_python_requirements
   - dragon_presets
+- title: Documents
+  desc: Drop in documents, ask them questions, write and review training questions, build the training set.
+  contents:
+  - dragon_documents
+  - dragon_documents_load
+  - dragon_documents_list
+  - dragon_chunks
+  - dragon_index
+  - dragon_retrieve
+  - dragon_ask
+  - dragon_questions
+  - dragon_questions_load
+  - dragon_questions_dataset
 - title: Data
   contents:
   - dragon_dataset
