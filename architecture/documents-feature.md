@@ -43,7 +43,7 @@ box open in the meantime. The destination is still a fine-tuned model.
 | File types, v1 | PDF, HTML, Markdown, plain text, DOCX, web URLs (fetched as HTML), spreadsheets (xlsx/csv treated as documents: one chunk per row group or sheet) |
 | Answer model | Follows the hardware tier (decided 2026-10-12 after the 7B measurement): `Qwen2.5-1.5B-Instruct` under 6 GB of GPU memory or on CPU, `Qwen2.5-3B-Instruct` at 6 to 8 GB, `Qwen2.5-7B-Instruct` loaded 4-bit at 8 GB and above. Any run or base model can be chosen instead |
 | Q&A generator | Same tiers, so a 7B 4-bit on an 8 GB card (60% usable pairs against 33% for the 3B); an optional teacher via `dragon_llm_anthropic()` / `dragon_llm_ellmer()` when given, same pattern as `dragon_judge()` |
-| 4-bit loading | In 0.4.0: `bitsandbytes` NF4 for inference and generation (`dragon_generate(..., load_in_4bit = TRUE)`, automatic for the 7B tier). `dragon_check()` reports the tier. QLoRA training of 7B models is a stretch goal, measured before it is promised |
+| 4-bit loading | In 0.4.0: `bitsandbytes` NF4 for inference and generation (`dragon_generate(..., load_in_4bit = TRUE)`, automatic for the 7B tier). `dragon_check()` reports the tier. QLoRA training of 7B models measured 2026-10-13: works on 8 GB at batch 1, 512 tokens, checkpointing on; 26 min per epoch on 190 tickets, 7.9 GB peak. Offered, not defaulted; document prompts (~1000 tokens) need a bigger card or the cloud |
 | Citations | Numbered footnotes with expandable excerpts (file, section, text); the same structure is returned by `dragon_ask()` |
 | Persistence | Under `runs_dir/documents/<name>/`; temporary by default like runs, kept when `dragonfarm.runs_dir` is set; re-index only changed files |
 
