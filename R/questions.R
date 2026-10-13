@@ -226,7 +226,7 @@ dragon_questions_dataset <- function(qa, docs = NULL, k = 4) {
   if (is.null(hits$query)) hits$query <- kept$question[1]   # one question: dragon_retrieve drops the column
   context <- vapply(seq_len(nrow(kept)), function(i) {
     h <- hits[hits$query == kept$question[i], , drop = FALSE]
-    paste(sprintf("[%d] %s%s\n%s", h$n, h$source, ifelse(nzchar(h$section), paste0(" › ", h$section), ""), h$text), collapse = "\n\n")
+    paste(sprintf("[%d] %s%s\n%s", h$n, h$source, ifelse(nzchar(h$section), paste0(" \u203a ", h$section), ""), h$text), collapse = "\n\n")
   }, character(1))
   df <- data.frame(question = kept$question, context = context, answer = kept$answer, source = kept$source,
                    stringsAsFactors = FALSE)

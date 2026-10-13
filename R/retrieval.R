@@ -133,7 +133,7 @@ print.dragon_answer <- function(x, ...) {
     cat("\n")
     for (i in seq_len(nrow(src))) {
       mark <- if (isTRUE(src$cited[i])) "*" else " "
-      sec <- if (nzchar(src$section[i])) paste0(" › ", src$section[i]) else ""
+      sec <- if (nzchar(src$section[i])) paste0(" \u203a ", src$section[i]) else ""
       cat(sprintf("[%d]%s %s%s\n", src$n[i], mark, src$source[i], sec))
     }
     if (any(src$cited)) cat("* cited in the answer. Excerpt text is in $sources$text.\n")
@@ -161,18 +161,18 @@ documents_system <- function(extra = NULL) {
 documents_prompt <- function(question, hits) {
   if (!nrow(hits)) return(paste0("No excerpts were found in the documents.\n\nQuestion: ", question))
   parts <- vapply(seq_len(nrow(hits)), function(i) {
-    where <- if (nzchar(hits$section[i])) paste0(hits$source[i], " › ", hits$section[i]) else hits$source[i]
+    where <- if (nzchar(hits$section[i])) paste0(hits$source[i], " \u203a ", hits$section[i]) else hits$source[i]
     sprintf("[%d] %s\n%s", hits$n[i], where, hits$text[i])
   }, character(1))
   paste0("Excerpts from the documents:\n\n", paste(parts, collapse = "\n\n"), "\n\nQuestion: ", question)
 }
 
-# Footnotes under a reply in the app: "[1] file › section", each expandable to
+# Footnotes under a reply in the app: "[1] file \u203a section", each expandable to
 # the excerpt. Cited ones are bold. NULL when there is nothing to show.
 sources_footnotes <- function(src) {
   if (is.null(src) || !nrow(src)) return(NULL)
   items <- lapply(seq_len(nrow(src)), function(i) {
-    where <- if (nzchar(src$section[i])) paste0(src$source[i], " › ", src$section[i]) else src$source[i]
+    where <- if (nzchar(src$section[i])) paste0(src$source[i], " \u203a ", src$section[i]) else src$source[i]
     label <- sprintf("[%d] %s", src$n[i], where)
     shiny::tags$details(class = "source",
       shiny::tags$summary(if (isTRUE(src$cited[i])) shiny::strong(label) else label),

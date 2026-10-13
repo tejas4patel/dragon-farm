@@ -3,7 +3,7 @@
 
 fake_hits <- function(n = 3) {
   data.frame(
-    n = seq_len(n), id = paste0("abc-00", seq_len(n) - 1), source = c("policy.pdf", "policy.pdf", "NEWS.md")[seq_len(n)],
+    n = seq_len(n), id = sprintf("abc-%03d", seq_len(n) - 1), source = c("policy.pdf", "policy.pdf", "NEWS.md")[seq_len(n)],
     section = c("Returns", "Warranty", "1.1.0")[seq_len(n)],
     text = c("Any device can be returned within 30 days.", "Every device has a 2-year warranty.", "Changed things.")[seq_len(n)],
     score = c(0.8, 0.6, 0.4)[seq_len(n)], similarity = c(0.8, 0.6, 0.57)[seq_len(n)], weight = c(1, 1, 0.7)[seq_len(n)],

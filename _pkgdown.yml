@@ -110,6 +110,7 @@ reference:
 articles:
 - title: Start here
   contents:
+  - "`articles/documents`"
   - quickstart
   - shiny-app
   - "`articles/cloud-gpu`"

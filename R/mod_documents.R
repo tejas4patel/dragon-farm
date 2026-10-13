@@ -173,7 +173,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
         shiny::div(class = "kv", shiny::span("Set"), shiny::strong(docs$name)),
         shiny::tags$ul(class = "source-list", lapply(m$sources, function(s) {
           flags <- c(if (isTRUE(s$changelog_like)) "changelog, down-weighted", if (!is.null(s$error)) paste("could not read:", s$error))
-          shiny::tags$li(s$name, sprintf(" — %d chunks", as.integer(s$n_chunks)),
+          shiny::tags$li(s$name, sprintf(" \u2014 %d chunks", as.integer(s$n_chunks)),
                          if (length(flags)) shiny::span(class = "text-muted small", paste0(" (", paste(flags, collapse = "; "), ")")))
         })),
         shiny::div(class = "kv", shiny::span("Index"), shiny::strong(if (is.null(m$index)) "not built yet" else m$index$model))
@@ -321,7 +321,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       if (!nrow(qa)) return(shiny::p(class = "hint", "The model wrote nothing usable. Try a larger generator."))
       groups <- split(seq_len(nrow(qa)), factor(qa$chunk_id, levels = unique(qa$chunk_id)))
       blocks <- lapply(groups, function(idx) {
-        where <- paste0(qa$source[idx[1]], if (nzchar(qa$section[idx[1]])) paste0(" › ", qa$section[idx[1]]) else "")
+        where <- paste0(qa$source[idx[1]], if (nzchar(qa$section[idx[1]])) paste0(" \u203a ", qa$section[idx[1]]) else "")
         names_html <- lapply(idx, function(i) {
           shiny::div(class = paste("qa", if (!qa$keep[i]) "rejected"),
             shiny::div(class = "q", qa$question[i]),
