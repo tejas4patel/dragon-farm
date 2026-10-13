@@ -147,7 +147,9 @@ mod_tryit_server <- function(id, state, runs_dir) {
       sets <- tryCatch(dragon_documents_list(runs_dir), error = function(e) NULL)
       choices <- c("No, just the prompt" = "")
       if (!is.null(sets) && nrow(sets)) choices <- c(choices, stats::setNames(sets$dir, sprintf("%s (%d chunks)", sets$name, sets$chunks)))
-      shiny::updateSelectInput(session, "documents", choices = choices, selected = shiny::isolate(input$documents) %||% "")
+      open <- state$documents
+      selected <- if (!is.null(open) && open$dir %in% choices) open$dir else shiny::isolate(input$documents) %||% ""
+      shiny::updateSelectInput(session, "documents", choices = choices, selected = selected)
     })
     output$tuned <- shiny::renderUI(reply_ui(replies$tuned))
     output$base <- shiny::renderUI({

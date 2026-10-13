@@ -1,5 +1,13 @@
 # dragonfarm (development version)
 
+* The app now starts with documents. A new **Documents** tab is tab 1: drop
+  files or add web pages, press Read and index, ask questions and see the
+  sources, then continue in Chat with the same set. The default route runs
+  Documents, Model, Train, Monitor, Try it, Chat, Pipeline; the table route
+  (Data and Map first, today's app) is one link away ("Have a table of
+  prompts and replies instead?") or `dragon_app(route = "table")`. The Chat
+  and Try it pickers preselect the set open on the Documents tab.
+
 * New: ask questions of your documents, no training needed. `dragon_index()`
   embeds a document set with a small encoder (`BAAI/bge-small-en-v1.5` by
   default, kept warm in the inference worker), `dragon_retrieve()` returns

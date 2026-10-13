@@ -4,10 +4,14 @@
 \alias{dragon_app}
 \title{Launch the dragon-farm app}
 \usage{
-dragon_app(runs_dir = dragon_runs_dir(), ...)
+dragon_app(runs_dir = dragon_runs_dir(), route = c("documents", "table"), ...)
 }
 \arguments{
 \item{runs_dir}{Directory where runs are stored and listed.}
+
+\item{route}{Which tabs lead: \code{"documents"} (Documents, Model, Train,
+Monitor, Try it, Chat, Pipeline) or \code{"table"} (Data, Map, Model, ...).
+Either can be switched to from inside the app.}
 
 \item{...}{Passed to \code{\link[shiny:shinyApp]{shiny::shinyApp()}} as \code{options}.}
 }
@@ -15,15 +19,18 @@ dragon_app(runs_dir = dragon_runs_dir(), ...)
 A Shiny app object. Printing it runs the app.
 }
 \description{
-A Shiny app that walks through the same steps as the R API: drop in a
-dataset, drag its columns into prompt and response slots, pick a model,
-train in the background, watch the loss curve, try the result, talk to it
-with context, and run the whole post-training loop as a pipeline.
-Every run started here is a normal run directory, and the Monitor panel
-shows the R code that reproduces it.
+A Shiny app that walks through the same steps as the R API. The default
+route starts from documents: drop in files or web pages, ask questions of
+them with cited sources, then pick a model, train in the background, watch
+the loss curve, try the result, talk to it with context, and run the whole
+post-training loop as a pipeline. The table route (a dataset of prompt and
+response rows, mapped by dragging columns) is one link away, or the start
+with \code{route = "table"}. Every run started here is a normal run directory,
+and the Monitor panel shows the R code that reproduces it.
 }
 \examples{
 if (interactive()) {
 dragon_app()
+dragon_app(route = "table")
 }
 }

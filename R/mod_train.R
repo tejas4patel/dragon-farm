@@ -150,9 +150,9 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
 
     problems <- shiny::reactive({
       out <- character()
-      if (is.null(state$dataset)) out <- c(out, "Load a dataset (step 1).")
-      if (is.null(state$mapped)) out <- c(out, "Map the columns (step 2).")
-      if (is.null(base()) && (is.null(state$model$id) || !nzchar(state$model$id))) out <- c(out, "Choose a model (step 3) or a run to start from.")
+      if (is.null(state$dataset)) out <- c(out, "Load a table of training rows (Data tab; from the Documents tab, follow \"Have a table instead?\").")
+      if (is.null(state$mapped)) out <- c(out, "Map the columns (Map tab).")
+      if (is.null(base()) && (is.null(state$model$id) || !nzchar(state$model$id))) out <- c(out, "Choose a model (Model tab) or a run to start from.")
       out
     })
 

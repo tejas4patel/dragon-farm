@@ -1,26 +1,34 @@
 #' Launch the dragon-farm app
 #'
-#' A Shiny app that walks through the same steps as the R API: drop in a
-#' dataset, drag its columns into prompt and response slots, pick a model,
-#' train in the background, watch the loss curve, try the result, talk to it
-#' with context, and run the whole post-training loop as a pipeline.
-#' Every run started here is a normal run directory, and the Monitor panel
-#' shows the R code that reproduces it.
+#' A Shiny app that walks through the same steps as the R API. The default
+#' route starts from documents: drop in files or web pages, ask questions of
+#' them with cited sources, then pick a model, train in the background, watch
+#' the loss curve, try the result, talk to it with context, and run the whole
+#' post-training loop as a pipeline. The table route (a dataset of prompt and
+#' response rows, mapped by dragging columns) is one link away, or the start
+#' with `route = "table"`. Every run started here is a normal run directory,
+#' and the Monitor panel shows the R code that reproduces it.
 #'
 #' @param runs_dir Directory where runs are stored and listed.
+#' @param route Which tabs lead: `"documents"` (Documents, Model, Train,
+#'   Monitor, Try it, Chat, Pipeline) or `"table"` (Data, Map, Model, ...).
+#'   Either can be switched to from inside the app.
 #' @param ... Passed to [shiny::shinyApp()] as `options`.
 #' @return A Shiny app object. Printing it runs the app.
 #' @export
 #' @examples
 #' if (interactive()) {
 #' dragon_app()
+#' dragon_app(route = "table")
 #' }
-dragon_app <- function(runs_dir = dragon_runs_dir(), ...) {
+dragon_app <- function(runs_dir = dragon_runs_dir(), route = c("documents", "table"), ...) {
+  route <- match.arg(route)
   options(dragonfarm.runs_dir = runs_dir)
   # Imported results zips carry a LoRA adapter, typically tens of megabytes.
   options(shiny.maxRequestSize = 1024 * 1024^2)
   dir.create(runs_dir, recursive = TRUE, showWarnings = FALSE)
   shiny::addResourcePath("dragonfarm", system.file("app", "www", package = "dragonfarm"))
+  titles <- route_titles(route)
 
   ui <- bslib::page_navbar(
     title = shiny::tags$span(shiny::tags$span(class = "brand-mark", "\u25b2"), "dragon-farm"),
@@ -38,24 +46,38 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), ...) {
     header = shiny::tags$head(
       shiny::tags$link(rel = "stylesheet", href = paste0("dragonfarm/dragonfarm.css?v=", css_version())),
       shiny::tags$link(rel = "stylesheet",
-                       href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&family=IBM+Plex+Mono&display=swap")
+                       href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&family=IBM+Plex+Mono&display=swap"),
+      shiny::tags$script(src = paste0("dragonfarm/dragonfarm.js?v=", css_version()))
     ),
-    bslib::nav_panel("1 Data", value = "data", mod_data_ui("data")),
-    bslib::nav_panel("2 Map", value = "map", mod_mapping_ui("map")),
-    bslib::nav_panel("3 Model", value = "model", mod_model_ui("model")),
-    bslib::nav_panel("4 Train", value = "train", mod_train_ui("train")),
-    bslib::nav_panel("5 Monitor", value = "monitor", mod_monitor_ui("monitor")),
-    bslib::nav_panel("6 Try it", value = "tryit", mod_tryit_ui("tryit")),
-    bslib::nav_panel("7 Chat", value = "chat", mod_chat_ui("chat")),
-    bslib::nav_panel("8 Pipeline", value = "pipeline", mod_pipeline_ui("pipeline")),
+    # Titles are renumbered client-side for the active route (route_titles()).
+    bslib::nav_panel(titles[["documents"]], value = "documents", mod_documents_ui("documents")),
+    bslib::nav_panel(titles[["data"]], value = "data", mod_data_ui("data")),
+    bslib::nav_panel(titles[["map"]], value = "map", mod_mapping_ui("map")),
+    bslib::nav_panel(titles[["model"]], value = "model", mod_model_ui("model")),
+    bslib::nav_panel(titles[["train"]], value = "train", mod_train_ui("train")),
+    bslib::nav_panel(titles[["monitor"]], value = "monitor", mod_monitor_ui("monitor")),
+    bslib::nav_panel(titles[["tryit"]], value = "tryit", mod_tryit_ui("tryit")),
+    bslib::nav_panel(titles[["chat"]], value = "chat", mod_chat_ui("chat")),
+    bslib::nav_panel(titles[["pipeline"]], value = "pipeline", mod_pipeline_ui("pipeline")),
     bslib::nav_spacer(),
     bslib::nav_item(shiny::uiOutput("hw_badge", inline = TRUE))
   )
 
   server <- function(input, output, session) {
-    state <- shiny::reactiveValues(dataset = NULL, mapped = NULL, model = NULL, run = NULL, hardware = NULL, cloud = NULL)
+    state <- shiny::reactiveValues(dataset = NULL, mapped = NULL, model = NULL, run = NULL, hardware = NULL, cloud = NULL,
+                                   documents = NULL, route = route)
     nav_to <- function(panel) bslib::nav_select("nav", panel, session = session)
 
+    # The route decides which tabs show and how they are numbered. Hidden
+    # tabs still exist, so switching back and forth loses nothing.
+    shiny::observeEvent(state$route, {
+      r <- state$route
+      for (v in c("documents")) if (identical(r, "documents")) bslib::nav_show("nav", v, session = session) else bslib::nav_hide("nav", v, session = session)
+      for (v in c("data", "map")) if (identical(r, "table")) bslib::nav_show("nav", v, session = session) else bslib::nav_hide("nav", v, session = session)
+      session$sendCustomMessage("df-tab-titles", as.list(route_titles(r)))
+    }, ignoreNULL = TRUE)
+
+    mod_documents_server("documents", state, nav_to, runs_dir)
     mod_data_server("data", state, nav_to)
     mod_mapping_server("map", state, nav_to)
     mod_model_server("model", state, nav_to)
@@ -75,6 +97,19 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), ...) {
   }
 
   shiny::shinyApp(ui, server, options = list(...))
+}
+
+# Tab titles for a route: the steps the route shows, numbered in order.
+route_titles <- function(route) {
+  steps <- if (identical(route, "table")) {
+    c(data = "Data", map = "Map", model = "Model", train = "Train", monitor = "Monitor", tryit = "Try it", chat = "Chat", pipeline = "Pipeline")
+  } else {
+    c(documents = "Documents", model = "Model", train = "Train", monitor = "Monitor", tryit = "Try it", chat = "Chat", pipeline = "Pipeline")
+  }
+  numbered <- stats::setNames(paste(seq_along(steps), steps), names(steps))
+  # Hidden tabs keep a sensible title for when the other route shows them.
+  other <- if (identical(route, "table")) c(documents = "Documents") else c(data = "Data", map = "Map")
+  c(numbered, other)
 }
 
 # Cache-busting token for the stylesheet: the file's modification time, so a

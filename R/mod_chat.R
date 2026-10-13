@@ -171,7 +171,10 @@ mod_chat_server <- function(id, state, runs_dir) {
       sets <- tryCatch(dragon_documents_list(runs_dir), error = function(e) NULL)
       choices <- c("No, plain conversation" = "")
       if (!is.null(sets) && nrow(sets)) choices <- c(choices, stats::setNames(sets$dir, sprintf("%s (%d chunks)", sets$name, sets$chunks)))
-      shiny::updateSelectInput(session, "documents", choices = choices, selected = shiny::isolate(input$documents) %||% "")
+      # Prefer the set open on the Documents tab ("Continue in Chat"), else keep the user's pick.
+      open <- state$documents
+      selected <- if (!is.null(open) && open$dir %in% choices) open$dir else shiny::isolate(input$documents) %||% ""
+      shiny::updateSelectInput(session, "documents", choices = choices, selected = selected)
     })
     documents_choice <- function() {
       d <- input$documents

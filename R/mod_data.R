@@ -12,7 +12,8 @@ mod_data_ui <- function(id) {
       shiny::p(class = "text-muted small",
         "One row per training example. You will pick which columns form the prompt and the reply in the next step."),
       shiny::actionButton(ns("example"), "Load the example tickets", class = "btn-outline-primary"),
-      shiny::uiOutput(ns("summary"))
+      shiny::uiOutput(ns("summary")),
+      shiny::p(class = "hint mt-3", shiny::actionLink(ns("documents_route"), "Have documents instead of a table?"))
     ),
     bslib::card(
       bslib::card_header("Preview"),
@@ -40,6 +41,10 @@ mod_data_server <- function(id, state, nav_to) {
 
     shiny::observeEvent(input$example, {
       set_dataset(dragon_dataset(dragon_example_data(), name = "support_tickets.jsonl (example)"))
+    })
+    shiny::observeEvent(input$documents_route, {
+      state$route <- "documents"
+      nav_to("documents")
     })
 
     output$summary <- shiny::renderUI({
