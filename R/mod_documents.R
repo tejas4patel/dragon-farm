@@ -123,8 +123,22 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       cur <- state$documents
       if (!is.null(cur) && identical(cur$dir, d)) return()
       docs <- tryCatch(dragon_documents_load(d), error = function(e) { notify_error(e); NULL })
-      if (!is.null(docs)) { state$documents <- docs; answer(NULL) }
+      if (!is.null(docs)) { state$documents <- docs; answer(NULL); warm_up(docs) }
     })
+
+    # Warm up what the first question would otherwise pay for in silence: the
+    # inference worker, the embedding model (via the index check), and the
+    # hardware check that picks the default answer model. The answer model
+    # itself still loads on the first question.
+    warm_up <- function(docs) {
+      shiny::withProgress(message = "Preparing retrieval for this set (first time loads a small embedding model).", value = 0.5, {
+        tryCatch({
+          if (is.null(state$hardware)) state$hardware <- hardware_info()
+          worker_start()
+          dragon_index(docs)
+        }, error = function(e) notify_error(e))
+      })
+    }
 
     # Read and index: uploads are copied into <set>/uploads so their paths
     # outlive the session's temp files, then dragon_documents() does the rest.
@@ -145,6 +159,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       if (is.null(docs)) return()
       state$documents <- docs
       answer(NULL)
+      if (is.null(state$hardware)) state$hardware <- tryCatch(hardware_info(), error = function(e) NULL)
       pending_files(pending_files()[0, , drop = FALSE])
       pending_urls(character())
       shiny::showNotification(sprintf("%s: %d chunks ready to ask.", docs$name, docs$manifest$n_chunks), type = "message", duration = 5)
@@ -192,8 +207,11 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       if (!nzchar(q)) { shiny::showNotification("Type a question first.", type = "warning"); return() }
       docs <- state$documents
       if (is.null(docs)) { shiny::showNotification("Read some documents first, or open a saved set.", type = "warning"); return() }
-      shiny::withProgress(message = "Finding excerpts and answering. The first question loads the model.", value = 0.4, {
-        ans <- tryCatch(dragon_ask(docs, q, model = chosen_model(), k = input$k %||% 4), error = function(e) { notify_error(e); NULL })
+      shiny::withProgress(message = "Asking the documents", value = 0.1, {
+        ans <- tryCatch(
+          dragon_ask(docs, q, model = chosen_model(), k = input$k %||% 4,
+                     on_stage = function(msg) shiny::incProgress(0.3, detail = msg)),
+          error = function(e) { notify_error(e); NULL })
       })
       if (!is.null(ans)) answer(ans)
     })

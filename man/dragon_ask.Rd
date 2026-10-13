@@ -14,7 +14,8 @@ dragon_ask(
   max_new_tokens = 300,
   temperature = 0,
   top_p = 0.9,
-  base = FALSE
+  base = FALSE,
+  on_stage = NULL
 )
 }
 \arguments{
@@ -38,6 +39,11 @@ answering only from the excerpts and citing them.}
 
 \item{base}{When \code{model} is a run, answer with what it started from instead
 (as in \code{\link[=dragon_generate]{dragon_generate()}}), for before-and-after comparisons.}
+
+\item{on_stage}{Optional function called with a short message before each
+stage (finding excerpts, loading the model, answering), for progress
+displays. The first question in a session loads the model, which can
+take a minute for a 7B.}
 }
 \value{
 A \code{dragon_answer}: \verb{$answer}, \verb{$sources} (a data frame of the

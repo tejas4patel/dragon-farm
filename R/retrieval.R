@@ -79,6 +79,10 @@ dragon_retrieve <- function(docs, query, k = 4) {
 #'   0 (the default) is deterministic, which suits factual answers.
 #' @param base When `model` is a run, answer with what it started from instead
 #'   (as in [dragon_generate()]), for before-and-after comparisons.
+#' @param on_stage Optional function called with a short message before each
+#'   stage (finding excerpts, loading the model, answering), for progress
+#'   displays. The first question in a session loads the model, which can
+#'   take a minute for a 7B.
 #' @return A `dragon_answer`: `$answer`, `$sources` (a data frame of the
 #'   excerpts with `n`, `source`, `section`, `text`, `score`, and `cited`,
 #'   whether the answer refers to it), `$question`, and `$model`. `print()`
@@ -92,10 +96,12 @@ dragon_retrieve <- function(docs, query, k = 4) {
 #' ans$sources
 #' }
 dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backend = dragon_backend(),
-                       max_new_tokens = 300, temperature = 0, top_p = 0.9, base = FALSE) {
+                       max_new_tokens = 300, temperature = 0, top_p = 0.9, base = FALSE, on_stage = NULL) {
   docs <- as_documents(docs)
   check_string(question, "question")
   if (!inherits(backend, "dragon_backend")) cli::cli_abort("{.arg backend} must be a {.cls dragon_backend}.")
+  stage <- function(msg) if (is.function(on_stage)) on_stage(msg)
+  stage("Finding the most relevant excerpts")
   hits <- dragon_retrieve(docs, question, k = k)
   target <- NULL
   model_label <- backend$model %||% ""
@@ -110,6 +116,7 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
     list(role = "system", content = documents_system(system)),
     list(role = "user", content = documents_prompt(question, hits))
   )
+  stage(sprintf("Answering with %s (the first question loads it, about a minute for a 7B)", model_label))
   reply <- backend_generate(backend, target, list(convo), max_new_tokens = as.integer(max_new_tokens),
                             temperature = temperature, top_p = top_p)[[1]]
   reply <- as.character(reply %||% "")

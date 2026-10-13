@@ -8,6 +8,9 @@ test_that("the documents module opens a saved set, asks, and switches routes", {
   visited <- character()
   asked <- NULL
   testthat::local_mocked_bindings(
+    worker_start = function(backend = NULL) invisible(NULL),
+    dragon_index = function(docs, ...) docs,
+    hardware_info = function() NULL,
     dragon_ask = function(docs, question, model = NULL, k = 4, ...) {
       asked <<- list(docs = docs$name, question = question, model = model, k = k)
       structure(list(question = question, answer = "Thirty days [1].", model = "test-model", documents = docs$name,
@@ -77,7 +80,9 @@ test_that("the Teach card reviews a question set and hands a dataset to Model", 
   state <- shiny::reactiveValues(documents = dragon_documents_load(f$dir), route = "documents", hardware = NULL,
                                  dataset = NULL, mapped = NULL)
   visited <- character()
-  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4) do.call(rbind, lapply(query, function(q) data.frame(
+  testthat::local_mocked_bindings(
+    worker_start = function(backend = NULL) invisible(NULL), dragon_index = function(docs, ...) docs, hardware_info = function() NULL,
+    dragon_retrieve = function(docs, query, k = 4) do.call(rbind, lapply(query, function(q) data.frame(
     query = q, n = 1L, id = "abc-000", source = "policy.pdf", section = "Returns", text = "Thirty days.",
     score = 0.9, similarity = 0.9, weight = 1, stringsAsFactors = FALSE))))
   shiny::testServer(dragonfarm:::mod_documents_server,
