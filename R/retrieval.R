@@ -186,7 +186,7 @@ sources_footnotes <- function(src) {
 parse_citations <- function(text, n_max) {
   if (!n_max || is.null(text) || !nzchar(text)) return(integer())
   groups <- regmatches(text, gregexpr("\\[[0-9][0-9 ,]*\\]", text))[[1]]
-  nums <- unlist(lapply(groups, function(g) as.integer(strsplit(gsub("[^0-9,]", "", g), ",")[[1]])))
+  nums <- as.integer(unlist(lapply(groups, function(g) as.integer(strsplit(gsub("[^0-9,]", "", g), ",")[[1]]))))
   nums <- nums[!is.na(nums) & nums >= 1 & nums <= n_max]
   sort(unique(nums))
 }

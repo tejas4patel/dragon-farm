@@ -39,7 +39,31 @@ dragon_check()                   # first run builds the Python environment: 2 to
 The development version: `pak::pak("tejas4patel/dragon-farm")`. Then open the
 app with `dragon_app()`.
 
+## Start with documents
+
+You do not need a table of prompts and replies. Drop in documents, ask them
+questions with cited sources, have a model write training questions from
+them, review those, and fine-tune with the retrieved excerpts in every
+prompt. In the app this is the Documents tab, the first one; in code:
+
+```r
+docs <- dragon_documents(c("policies/", "https://example.com/help"), name = "support")
+dragon_ask(docs, "How long is the return window?")   # answer with [1] [2] footnotes, no training
+
+qa <- dragon_questions(docs)        # questions and answers per chunk, filtered, every one kept with a reason
+dragon_questions_save(qa)           # after you have looked at them
+run <- dragon_train(dragon_questions_dataset(qa, docs), "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+dragon_chat(run, documents = docs)$say("A customer wants to return an opened device.")
+```
+
+Retrieval does most of the work and a bigger answering model helps more
+than training does, so the default is to answer first and train second. The
+numbers behind that, and what to expect from each model size, are in
+[From your documents to your model](https://dragonfarm.dev/articles/documents.html).
+
 ## The same thing in code
+
+The table route, for data that already comes as prompt and response rows:
 
 ```r
 library(dragonfarm)
@@ -96,6 +120,7 @@ data.
 
 | I want to | Read |
 |---|---|
+| Go from documents to a model | [From your documents to your model](https://dragonfarm.dev/articles/documents.html) |
 | Walk through the whole workflow | [Quickstart](https://dragonfarm.dev/articles/quickstart.html) |
 | Use the app, or run it for other people | [The dragon-farm app](https://dragonfarm.dev/articles/shiny-app.html) |
 | Train without a local GPU | [No GPU? Train in the cloud](https://dragonfarm.dev/articles/cloud-gpu.html) |

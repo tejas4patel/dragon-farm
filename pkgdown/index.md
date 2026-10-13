@@ -3,7 +3,7 @@
 <div class="df-wrap">
 <p class="df-eyebrow"><span class="df-dot"></span>R package · on CRAN · MIT licensed</p>
 <h1 class="df-h1">Fine-tune a language model<br>from R. <span class="df-grad">In minutes.</span></h1>
-<p class="df-lede">Drop in a table, drag its columns into Prompt and Response, press Train. dragonfarm teaches a small model your format and your domain, on your own GPU or a free cloud one.</p>
+<p class="df-lede">Drop in your documents, ask them questions, then teach a small model from them. Or start from a table of prompts and replies. dragonfarm runs on your own GPU or a free cloud one, and the model you get is yours.</p>
 <div class="df-cta">
 <div class="df-install"><code>install.packages(&quot;dragonfarm&quot;)</code><button class="df-copy" type="button" data-copy="install.packages(&quot;dragonfarm&quot;)">Copy</button></div>
 <a class="df-btn df-btn-primary" href="articles/quickstart.html">Get started</a>
@@ -43,18 +43,17 @@
 <div class="df-wrap df-reveal">
 <p class="df-kicker">Three ways in</p>
 <h2 class="df-h2">Start where you're comfortable.</h2>
-<p class="df-sub">Everything the app does is also an R function, and every run is a plain folder of files you can inspect.</p>
+<p class="df-sub">Documents first, a table if you have one, the cloud if you have no GPU. Everything the app does is also an R function, and every run is a plain folder of files you can inspect.</p>
 <div class="df-grid3 df-ways">
-<div class="df-card"><span class="df-tag">Code</span><h3>Five lines</h3><p>Map your columns, train, generate.</p>
-<pre><code>library(dragonfarm)
-run &lt;- dragon_dataset(dragon_example_data()) |&gt;
-  dragon_map(prompt = "{subject}\n\n{body}",
-             response = "reply") |&gt;
-  dragon_train("Qwen/Qwen2.5-0.5B-Instruct",
-               wait = TRUE)
-dragon_generate(run,
-  "My thermostat keeps dropping off Wi-Fi.")</code></pre></div>
-<div class="df-card"><span class="df-tag">App</span><h3>Drag and drop</h3><p>Six numbered steps, from loading a table to comparing against the base model. No code needed.</p>
+<div class="df-card"><span class="df-tag">Documents</span><h3>Ask, then teach</h3><p>Drop in files or pages, ask with cited sources, write and review training questions, fine-tune.</p>
+<pre><code>docs &lt;- dragon_documents("policies/")
+dragon_ask(docs, "How long is the
+  return window?")
+qa &lt;- dragon_questions(docs)   # review
+run &lt;- dragon_train(
+  dragon_questions_dataset(qa, docs),
+  "Qwen/Qwen2.5-0.5B-Instruct")</code></pre></div>
+<div class="df-card"><span class="df-tag">App</span><h3>No code needed</h3><p>Opens on Documents: drop files, ask, review the generated questions, train, try, chat. Have a table instead? One link switches to the drag-and-drop route.</p>
 <pre><code>library(dragonfarm)
 dragon_app()</code></pre></div>
 <div class="df-card"><span class="df-tag">Cloud</span><h3>No GPU? No problem.</h3><p>Send the run to a free Colab or Kaggle GPU and bring the adapter home. Colab trains the example in about four minutes.</p>
