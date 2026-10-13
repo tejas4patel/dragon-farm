@@ -18,7 +18,9 @@ dragon_chat(
   top_p = 0.9,
   base = FALSE,
   runs_dir = dragon_runs_dir(),
-  context_window = NULL
+  context_window = NULL,
+  documents = NULL,
+  k = 4
 )
 
 dragon_chat_load(path, x = NULL, backend = dragon_backend())
@@ -63,6 +65,20 @@ dragon_chat_load(path, x = NULL, backend = dragon_backend())
   recent turns. `NULL` (the default) never drops turns. The token count
   is a rough estimate (about 4 characters per token), not the model's
   own tokenizer.
+
+- documents:
+
+  A `dragon_documents` set (see
+  [`dragon_documents()`](https://dragonfarm.dev/reference/dragon_documents.md)).
+  When given, every user turn is answered with the `k` most relevant
+  excerpts in front of the model and an instruction to cite them, as in
+  [`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md). The
+  history keeps the plain turns; `$sources()` returns the excerpts
+  behind the last reply.
+
+- k:
+
+  Excerpts to retrieve per turn when `documents` is set.
 
 - path:
 

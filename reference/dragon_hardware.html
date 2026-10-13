@@ -68,8 +68,10 @@ older GPUs, and float32 elsewhere.</p></dd>
 
 
 <dt id="arg-load-in-bit">load_in_4bit<a class="anchor" aria-label="anchor" href="#arg-load-in-bit"></a></dt>
-<dd><p>Load the base model in 4-bit through bitsandbytes.
-Only available on Linux with CUDA.</p></dd>
+<dd><p>Load the base model in 4-bit through bitsandbytes
+(QLoRA when training). Needs an NVIDIA GPU; works on Linux and Windows.
+For generation, prefer the <code>load_in_4bit</code> argument of
+<code><a href="dragon_backend.html">dragon_backend_local()</a></code>, which decides per model.</p></dd>
 
 </dl></div>
     <div class="section level2">

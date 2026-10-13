@@ -68,7 +68,9 @@ example.</p>
 <span>  top_p <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>  base <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  runs_dir <span class="op">=</span> <span class="fu"><a href="dragon_runs_dir.html">dragon_runs_dir</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  context_window <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  context_window <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  documents <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">4</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">dragon_chat_load</span><span class="op">(</span><span class="va">path</span>, x <span class="op">=</span> <span class="cn">NULL</span>, backend <span class="op">=</span> <span class="fu"><a href="dragon_backend.html">dragon_backend</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -112,6 +114,18 @@ oldest user/assistant pair and tries again until it fits, keeping the
 system prompt and the most recent turns. <code>NULL</code> (the default) never
 drops turns. The token count is a rough estimate (about 4 characters
 per token), not the model's own tokenizer.</p></dd>
+
+
+<dt id="arg-documents">documents<a class="anchor" aria-label="anchor" href="#arg-documents"></a></dt>
+<dd><p>A <code>dragon_documents</code> set (see <code><a href="dragon_documents.html">dragon_documents()</a></code>).
+When given, every user turn is answered with the <code>k</code> most relevant
+excerpts in front of the model and an instruction to cite them, as in
+<code><a href="dragon_ask.html">dragon_ask()</a></code>. The history keeps the plain turns; <code>$sources()</code> returns
+the excerpts behind the last reply.</p></dd>
+
+
+<dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
+<dd><p>Excerpts to retrieve per turn when <code>documents</code> is set.</p></dd>
 
 
 <dt id="arg-path">path<a class="anchor" aria-label="anchor" href="#arg-path"></a></dt>

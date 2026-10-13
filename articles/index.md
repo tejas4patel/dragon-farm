@@ -2,6 +2,8 @@
 
 ### Start here
 
+- [From your documents to your
+  model](https://dragonfarm.dev/articles/documents.md):
 - [Quickstart: fine-tune a small model from
   R](https://dragonfarm.dev/articles/quickstart.md):
 - [The dragon-farm app](https://dragonfarm.dev/articles/shiny-app.md):

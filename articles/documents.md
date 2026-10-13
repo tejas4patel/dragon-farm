@@ -1,0 +1,171 @@
+# From your documents to your model
+
+This is the default route through dragonfarm: drop in documents, ask
+them questions straight away, have a model write training questions from
+them, review those, and fine-tune. Nothing here needs a table of prompts
+and replies. If you already have one, the table route is one link away
+in the app and is described in the
+[quickstart](https://dragonfarm.dev/articles/quickstart.md).
+
+Everything below also happens in the app:
+[`dragon_app()`](https://dragonfarm.dev/reference/dragon_app.md) opens
+on the Documents tab, and the Teach card at the bottom is the review
+step.
+
+## 1. Read the documents
+
+PDF, HTML, Markdown, plain text, Word, spreadsheets, whole folders, and
+web pages all work. The text is split into chunks of about 170 words
+that never cross a heading, and each chunk remembers its file and
+section so answers can say where they came from.
+
+``` r
+
+library(dragonfarm)
+options(dragonfarm.runs_dir = "~/dragonfarm_runs")   # keep sets and runs after R closes
+
+docs <- dragon_documents(c("policies/", "https://example.com/help"), name = "support")
+docs
+#> Document set support
+#> • returns.pdf: 9 chunks, 1,320 words
+#> • warranty.docx: 4 chunks, 610 words
+#> • https://example.com/help: 11 chunks, 1,540 words
+#> 24 chunks of about 170 words; index: BAAI/bge-small-en-v1.5
+```
+
+Two things happen quietly. Quoted passages and code blocks are marked on
+their chunks, and files that look like a changelog (`NEWS`, `CHANGELOG`,
+or mostly version headings) are flagged and down-weighted. Both came out
+of testing: a quoted example reply in a README turned into confident,
+wrong training questions about a product that does not exist, and
+changelog entries kept crowding out the page that answered the question.
+Reading the same set again re-reads only files whose contents changed.
+
+## 2. Ask, before training anything
+
+``` r
+
+ans <- dragon_ask(docs, "How long is the return window?")
+ans
+#> You can return any device within 30 days of delivery, opened or unopened [1].
+#>
+#> [1]* returns.pdf › Returns
+#> [2]  returns.pdf › Refunds
+#> [3]  https://example.com/help › Orders
+#> [4]  warranty.docx › Coverage
+#> * cited in the answer. Excerpt text is in $sources$text.
+```
+
+The `k` most relevant chunks go in front of a model as numbered excerpts
+with an instruction to answer only from them and cite them. The model is
+whatever
+[dragon_check()](https://dragonfarm.dev/reference/dragon_check.md)
+recommends for your GPU memory: a 1.5B model under 6 GB, a 3B at 6 to 8
+GB, a 7B loaded in 4-bit at 8 GB and up. Pass `model =` to use a run,
+another id, or a server backend.
+
+This step is worth doing first for two reasons. It shows you whether the
+documents came through (if the answer cites the wrong file, look at
+`dragon_chunks(docs)`), and for many uses it is already enough: swap the
+documents, ask again, no training.
+
+A conversation works the same way, with the history kept plain:
+
+``` r
+
+chat <- dragon_chat(documents = docs)
+chat$say("How long is the return window?")
+chat$say("And if I already set the device up?")
+chat$sources()      # the excerpts behind the last reply
+```
+
+## 3. Write training questions, then review them
+
+``` r
+
+qa <- dragon_questions(docs)             # the recommended local model, in the background
+#> 72 questions written, 41 kept by the filters (57%). Review them before training.
+#> Rejected: answer not grounded (19), names not in the source (7), question length (3), duplicate question (2)
+```
+
+For each chunk a model writes three self-contained questions and answers
+them from that chunk alone. Simple deterministic filters then mark pairs
+whose answer is not grounded in the chunk, that name things the chunk
+does not, that refer to “the passage”, or that duplicate another
+question. Nothing is thrown away: every pair comes back with `keep` and
+a `reason`.
+
+Review them. This is the step that decides whether fine-tuning helps. On
+the package’s own documentation, a 7B model’s pairs were about 60
+percent usable, a 3B’s about 33 percent, a 1.5B’s about 20 percent, and
+roughly a fifth of what passed the filters was still wrong or trivial. A
+model fine-tuned on unreviewed pairs learned to sound sure when it was
+wrong.
+
+``` r
+
+qa[!qa$keep, c("question", "reason")]          # read the rejections
+qa$keep[qa$id == "p0017"] <- TRUE               # rescue one
+qa$keep[qa$id == "p0030"] <- FALSE              # drop one
+dragon_questions_save(qa)                       # decisions are kept with the set
+```
+
+A stronger generator gives a higher yield. Any teacher works:
+
+``` r
+
+qa <- dragon_questions(docs, generator = dragon_llm_anthropic())   # needs ANTHROPIC_API_KEY
+```
+
+## 4. Fine-tune with the excerpts in the prompt
+
+``` r
+
+ds  <- dragon_questions_dataset(qa, docs)       # kept pairs, excerpts retrieved into every prompt
+run <- dragon_train(ds, "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+```
+
+Each training prompt is the retrieved excerpts followed by the question,
+retrieved by the question rather than taken from the chunk it was
+written from, so training matches what happens at answer time. This
+matters more than it sounds. In the prototypes, a model trained this way
+recalled 89 percent of the facts in a held-out test against 68 percent
+for a plain fine-tune, and when the documents were edited after training
+it followed the new text in 88 percent of answers while the plain
+fine-tune kept repeating the old policy. The model learns the style and
+how to use excerpts; the documents stay the source of truth, and they
+can change without retraining.
+
+## 5. Use it
+
+``` r
+
+dragon_ask(docs, "How long is the return window?", model = run)
+dragon_chat(run, documents = docs)$say("A customer wants to return an opened device.")
+dragon_merge(run, "models/support-0.5b")        # a standalone model that loads with plain transformers
+```
+
+## What to expect, honestly
+
+- Retrieval does most of the work. Without it a small model answered
+  none of our test questions correctly and invented function names; with
+  it, the same model answered most of the questions whose answer had
+  been retrieved.
+- Model size matters for answering. A 1.5B answered 60 percent of our
+  questions, a 3B 69 percent, a 7B in 4-bit 86 percent, and the 7B said
+  “the documents do not cover this” instead of guessing when the right
+  chunk was not retrieved. The 4-bit 7B uses about the memory of a
+  full-precision 3B.
+- Fine-tuning on a few dozen unreviewed machine-written pairs barely
+  helped a 0.5B and made its mistakes confident. Review, or use a
+  stronger generator, before you train.
+- PDFs with tables read poorly for now (text comes out, structure does
+  not). Markdown, HTML, Word, and spreadsheets come through cleanly.
+- The first question in a session loads the model. For a 7B in 4-bit
+  that is about a minute; later questions take a few seconds.
+
+The numbers above come from one corpus (this package’s own
+documentation), 35 hand-written questions, and one run each. They are
+measured, not promised; measure on your own documents. The scripts are
+in `scripts/doc_prototype/` and `scripts/rag_prototype/` in the
+repository.

@@ -2,9 +2,9 @@
 
 R package · on CRAN · MIT licensed
 
-Drop in a table, drag its columns into Prompt and Response, press Train.
-dragonfarm teaches a small model your format and your domain, on your
-own GPU or a free cloud one.
+Drop in your documents, ask them questions, then teach a small model
+from them. Or start from a table of prompts and replies. dragonfarm runs
+on your own GPU or a free cloud one, and the model you get is yours.
 
 `install.packages("dragonfarm")`
 
@@ -64,30 +64,32 @@ Three ways in
 
 ## Start where you’re comfortable.
 
+Documents first, a table if you have one, the cloud if you have no GPU.
 Everything the app does is also an R function, and every run is a plain
 folder of files you can inspect.
 
-Code
+Documents
 
-### Five lines
+### Ask, then teach
 
-Map your columns, train, generate.
+Drop in files or pages, ask with cited sources, write and review
+training questions, fine-tune.
 
-    library(dragonfarm)
-    run <- dragon_dataset(dragon_example_data()) |>
-      dragon_map(prompt = "{subject}\n\n{body}",
-                 response = "reply") |>
-      dragon_train("Qwen/Qwen2.5-0.5B-Instruct",
-                   wait = TRUE)
-    dragon_generate(run,
-      "My thermostat keeps dropping off Wi-Fi.")
+    docs <- dragon_documents("policies/")
+    dragon_ask(docs, "How long is the
+      return window?")
+    qa <- dragon_questions(docs)   # review
+    run <- dragon_train(
+      dragon_questions_dataset(qa, docs),
+      "Qwen/Qwen2.5-0.5B-Instruct")
 
 App
 
-### Drag and drop
+### No code needed
 
-Six numbered steps, from loading a table to comparing against the base
-model. No code needed.
+Opens on Documents: drop files, ask, review the generated questions,
+train, try, chat. Have a table instead? One link switches to the
+drag-and-drop route.
 
     library(dragonfarm)
     dragon_app()

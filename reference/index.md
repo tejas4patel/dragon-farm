@@ -9,6 +9,36 @@
 - [`dragon_presets()`](https://dragonfarm.dev/reference/dragon_presets.md)
   : Recommended small models
 
+## Documents
+
+Drop in documents, ask them questions, write and review training
+questions, build the training set.
+
+- [`dragon_documents()`](https://dragonfarm.dev/reference/dragon_documents.md)
+  : Read documents into a document set
+- [`dragon_documents_load()`](https://dragonfarm.dev/reference/dragon_documents_load.md)
+  : Reopen a saved document set
+- [`dragon_documents_list()`](https://dragonfarm.dev/reference/dragon_documents_list.md)
+  : List saved document sets
+- [`dragon_chunks()`](https://dragonfarm.dev/reference/dragon_chunks.md)
+  : The chunks of a document set
+- [`dragon_index()`](https://dragonfarm.dev/reference/dragon_index.md) :
+  Index a document set for retrieval
+- [`dragon_retrieve()`](https://dragonfarm.dev/reference/dragon_retrieve.md)
+  : Find the chunks most relevant to a question
+- [`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md) : Ask
+  a question of your documents
+- [`dragon_questions()`](https://dragonfarm.dev/reference/dragon_questions.md)
+  [`dragon_questions_progress()`](https://dragonfarm.dev/reference/dragon_questions.md)
+  [`dragon_questions_wait()`](https://dragonfarm.dev/reference/dragon_questions.md)
+  : Write questions and answers from a document set
+- [`dragon_questions_load()`](https://dragonfarm.dev/reference/dragon_questions_load.md)
+  [`dragon_questions_save()`](https://dragonfarm.dev/reference/dragon_questions_load.md)
+  [`dragon_questions_list()`](https://dragonfarm.dev/reference/dragon_questions_load.md)
+  : Load, save, and list question sets
+- [`dragon_questions_dataset()`](https://dragonfarm.dev/reference/dragon_questions_dataset.md)
+  : Training data from reviewed questions
+
 ## Data
 
 - [`dragon_dataset()`](https://dragonfarm.dev/reference/dragon_dataset.md)

@@ -2,6 +2,87 @@
 
 ## dragonfarm (development version)
 
+- New: documents to training data.
+  [`dragon_questions()`](https://dragonfarm.dev/reference/dragon_questions.md)
+  has a model write questions and answers from each chunk of a document
+  set (the local model recommended for the machine, in the background;
+  or a teacher such as
+  [`dragon_llm_anthropic()`](https://dragonfarm.dev/reference/dragon_llm_anthropic.md)),
+  runs simple deterministic filters, and returns every pair with `keep`
+  and a `reason`, because the measured yield of usable pairs is 20 to 60
+  percent depending on the model and a review step is not optional.
+  [`dragon_questions_save()`](https://dragonfarm.dev/reference/dragon_questions_load.md)
+  records your decisions;
+  [`dragon_questions_dataset()`](https://dragonfarm.dev/reference/dragon_questions_dataset.md)
+  builds the training set with retrieved excerpts placed in front of
+  each question, the setup that beat a plain fine-tune in the
+  prototypes. The Documents tab gains a **Teach** card: generate, watch
+  the yield grow, review pairs grouped by chunk, tick and untick, then
+  Continue to Model, which skips Data and Map.
+
+- The app now starts with documents. A new **Documents** tab is tab 1:
+  drop files or add web pages, press Read and index, ask questions and
+  see the sources, then continue in Chat with the same set. The default
+  route runs Documents, Model, Train, Monitor, Try it, Chat, Pipeline;
+  the table route (Data and Map first, today’s app) is one link away
+  (“Have a table of prompts and replies instead?”) or
+  `dragon_app(route = "table")`. The Chat and Try it pickers preselect
+  the set open on the Documents tab.
+
+- New: ask questions of your documents, no training needed.
+  [`dragon_index()`](https://dragonfarm.dev/reference/dragon_index.md)
+  embeds a document set with a small encoder (`BAAI/bge-small-en-v1.5`
+  by default, kept warm in the inference worker),
+  [`dragon_retrieve()`](https://dragonfarm.dev/reference/dragon_retrieve.md)
+  returns the most relevant chunks, and
+  [`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md) puts
+  them in front of a model as numbered excerpts and returns the answer
+  with its sources, marking which were cited. The model defaults to the
+  one
+  [`dragon_check()`](https://dragonfarm.dev/reference/dragon_check.md)
+  recommends for the GPU and can be any run, model id, or server
+  backend.
+  [`dragon_chat()`](https://dragonfarm.dev/reference/dragon_chat.md)
+  gains `documents` and `k`: each turn is answered from retrieved
+  excerpts while the transcript keeps the plain questions, and
+  `$sources()` shows the excerpts behind the last reply.
+  [`dragon_documents()`](https://dragonfarm.dev/reference/dragon_documents.md)
+  now indexes right away (`index = FALSE` to postpone). Changelog-like
+  sources are down-weighted at retrieval time.
+
+- 4-bit loading for generation, on Windows as well as Linux.
+  [`dragon_backend_local()`](https://dragonfarm.dev/reference/dragon_backend.md)
+  gains `load_in_4bit`: `"auto"` (the default) quantizes a model to NF4
+  through bitsandbytes only when its full weights would not fit the GPU,
+  so `dragon_generate("Qwen/Qwen2.5-7B-Instruct", ...)` now works on an
+  8 GB card (about 5.5 GB of weights, 7.2 GB peak) while a 3B still
+  loads in full precision.
+  [`dragon_check()`](https://dragonfarm.dev/reference/dragon_check.md)
+  reports whether 4-bit loading is available and which model it would
+  reach for on this machine, by GPU memory: a 1.5B under 6 GB, a 3B at 6
+  to 8 GB, a 7B in 4-bit at 8 GB and up. `bitsandbytes` is added to the
+  Python requirements on Linux and Windows. The earlier
+  `dragon_hardware(load_in_4bit = TRUE)` (QLoRA training) is no longer
+  refused on Windows, but training a 7B that way has not been measured
+  yet.
+
+- New:
+  [`dragon_documents()`](https://dragonfarm.dev/reference/dragon_documents.md)
+  reads PDF, HTML, Markdown, text, Word, spreadsheet files, directories
+  of them, and web pages into a *document set*: chunks of about 170
+  words that never cross a heading, each keeping its file and section,
+  stored under `runs_dir/documents/<name>/`. Reading again re-reads only
+  files whose contents changed. Changelog-like files are flagged and
+  down-weighted; quoted material and code blocks are marked on each
+  chunk.
+  [`dragon_chunks()`](https://dragonfarm.dev/reference/dragon_chunks.md),
+  [`dragon_documents_load()`](https://dragonfarm.dev/reference/dragon_documents_load.md),
+  and
+  [`dragon_documents_list()`](https://dragonfarm.dev/reference/dragon_documents_list.md)
+  go with it. This is the first piece of the document route (drop in
+  documents, ask, then fine-tune); retrieval and answering follow. The
+  Python environment gains `pypdf`, `python-docx`, and `openpyxl`.
+
 - A run can no longer be marked failed by an out-of-memory error in the
   evaluation that follows training. Scoring the held-out rows
   materialized the full `batch x tokens x vocabulary` logits tensor;

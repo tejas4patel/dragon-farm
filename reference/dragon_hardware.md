@@ -25,8 +25,11 @@ dragon_hardware(
 
 - load_in_4bit:
 
-  Load the base model in 4-bit through bitsandbytes. Only available on
-  Linux with CUDA.
+  Load the base model in 4-bit through bitsandbytes (QLoRA when
+  training). Needs an NVIDIA GPU; works on Linux and Windows. For
+  generation, prefer the `load_in_4bit` argument of
+  [`dragon_backend_local()`](https://dragonfarm.dev/reference/dragon_backend.md),
+  which decides per model.
 
 ## Value
 
