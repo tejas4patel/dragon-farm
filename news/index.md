@@ -2,6 +2,10 @@
 
 ## dragonfarm (development version)
 
+- A PDF with no text layer (a scan, a photo, a fax) is now reported by
+  name with advice to run OCR first, instead of silently adding nothing
+  to the set. Other files in the same set are read as usual.
+
 - Web pages without a `<nav>` or `<main>` tag no longer leak their menus
   into the first chunk: blocks that are mostly links (four or more, over
   60 percent of the text) are dropped, as are ARIA navigation, banner,
