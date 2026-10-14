@@ -39,7 +39,28 @@ from pathlib import Path
 
 SUPPORTED = {".pdf", ".html", ".htm", ".md", ".markdown", ".txt", ".docx", ".xlsx", ".xlsm", ".csv", ".tsv"}
 CHANGELOG_NAMES = re.compile(r"^(news|changelog|changes|history|releases?|whatsnew)\b", re.I)
-VERSION_HEADING = re.compile(r"^(v(ersion)?\s*)?\d+\.\d+(\.\d+)?\b|\(development version\)|^\d{4}-\d{2}-\d{2}", re.I)
+# "v1.2", "Version 1.2", "pkg 0.3.4", "0.3.4": an optional v/version marker or a
+# single leading word, then the dotted number.
+VERSION_START = re.compile(r"^(?:(v(?:ersion)?)\s*|[A-Za-z][\w.-]*\s+)?(\d+(?:\.\d+)+)\b", re.I)
+
+
+def version_heading(section):
+    """Does a section heading name a release? "0.3.4", "v1.2", "Version 1.2 highlights",
+    "pkg 0.3.4 (2026-01-01)" and "(development version)" do; the numbered section
+    titles of a manual or FAQ ("2.1 What is R?", "2.5.1 How can R be installed") do not."""
+    s = (section or "").strip()
+    if not s:
+        return False
+    if re.search(r"\(development version\)", s, re.I) or re.match(r"^\d{4}-\d{2}-\d{2}", s):
+        return True
+    m = VERSION_START.match(s)
+    if not m:
+        return False
+    prefixed = bool(m.group(1))
+    parts = m.group(2).count(".") + 1
+    rest = re.sub(r"\([^)]*\)", "", s[m.end():]).strip(" :-\u2013\u2014\u00b6")
+    words = len(rest.split())
+    return prefixed or words == 0 or (parts >= 3 and words <= 2)
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 JUNK = re.compile(r"[-​‌‍﻿]")
 USER_AGENT = "dragonfarm/0.4 (+https://dragonfarm.dev)"
@@ -170,6 +191,35 @@ def _need(module, pip_name, kind):
 
 def pdf_to_text(fh):
     pypdf = _need("pypdf", "pypdf", "PDF")
+    return pages_to_text([page.extract_text() or "" for page in pypdf.PdfReader(fh).pages])
+
+
+PAGE_NUMBER = re.compile(r"^[\divxlc]+$", re.I)
+CONTENTS_LINE = re.compile(r"^(\d+(\.\d+)*|[A-Z](\.\d+)*|Chapter \d+:?|Appendix [A-Z]:?)\s.*\d+$")
+CODE_LINE = re.compile(r"^[>+$#%]|<-|\(\)|==|=>")
+
+
+def running_lines(pages):
+    """Lines that recur at the top or bottom of several pages, with digits removed:
+    chapter titles, document names, page numbers."""
+    counts = {}
+    for text in pages:
+        lines = [l.strip() for l in text.splitlines() if l.strip()]
+        edge = lines[:2] + lines[-2:]
+        for key in {re.sub(r"\d+", "", l) for l in edge}:
+            counts[key] = counts.get(key, 0) + 1
+    floor = max(3, len(pages) // 10)
+    return {k for k, n in counts.items() if n >= floor}
+
+
+def pages_to_text(pages):
+    """Paragraphs and '## ' headings from the extracted text of each page.
+
+    Headings are guessed: a short line without end punctuation that starts a
+    paragraph, begins with a capital or a section number, and is not code.
+    Repeated page furniture, contents entries, and bare page numbers are
+    dropped, and a sentence that breaks across a page boundary is rejoined."""
+    recurring = running_lines(pages) if len(pages) >= 3 else set()
     paras, buf = [], []
 
     def flush():
@@ -177,14 +227,42 @@ def pdf_to_text(fh):
             paras.append(" ".join(buf))
             buf.clear()
 
-    for page in pypdf.PdfReader(fh).pages:
-        for line in (page.extract_text() or "").splitlines():
-            line = line.strip()
+    def open_sentence():
+        return bool(paras) and not paras[-1].startswith("## ") and not re.search(r"[.:?!)]$", paras[-1])
+
+    for text in pages:
+        lines = [l.strip() for l in text.splitlines()]
+        nonblank = [i for i, l in enumerate(lines) if l]
+        edges = set(nonblank[:2] + nonblank[-2:])
+        page_start = True
+        for i, line in enumerate(lines):
             if not line:
                 flush()
                 continue
-            # A short line without end punctuation, starting a paragraph, is probably a heading.
-            heading_like = len(line) < 55 and not re.search(r"[.,;:)]$", line) and not re.match(r"^[\d\W]+$", line)
+            if i in edges and (re.sub(r"\d+", "", line) in recurring or PAGE_NUMBER.match(line)):
+                continue
+            if CONTENTS_LINE.match(line) or re.match(r"^(Table of )?Contents$", line, re.I):
+                continue
+            if page_start:
+                page_start = False
+                if open_sentence() and not re.match(r"^\d+(\.\d+)*\s", line):
+                    # The sentence ran off the previous page: carry on with it.
+                    buf.append(paras.pop())
+                    buf.append(line)
+                    if re.search(r"[.:]$", line) and len(line) < 60:
+                        flush()
+                    continue
+            following = next((l for l in lines[i + 1:] if l), "")
+            heading_like = (
+                len(line) < 55
+                and not re.search(r"[.,;:)\d]$", line)
+                and not re.match(r"^[\d\W]+$", line)
+                and re.match(r"^[A-Z\d]", line)
+                and not CODE_LINE.search(line)
+                and ". " not in line                       # a sentence, not a title
+                and not CODE_LINE.search(following)        # "A call such as" before an example
+                and not re.match(r"^[a-z]", following)     # the sentence continues on the next line
+            )
             if heading_like and not buf:
                 flush()
                 paras.append("## " + line)
@@ -360,7 +438,7 @@ def chunk_text(text, source, max_words=170, min_words=35):
 
     for u in units:
         m = re.match(r"^(#{1,6})\s+(.*)", u)
-        if m:
+        if m and "\n" not in u and len(u) <= 200:
             emit()
             section = m.group(2).strip()
             continue
@@ -378,7 +456,7 @@ def changelog_like(display_name, chunks):
         return True
     if not chunks:
         return False
-    versioned = sum(1 for c in chunks if VERSION_HEADING.search(c["section"] or ""))
+    versioned = sum(1 for c in chunks if version_heading(c["section"]))
     return versioned / len(chunks) >= 0.6
 
 
