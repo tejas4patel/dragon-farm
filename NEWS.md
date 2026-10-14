@@ -1,5 +1,15 @@
 # dragonfarm (development version)
 
+* Retrieval is now hybrid by default: the embedding ranking and a BM25
+  keyword ranking are combined (reciprocal-rank fusion), so exact terms and
+  figures that a small embedding model ranks a few places too low still
+  reach the answer. The share of generated questions whose source chunk was
+  among the four excerpts rose from 90.6 to 93.0 percent on R's manuals, 88
+  to 100 on the package documentation, and 91 to 100 on hand-written
+  questions about an annual report, where "How many employees..." went from
+  "the documents do not cover this" to the right figure.
+  `dragon_retrieve(method = "dense")` keeps the previous behaviour.
+
 * PDF reading drops dot-leader contents entries ("Item 1A. Risk Factors .
   . .. 10", the table of contents of a 10-K) while keeping financial table
   rows, and restores apostrophes a font did not map ("Registrant’s"

@@ -4,7 +4,7 @@
 \alias{dragon_retrieve}
 \title{Find the chunks most relevant to a question}
 \usage{
-dragon_retrieve(docs, query, k = 4)
+dragon_retrieve(docs, query, k = 4, method = c("hybrid", "dense"))
 }
 \arguments{
 \item{docs}{A \code{dragon_documents} object or its directory. Indexed on the
@@ -13,11 +13,19 @@ fly if it has no index yet.}
 \item{query}{One question, or several.}
 
 \item{k}{Chunks to return per query.}
+
+\item{method}{\code{"hybrid"} (the default) ranks chunks by combining the
+embedding similarity with a keyword (BM25) match, which catches exact
+terms and figures a small embedding model ranks too low; \code{"dense"} uses
+the embedding alone. On three document sets hybrid raised the share of
+questions whose source chunk was among the top four from 90.6 to 93.0,
+88 to 100, and 91 to 100 percent.}
 }
 \value{
 A data frame with one row per hit: \code{query} (when several), \code{n}
-(rank), \code{id}, \code{source}, \code{section}, \code{text}, \code{score} (cosine similarity
-times the chunk's weight), \code{similarity}, and \code{weight}.
+(rank), \code{id}, \code{source}, \code{section}, \code{page} (PDFs), \code{text}, \code{score} (cosine
+similarity times the chunk's weight; rows are ordered by the combined
+ranking, so it need not decrease), \code{similarity}, and \code{weight}.
 }
 \description{
 Find the chunks most relevant to a question

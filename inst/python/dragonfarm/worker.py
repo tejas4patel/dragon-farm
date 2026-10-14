@@ -157,7 +157,8 @@ def main():
                     info = retriever.index(req["dir"], req.get("model") or DEFAULT_MODEL, bool(req.get("force")))
                     emit({"ok": True, "index": info})
                 else:
-                    hits = retriever.retrieve(req["dir"], req["queries"], k=int(req.get("k", 4)))
+                    hits = retriever.retrieve(req["dir"], req["queries"], k=int(req.get("k", 4)),
+                                              mode=req.get("method") or "hybrid")
                     emit({"ok": True, "hits": hits})
             elif op == "quit":
                 emit({"ok": True, "bye": True})

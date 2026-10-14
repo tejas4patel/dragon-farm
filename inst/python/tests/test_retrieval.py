@@ -115,3 +115,43 @@ def test_missing_index_is_a_clear_error():
 def test_chunk_signature_depends_on_ids_only():
     assert R.chunk_signature(["a", "b"]) == R.chunk_signature(["a", "b"])
     assert R.chunk_signature(["a", "b"]) != R.chunk_signature(["b", "a"])
+
+
+def test_keyword_tokens_keep_numbers_and_drop_stop_words():
+    assert R.keyword_tokens("How many employees did Costco have? 333,000 and $4,409.") == \
+        ["many", "employees", "costco", "have", "333,000", "4,409"]   # "$" dropped: tables write "$ 4,409" or "(4,409)"
+
+
+def test_bm25_prefers_the_chunk_with_the_exact_terms():
+    bm = R.BM25(["We employed 333,000 employees worldwide.", "Warehouses opened in Japan and Korea.",
+                 "Employees receive wage increases."])
+    s = bm.scores("how many employees at year end 333,000")
+    assert s.argmax() == 0 and s[1] == 0
+
+
+def test_hybrid_search_lifts_a_keyword_match_the_embedding_ranks_low():
+    import numpy as np
+
+    class Vec:
+        def __init__(self, a):
+            self.a = np.asarray(a, dtype="float32")
+
+        def numpy(self):
+            return self.a
+
+    idx = R.LoadedIndex.__new__(R.LoadedIndex)
+    idx.ids = ["a", "b", "c", "d"]
+    idx.chunks = [{"text": t} for t in ["Warehouse openings by country.", "Membership fee revenue.",
+                                         "Executive officers.", "We employed 333,000 employees at year end."]]
+    idx.vectors = np.eye(4, dtype="float32")
+    idx.weights = np.ones(4, dtype="float32")
+    idx.bm25 = R.BM25([c["text"] for c in idx.chunks])
+    q = Vec([[0.9, 0.8, 0.7, 0.1]])          # the embedding puts the employee chunk last
+    dense = [h["id"] for h in idx.search(q, k=2)[0]]
+    hybrid = [h["id"] for h in idx.search(q, k=2, queries=["How many employees at year end?"])[0]]
+    assert dense == ["a", "b"]
+    assert "d" in hybrid
+    assert idx.search(q, k=2, queries=["employees"], mode="dense")[0][0]["id"] == "a"
+    # scores keep the cosine x weight scale whatever the ordering
+    by_id = {h["id"]: h["score"] for h in idx.search(q, k=4, queries=["employees"])[0]}
+    assert abs(by_id["d"] - 0.1) < 1e-6 and abs(by_id["a"] - 0.9) < 1e-6
