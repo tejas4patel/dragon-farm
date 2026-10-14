@@ -2,6 +2,17 @@
 
 ## dragonfarm (development version)
 
+- Generating for several prompts at once
+  ([`dragon_generate()`](https://dragonfarm.dev/reference/dragon_generate.md)
+  with a vector, the post-training samples,
+  [`dragon_judge()`](https://dragonfarm.dev/reference/dragon_judge.md))
+  now runs them in batches of eight with left padding instead of one at
+  a time: eight short prompts through a 0.5B took 17 to 37 seconds and
+  now take 6. A batch that runs out of GPU memory falls back to single
+  prompts. Greedy outputs can differ marginally from the one-at-a-time
+  result because batching changes the arithmetic; `batch_size` on the
+  worker request controls it.
+
 - [`dragon_questions_dataset()`](https://dragonfarm.dev/reference/dragon_questions_dataset.md)
   now guarantees that the chunk a pair was written from is among the
   excerpts in its training prompt (retrieval missed it for about one
