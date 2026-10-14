@@ -2,6 +2,16 @@
 
 ## dragonfarm (development version)
 
+- Excerpts from PDFs now carry the page they start on, and answers,
+  footnotes, prompts, and training contexts show it: “report.pdf, p. 68
+  › Item 14”. On a 76-page annual report most answers had cited the bare
+  file name.
+  [`dragon_chunks()`](https://dragonfarm.dev/reference/dragon_chunks.md)
+  gains a `page` column (`NA` for other sources). A set built by an
+  older reader is re-read on the next
+  [`dragon_documents()`](https://dragonfarm.dev/reference/dragon_documents.md)
+  call instead of being reused by checksum.
+
 - PDFs whose text comes out of the plain extractor as two-letter
   fragments (“De”, “ce”, “mb”, “er”: typesetting that places every few
   glyphs as its own text object, common in annual reports and brochures)
