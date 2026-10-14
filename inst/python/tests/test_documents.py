@@ -171,7 +171,11 @@ def test_pdf_and_docx_readers_when_libraries_are_present():
             p = Path(tmp) / "blank.pdf"
             with open(p, "wb") as fh:
                 w.write(fh)
-            assert D.read_pdf(str(p)) == ""   # no text, no crash
+            try:
+                D.read_pdf(str(p))
+                raise AssertionError("an image-only PDF should be reported, not read as empty")
+            except ValueError as e:
+                assert "scanned PDF" in str(e) and "OCR" in str(e)
 
 
 def test_a_tiny_source_still_yields_one_chunk():

@@ -358,7 +358,14 @@ def pages_to_text(pages):
 
 def read_pdf(path):
     with open(path, "rb") as fh:
-        return pdf_to_text(fh)
+        text = pdf_to_text(fh)
+    words = len([w for w in re.sub(r"page \d+", " ", text).split() if any(ch.isalnum() for ch in w)])
+    if words < 10:
+        # No text layer: pages that are pictures of text (a scan, a photo, a
+        # fax). Say so, rather than adding a source that contributes nothing.
+        raise ValueError("no text layer; this looks like a scanned PDF. Run OCR on it first "
+                         "(for example `ocrmypdf in.pdf out.pdf`) and add the result")
+    return text
 
 
 def emphasis_title(para, text):
