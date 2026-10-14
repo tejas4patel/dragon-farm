@@ -163,6 +163,14 @@ dragon_merge(run, "models/support-0.5b")        # a standalone model that loads 
 - Fine-tuning on a few dozen unreviewed machine-written pairs barely
   helped a 0.5B and made its mistakes confident. Review, or use a
   stronger generator, before you train.
+- On real PDFs it holds up. R’s own manuals (*An Introduction to R* as
+  PDF plus the R FAQ as HTML, 425 chunks) read and indexed in 41
+  seconds; the 7B in 4-bit answered nine of ten questions from the right
+  section and said “the documents do not cover this” on the tenth; the
+  generator wrote 796 pairs in 21 minutes of which 78 percent passed the
+  filters. A 0.5B trained on the 617 kept pairs learned to cite and to
+  answer in one sentence, and was right about as often as the untrained
+  0.5B. The model size you can run matters more than the training.
 - Fine-tuning a 7B is possible on 8 GB with
   `dragon_hardware(load_in_4bit = TRUE)` (QLoRA), but only just: batch
   1, 512 tokens, gradient checkpointing, about 22 minutes for three
