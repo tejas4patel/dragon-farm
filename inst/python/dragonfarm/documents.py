@@ -359,7 +359,7 @@ def pages_to_text(pages):
 def read_pdf(path):
     with open(path, "rb") as fh:
         text = pdf_to_text(fh)
-    words = len([w for w in re.sub(r"page \d+", " ", text).split() if any(ch.isalnum() for ch in w)])
+    words = len([w for w in re.sub(r"\x01page \d+", " ", text).split() if any(ch.isalnum() for ch in w)])
     if words < 10:
         # No text layer: pages that are pictures of text (a scan, a photo, a
         # fax). Say so, rather than adding a source that contributes nothing.
