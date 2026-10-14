@@ -47,7 +47,7 @@ suite on a CPU runner, so a change that passes locally should pass there.
 
 - `devtools::document()` after touching roxygen comments.
 - `devtools::check(args = "--as-cran")` should be clean. R sources must be
-  ASCII outside comments: write `›`, not the character.
+  ASCII outside comments: write the escape `\u203a`, not the character.
 - `pkgdown::check_pkgdown()` if you added an exported function; every
   exported topic has to appear in the reference index in `_pkgdown.yml`, and
   a unit test enforces this.
