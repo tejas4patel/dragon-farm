@@ -54,7 +54,8 @@ should pass there.
 - [`devtools::document()`](https://devtools.r-lib.org/reference/document.html)
   after touching roxygen comments.
 - `devtools::check(args = "--as-cran")` should be clean. R sources must
-  be ASCII outside comments: write `›`, not the character.
+  be ASCII outside comments: write the escape `\u203a`, not the
+  character.
 - [`pkgdown::check_pkgdown()`](https://pkgdown.r-lib.org/reference/check_pkgdown.html)
   if you added an exported function; every exported topic has to appear
   in the reference index in `_pkgdown.yml`, and a unit test enforces

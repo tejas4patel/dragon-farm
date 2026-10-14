@@ -81,7 +81,7 @@
 <ul><li>
 <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> after touching roxygen comments.</li>
 <li>
-<code>devtools::check(args = "--as-cran")</code> should be clean. R sources must be ASCII outside comments: write <code>›</code>, not the character.</li>
+<code>devtools::check(args = "--as-cran")</code> should be clean. R sources must be ASCII outside comments: write the escape <code>\u203a</code>, not the character.</li>
 <li>
 <code><a href="https://pkgdown.r-lib.org/reference/check_pkgdown.html" class="external-link">pkgdown::check_pkgdown()</a></code> if you added an exported function; every exported topic has to appear in the reference index in <code>_pkgdown.yml</code>, and a unit test enforces this.</li>
 <li>Add a line to <code>NEWS.md</code> for anything a user would notice.</li>
