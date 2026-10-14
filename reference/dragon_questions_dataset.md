@@ -11,7 +11,7 @@ source of truth and can change later without retraining.
 ## Usage
 
 ``` r
-dragon_questions_dataset(qa, docs = NULL, k = 4)
+dragon_questions_dataset(qa, docs = NULL, k = 4, cite = TRUE)
 ```
 
 ## Arguments
@@ -28,6 +28,15 @@ dragon_questions_dataset(qa, docs = NULL, k = 4)
 - k:
 
   Excerpts per prompt.
+
+- cite:
+
+  Append the excerpt number of the chunk each pair was written from to
+  its answer (`" [2]"`), the way
+  [`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md)
+  cites, so the tuned model keeps citing. Answers that already contain a
+  `[n]` marker are left alone. The source chunk is always among the
+  excerpts: when retrieval misses it, it takes the last slot.
 
 ## Value
 
