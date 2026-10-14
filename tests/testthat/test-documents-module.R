@@ -114,3 +114,20 @@ test_that("the Teach card reviews a question set and hands a dataset to Model", 
     expect_equal(visited, "model")
   })
 })
+
+test_that("Read and index with nothing queued explains a still-running upload", {
+  runs_dir <- tempfile("runs-")
+  state <- shiny::reactiveValues(documents = NULL, route = "documents", hardware = NULL)
+  notes <- character()
+  testthat::local_mocked_bindings(
+    showNotification = function(ui, ...) { notes <<- c(notes, paste(ui, collapse = " ")); invisible("id") },
+    .package = "shiny"
+  )
+  testthat::local_mocked_bindings(dragon_documents = function(...) stop("must not be called"))
+  shiny::testServer(dragonfarm:::mod_documents_server,
+    args = list(state = state, nav_to = function(p) NULL, runs_dir = runs_dir), {
+    session$setInputs(name = "my-docs", build = 1)
+    expect_true(any(grepl("still uploading", notes)))
+    expect_null(state$documents)
+  })
+})

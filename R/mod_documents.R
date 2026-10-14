@@ -149,7 +149,9 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       files <- pending_files(); urls <- pending_urls()
       name <- slugify(input$name %||% "")
       if (!nrow(files) && !length(urls)) {
-        shiny::showNotification("Add at least one file or page first.", type = "warning")
+        # A large file takes a while to upload (about 10 s for 3 MB); until the bar
+        # says "Upload complete" the server has not seen it.
+        shiny::showNotification("Add at least one file or page first. If a file is still uploading, wait for \"Upload complete\" under the drop box.", type = "warning", duration = 8)
         return()
       }
       upload_dir <- file.path(runs_dir, "documents", name, "uploads")
