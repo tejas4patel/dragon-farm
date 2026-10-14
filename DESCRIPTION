@@ -42,6 +42,7 @@ Suggests:
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+Language: en-GB
 SystemRequirements: 'Python' (>= 3.10). The 'uv' tool is installed
     automatically by 'reticulate' to build the 'Python' environment.
 URL: https://dragonfarm.dev, https://github.com/tejas4patel/dragon-farm
