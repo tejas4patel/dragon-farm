@@ -64,12 +64,15 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 4
+READER_VERSION = 5
 # "(dollars in millions, except per share data)": the unit note a filing puts
 # once above a section or statement. Carried into later chunks that show money
 # without a unit word, so "$11,339" is not read as eleven thousand dollars.
 UNIT_NOTE = re.compile(r"\((?:[^()]{0,40}\s)?in (?:millions|thousands|billions)\b[^()]{0,80}\)", re.I)
 MONEY = re.compile(r"\$\s?\d|\(\d{1,3}(?:,\d{3})+\)")
+# Runs of four or more spaced dots: the leaders that pad a contents line or a
+# table label ("Net sales . . . . . . 249,625"). Three dots, an ellipsis, stay.
+DOT_LEADER = re.compile(r"(?:\s?\.){4,}")
 UNIT_WORD = re.compile(r"\b(?:millions?|billions?|thousands?)\b", re.I)
 # One per PDF page in the text handed to chunk_text(); never shown to anyone.
 PAGE_MARK = re.compile(r"^\x01page (\d+)$")
@@ -304,6 +307,9 @@ def pages_to_text(pages):
             if (CONTENTS_LINE.match(line) or re.match(r"^(Table of )?Contents$", line, re.I)
                     or (LEADER_ENTRY.search(line) and "$" not in line)):
                 continue
+            line = re.sub(r" {2,}", " ", DOT_LEADER.sub(" ", line)).strip()
+            if not line:
+                continue
             if page_start:
                 page_start = False
                 if open_sentence() and not re.match(r"^\d+(\.\d+)*\s", line):
@@ -342,6 +348,30 @@ def read_pdf(path):
         return pdf_to_text(fh)
 
 
+def emphasis_title(para, text):
+    """A short paragraph set entirely in bold or entirely in italic that could be
+    a title: at most 120 characters, no tab (column headers use tabs), no final
+    punctuation, and at least two words of three or more letters. Whether it
+    really is a heading is decided by what follows it (see read_docx)."""
+    runs = [r for r in para.runs if r.text.strip()]
+    if not runs or len(text) > 120 or "\t" in text or text.endswith((".", ":", ";", ",")):
+        return False
+    style_font = para.style.font if para.style is not None else None
+
+    def on(r, attr):
+        v = getattr(r, attr)
+        return v if v is not None else bool(style_font is not None and getattr(style_font, attr))
+
+    if not (all(on(r, "bold") for r in runs) or all(on(r, "italic") for r in runs)):
+        return False
+    return len(re.findall(r"[A-Za-z]{3,}", text)) >= 2
+
+
+def prose(text):
+    """Running text: a dozen words or more ending like a sentence."""
+    return len(text.split()) >= 12 and text.rstrip().endswith((".", ".)", ".\u201d", ":"))
+
+
 def read_docx(path):
     docx = _need("docx", "python-docx", "Word")
     doc = docx.Document(path)
@@ -361,15 +391,28 @@ def read_docx(path):
                 out.append("> " + text)
             elif "list" in style.lower():
                 out.append("- " + text)
+            elif emphasis_title(para, text):
+                # Many documents mark headings with bold or italic type instead of
+                # a heading style. Table labels look the same, so the decision
+                # waits for the next paragraph: a heading is followed by prose.
+                out.append(("CANDIDATE", text))
             else:
                 out.append(text)
         elif tag == "tbl":
             table = docx.table.Table(block, doc)
             for row in table.rows:
-                cells = [c.text.strip().replace("\n", " ") for c in row.cells]
+                cells = [DOT_LEADER.sub(" ", c.text).strip().replace("\n", " ") for c in row.cells]
+                cells = [c for k, c in enumerate(cells) if c or k == 0]   # leader-only cells drop out
                 if any(cells):
                     out.append(" | ".join(cells))
-    return "\n\n".join(out)
+    resolved = []
+    for i, item in enumerate(out):
+        if isinstance(item, tuple):
+            nxt = next((o for o in out[i + 1:] if not isinstance(o, tuple)), "")
+            resolved.append(("### " + item[1]) if prose(nxt) else item[1])
+        else:
+            resolved.append(item)
+    return "\n\n".join(resolved)
 
 
 def rows_to_text(sheet_name, header, rows):
@@ -512,8 +555,17 @@ def chunk_text(text, source, max_words=170, min_words=35):
             continue
         m = re.match(r"^(#{1,6})\s+(.*)", u)
         if m and "\n" not in u and len(u) <= 200:
+            title = m.group(2).strip()
+            note = UNIT_NOTE.search(title)
+            if note:
+                # "(amounts in millions)" styled as a heading, alone or in front of
+                # the real title: it sets the unit; whatever is left is the section.
+                unit_note = note.group(0)
+                title = (title[:note.start()] + " " + title[note.end():]).strip(" -—:")
+                if not title:
+                    continue
             emit()
-            section = m.group(2).strip()
+            section = title
             continue
         note = UNIT_NOTE.search(u)
         w = words(u)

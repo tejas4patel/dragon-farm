@@ -154,3 +154,51 @@ def test_unit_notes_carry_into_later_money_chunks():
     assert not chunks["Letter"].startswith("[")          # says "billion" itself
     assert D.UNIT_NOTE.search("(amounts in millions, except par value and share data)")
     assert not D.UNIT_NOTE.search("(see Note 4)")
+
+
+def test_unit_note_headings_set_the_unit_and_keep_the_section():
+    text = "\n\n".join([
+        "## Note 4—Debt",
+        "## (amounts in millions)",
+        "The carrying value of long-term debt was $5,794 and $6,084 at year end. " * 4,
+    ])
+    chunks = D.chunk_text(text, "10k.docx", min_words=20)
+    assert {c["section"] for c in chunks} == {"Note 4—Debt"}
+    assert chunks[0]["text"].startswith("[amounts in millions]")
+
+
+def test_dot_leaders_are_recognised_but_an_ellipsis_is_not():
+    assert D.DOT_LEADER.sub(" ", "Net sales . . . . . . 249,625").split() == ["Net", "sales", "249,625"]
+    assert D.DOT_LEADER.sub(" ", "and so on...") == "and so on..."
+
+
+def test_a_unit_note_in_front_of_a_heading_is_split_off():
+    text = "## (amounts in millions, except share data) Note 1—Summary of Significant Accounting Policies\n\n" + \
+           "Cash equivalents were $9,906 at year end and are carried at cost. " * 4
+    chunks = D.chunk_text(text, "10k.docx", min_words=20)
+    assert chunks[0]["section"] == "Note 1—Summary of Significant Accounting Policies"
+    assert chunks[0]["text"].startswith("[amounts in millions, except share data]")
+
+
+def test_emphasised_paragraphs_become_headings_only_before_prose():
+    try:
+        import docx
+    except ImportError:
+        return
+    import tempfile, os
+    d = docx.Document()
+    p = d.add_paragraph(); p.add_run("Description of Business").italic = True
+    d.add_paragraph("Costco Wholesale Corporation operates membership warehouses and e-commerce sites in several countries.")
+    p = d.add_paragraph(); p.add_run("Recorded Basis").bold = True
+    d.add_paragraph("1,234")
+    p = d.add_paragraph(); p.add_run("2024	2023").bold = True
+    d.add_paragraph("Net sales grew in every segment and every region during the year that ended in September.")
+    p = d.add_paragraph(); p.add_run("This sentence is bold but it is prose.").bold = True
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "t.docx")
+        d.save(path)
+        text = D.read_docx(path)
+    assert "### Description of Business" in text
+    assert "### Recorded Basis" not in text and "Recorded Basis" in text
+    assert "### 2024" not in text
+    assert "### This sentence" not in text

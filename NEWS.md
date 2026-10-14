@@ -1,5 +1,14 @@
 # dragonfarm (development version)
 
+* Word files read better, tested on the Word version of a 10-K. A unit note
+  styled as a heading ("(amounts in millions)", alone or in front of the real
+  title) sets the unit instead of becoming a section; dot leaders are dropped
+  from table cells and PDF lines; and short paragraphs set entirely in bold
+  or italic become headings when prose follows them, which recovers
+  sub-headings such as "Basis of Presentation" without turning table column
+  labels into sections. The Word report went from one 38-chunk "Note 1" to
+  123 real sections, and answered 12 of 13 test questions.
+
 * A unit note such as "(dollars in millions, except per share data)" is
   carried into later chunks that show money without a unit word, so answers
   from financial tables say "$11,339 million" rather than "$11,339". On a
