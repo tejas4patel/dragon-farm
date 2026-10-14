@@ -1,5 +1,10 @@
 # dragonfarm (development version)
 
+* A unit note such as "(dollars in millions, except per share data)" is
+  carried into later chunks that show money without a unit word, so answers
+  from financial tables say "$11,339 million" rather than "$11,339". On a
+  10-K this tags 76 of 272 chunks.
+
 * Retrieval is now hybrid by default: the embedding ranking and a BM25
   keyword ranking are combined (reciprocal-rank fusion), so exact terms and
   figures that a small embedding model ranks a few places too low still

@@ -134,3 +134,23 @@ def test_dot_leader_contents_entries_are_dropped_but_table_rows_kept():
 def test_lost_apostrophes_are_restored():
     assert D.LOST_APOSTROPHE.sub("\u2019", "Registrant\ufffds Common Equity; Costco\ufffds; don\ufffdt; M\ufffdxico") == \
         "Registrant\u2019s Common Equity; Costco\u2019s; don\u2019t; M\ufffdxico"
+
+
+def test_unit_notes_carry_into_later_money_chunks():
+    text = "\n\n".join([
+        "## Item 7",
+        "(dollars in millions, except per share data)",
+        "Net sales increased five percent in the year. " * 8,
+        "## Liquidity",
+        "Net cash provided by operating activities totaled $11,339 in 2024, compared to $11,068 in 2023. " * 4,
+        "## People",
+        "We employed 333,000 employees worldwide at the end of the year and paid them well. " * 4,
+        "## Letter",
+        "Net sales were $249.6 billion this year, an increase of five percent over last year. " * 4,
+    ])
+    chunks = {c["section"]: c["text"] for c in D.chunk_text(text, "10k.pdf", min_words=20)}
+    assert chunks["Liquidity"].startswith("[dollars in millions, except per share data]")
+    assert not chunks["People"].startswith("[")          # no money, no note
+    assert not chunks["Letter"].startswith("[")          # says "billion" itself
+    assert D.UNIT_NOTE.search("(amounts in millions, except par value and share data)")
+    assert not D.UNIT_NOTE.search("(see Note 4)")

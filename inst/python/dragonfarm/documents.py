@@ -64,7 +64,13 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 3
+READER_VERSION = 4
+# "(dollars in millions, except per share data)": the unit note a filing puts
+# once above a section or statement. Carried into later chunks that show money
+# without a unit word, so "$11,339" is not read as eleven thousand dollars.
+UNIT_NOTE = re.compile(r"\((?:[^()]{0,40}\s)?in (?:millions|thousands|billions)\b[^()]{0,80}\)", re.I)
+MONEY = re.compile(r"\$\s?\d|\(\d{1,3}(?:,\d{3})+\)")
+UNIT_WORD = re.compile(r"\b(?:millions?|billions?|thousands?)\b", re.I)
 # One per PDF page in the text handed to chunk_text(); never shown to anyone.
 PAGE_MARK = re.compile(r"^\x01page (\d+)$")
 ANCHOR_GLYPH = re.compile(r"\s*(?:[\u00b6\u00a7#\u2693\U0001f517]|Permalink(?: to this heading)?)+\s*$", re.I)
@@ -466,12 +472,15 @@ def chunk_text(text, source, max_words=170, min_words=35):
 
     chunks, section, cur, cur_w = [], "", [], 0
     page, cur_page = None, None
+    unit_note = None
 
     def emit():
         nonlocal cur, cur_w
         if not cur:
             return
         body = "\n\n".join(u for u, _ in cur).strip()
+        if unit_note and MONEY.search(body) and not UNIT_WORD.search(body):
+            body = "[" + unit_note.strip("()") + "]\n\n" + body
         n = words(body)
         kinds = {}
         for u, k in cur:
@@ -506,9 +515,12 @@ def chunk_text(text, source, max_words=170, min_words=35):
             emit()
             section = m.group(2).strip()
             continue
+        note = UNIT_NOTE.search(u)
         w = words(u)
         if cur and cur_w + w > max_words:
             emit()
+        if note:
+            unit_note = note.group(0)
         if not cur:
             cur_page = page
         cur.append((u, _unit_kind(u)))
