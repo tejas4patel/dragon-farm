@@ -215,10 +215,10 @@ CRAN release: 2026-10-07
 
 - The 0.3.1 fix for the torchao `ImportError` on cloud GPUs (pinning
   `torchao>=0.16.0` in requirements) turned out not to be reliably
-  honored on Colab’s and Kaggle’s preinstalled environment (pip reported
-  success but the old 0.10.0 build was still what got imported). The
-  requirements pin is reverted, and the shared remote notebook
-  (`inst/remote/dragonfarm_remote.ipynb`, used by
+  honoured on Colab’s and Kaggle’s preinstalled environment (pip
+  reported success but the old 0.10.0 build was still what got
+  imported). The requirements pin is reverted, and the shared remote
+  notebook (`inst/remote/dragonfarm_remote.ipynb`, used by
   [`dragon_remote()`](https://dragonfarm.dev/reference/dragon_remote.md)
   for Colab, Kaggle, Lightning AI, and RunPod) now explicitly uninstalls
   torchao after installing the trainer’s requirements. dragonfarm never
