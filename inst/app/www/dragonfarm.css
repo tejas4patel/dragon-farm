@@ -59,7 +59,12 @@
 details.qa-chunk { margin: 10px 0; padding: 6px 10px; border: 1px solid var(--df-line); border-radius: 8px; }
 details.qa-chunk summary { cursor: pointer; font-size: 0.9rem; }
 details.qa-chunk .checkbox { margin: 8px 0; }
-details.qa-chunk .qa { display: inline-block; vertical-align: top; max-width: 95%; font-size: 0.86rem; }
+/* Each choice is <label><input><span>.qa</span></label>; lay it out as a row so the
+   question and answer take the full card width instead of wrapping beside the box. */
+details.qa-chunk .checkbox label { display: flex; align-items: flex-start; gap: 8px; width: 100%; margin: 0; }
+details.qa-chunk .checkbox label > span { flex: 1 1 auto; min-width: 0; }
+details.qa-chunk .checkbox input[type=checkbox] { margin-top: 4px; flex: 0 0 auto; }
+details.qa-chunk .qa { display: block; font-size: 0.86rem; }
 details.qa-chunk .qa .q { font-weight: 600; }
 details.qa-chunk .qa .a { color: #333; }
 details.qa-chunk .qa.rejected .q, details.qa-chunk .qa.rejected .a { color: var(--df-muted); }

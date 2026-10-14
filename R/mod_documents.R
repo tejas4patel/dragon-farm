@@ -346,7 +346,9 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
         })
         shiny::tags$details(open = NA, class = "qa-chunk",
           shiny::tags$summary(shiny::strong(where), sprintf(" (%d of %d kept)", sum(qa$keep[idx]), length(idx))),
-          shiny::checkboxGroupInput(ns(paste0("keep_", qa$chunk_id[idx[1]])), label = NULL,
+          # width = "100%": Shiny's default input width is 300px, which squeezed
+          # every question and answer into a narrow column.
+          shiny::checkboxGroupInput(ns(paste0("keep_", qa$chunk_id[idx[1]])), label = NULL, width = "100%",
                                     choiceNames = names_html, choiceValues = qa$id[idx], selected = qa$id[idx][qa$keep[idx]])
         )
       })

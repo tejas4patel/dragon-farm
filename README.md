@@ -120,6 +120,14 @@ example tickets are also synthetic and built from templates, so this shows a
 model picking up a house style, not open-ended reliability. Measure on your own
 data.
 
+A larger model fixes most of this, and an 8 GB card is enough for one.
+`Qwen/Qwen2.5-7B-Instruct` loaded in 4-bit (`dragon_hardware(load_in_4bit =
+TRUE)`, QLoRA) trained three epochs on the same tickets in about 22 minutes on
+the RTX 4060 and, on held-out tickets, reproduced every policy the 0.5B had got
+wrong or blended, including the two-business-day detail above. The numbers and
+settings are in [From your documents to your
+model](https://dragonfarm.dev/articles/documents.html).
+
 ## Go further
 
 | I want to | Read |
