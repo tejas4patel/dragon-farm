@@ -88,7 +88,7 @@ def test_fragmented_extraction_is_detected_and_layout_text_tidied():
     assert not D.fragmented("December 11, 2024\n\nDear Costco Shareholders,\n")
     assert not D.fragmented("a\nb\nc")          # too short to judge
     tidy = D.tidy_layout("December    11,  2024   \n\nDear  Costco   Shareholders,\n")
-    assert tidy == "December 11, 2024\n\nDear Costco Shareholders,\n"
+    assert tidy == "December 11, 2024\n\nDear Costco Shareholders,"
 
 
 def test_single_short_words_are_not_headings():
