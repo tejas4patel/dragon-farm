@@ -87,17 +87,15 @@ class ModelCache:
 
 
 def generate_all(tok, model, hw, req):
-    from .evaluate_utils import generate_reply
+    from .evaluate_utils import generate_replies
 
-    outputs = []
-    for messages in req["conversations"]:
-        outputs.append(generate_reply(
-            model, tok, messages, hw.device,
-            max_new_tokens=int(req.get("max_new_tokens", 256)),
-            temperature=float(req.get("temperature", 0.7)),
-            top_p=float(req.get("top_p", 0.9)),
-        ))
-    return outputs
+    return generate_replies(
+        model, tok, req["conversations"], hw.device,
+        max_new_tokens=int(req.get("max_new_tokens", 256)),
+        temperature=float(req.get("temperature", 0.7)),
+        top_p=float(req.get("top_p", 0.9)),
+        batch_size=int(req.get("batch_size", 8)),
+    )
 
 
 def generate_stream(tok, model, hw, req):

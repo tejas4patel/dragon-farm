@@ -143,14 +143,53 @@ def generate_reply(model, tok, messages, device, max_new_tokens=256, temperature
     return tok.decode(new_tokens, skip_special_tokens=True).strip()
 
 
+def generate_replies(model, tok, conversations, device, max_new_tokens=256, temperature=0.7, top_p=0.9,
+                     batch_size=8):
+    """Replies for several conversations, a batch at a time with left padding.
+
+    One prompt at a time costs a full forward pass per token per prompt, which
+    for a small model is dominated by per-step overhead: twenty short prompts
+    took about ninety seconds on a 0.5B. Batched they take a few. A batch that
+    runs out of GPU memory falls back to one prompt at a time."""
+    if not conversations:
+        return []
+    if len(conversations) == 1 or batch_size <= 1:
+        return [generate_reply(model, tok, m, device, max_new_tokens, temperature, top_p) for m in conversations]
+    kwargs = dict(max_new_tokens=max_new_tokens, pad_token_id=tok.pad_token_id)
+    if temperature and temperature > 0:
+        kwargs.update(do_sample=True, temperature=float(temperature), top_p=float(top_p))
+    else:
+        kwargs.update(do_sample=False)
+    out = []
+    for i in range(0, len(conversations), batch_size):
+        batch = conversations[i:i + batch_size]
+        texts = [render_prompt(tok, m) for m in batch]
+        side = tok.padding_side
+        tok.padding_side = "left"
+        try:
+            enc = tok(texts, return_tensors="pt", padding=True, add_special_tokens=False).to(device)
+            gen = model.generate(**enc, **kwargs)
+        except Exception as e:
+            if not is_oom(e):
+                raise
+            free_gpu_memory()
+            out += [generate_reply(model, tok, m, device, max_new_tokens, temperature, top_p) for m in batch]
+            continue
+        finally:
+            tok.padding_side = side
+        start = enc["input_ids"].shape[1]
+        out += [tok.decode(seq[start:], skip_special_tokens=True).strip() for seq in gen]
+    return out
+
+
 def sample_generations(model, tok, records, device, n=10, max_new_tokens=200):
+    records = records[:n]
+    prompts = [rec["messages"][:-1] for rec in records]
+    generated = generate_replies(model, tok, prompts, device, max_new_tokens=max_new_tokens, temperature=0.0)
     samples = []
-    for rec in records[:n]:
-        messages = rec["messages"]
-        prompt_msgs = messages[:-1]
+    for rec, prompt_msgs, text in zip(records, prompts, generated):
         user = next((m["content"] for m in prompt_msgs if m["role"] == "user"), "")
-        generated = generate_reply(model, tok, prompt_msgs, device, max_new_tokens=max_new_tokens, temperature=0.0)
-        samples.append({"prompt": user, "reference": messages[-1]["content"], "generated": generated})
+        samples.append({"prompt": user, "reference": rec["messages"][-1]["content"], "generated": text})
     return samples
 
 
