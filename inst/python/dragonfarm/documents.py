@@ -64,7 +64,7 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 2
+READER_VERSION = 3
 # One per PDF page in the text handed to chunk_text(); never shown to anyone.
 PAGE_MARK = re.compile(r"^\x01page (\d+)$")
 ANCHOR_GLYPH = re.compile(r"\s*(?:[\u00b6\u00a7#\u2693\U0001f517]|Permalink(?: to this heading)?)+\s*$", re.I)
@@ -212,7 +212,7 @@ def pdf_to_text(fh):
                 text = tidy_layout(page.extract_text(extraction_mode="layout") or text)
             except Exception:   # older pypdf has no layout mode, and layout can fail on an odd page
                 pass
-        pages.append(text)
+        pages.append(LOST_APOSTROPHE.sub("\u2019", text))
     return pages_to_text(pages)
 
 
@@ -233,6 +233,12 @@ def tidy_layout(text):
 
 
 PAGE_NUMBER = re.compile(r"^[\divxlc]+$", re.I)
+# A contents entry set with a dot leader: "Item 1A. Risk Factors . . .. . 10".
+# One small page number after the dots, no currency: a financial table row has
+# "$" or several amounts, so it is left alone.
+LEADER_ENTRY = re.compile(r"(?:\.\s*){4,}\s*\d{1,3}$")
+# An apostrophe the font did not map comes out as U+FFFD: "Registrant\ufffds".
+LOST_APOSTROPHE = re.compile(r"(?<=[A-Za-z])\ufffd(?=(?:s|t|re|ll|ve|d|m)\b)")
 CONTENTS_LINE = re.compile(r"^(\d+(\.\d+)*|[A-Z](\.\d+)*|Chapter \d+:?|Appendix [A-Z]:?)\s.*\d+$")
 CODE_LINE = re.compile(r"^[>+$#%]|<-|\(\)|==|=>")
 
@@ -289,7 +295,8 @@ def pages_to_text(pages):
                 continue
             if i in edges and (re.sub(r"\d+", "", line) in recurring or PAGE_NUMBER.match(line)):
                 continue
-            if CONTENTS_LINE.match(line) or re.match(r"^(Table of )?Contents$", line, re.I):
+            if (CONTENTS_LINE.match(line) or re.match(r"^(Table of )?Contents$", line, re.I)
+                    or (LEADER_ENTRY.search(line) and "$" not in line)):
                 continue
             if page_start:
                 page_start = False

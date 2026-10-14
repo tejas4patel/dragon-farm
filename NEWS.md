@@ -1,5 +1,14 @@
 # dragonfarm (development version)
 
+* PDF reading drops dot-leader contents entries ("Item 1A. Risk Factors .
+  . .. 10", the table of contents of a 10-K) while keeping financial table
+  rows, and restores apostrophes a font did not map ("Registrant’s"
+  instead of a replacement character).
+* A question set now records a checksum of the chunks it was written from,
+  and `dragon_questions_dataset()` warns when the document set has been
+  re-read since: re-reading renumbers chunks, so the source excerpt added to
+  each prompt could otherwise be the wrong one.
+
 * Excerpts from PDFs now carry the page they start on, and answers,
   footnotes, prompts, and training contexts show it: "report.pdf, p. 68 ›
   Item 14". On a 76-page annual report most answers had cited the bare file

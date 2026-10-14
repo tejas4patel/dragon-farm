@@ -3,6 +3,8 @@
 # its worker). They hold GPU memory and have caused two false out-of-memory
 # diagnoses, so dragon_check() reports them and training warns about them.
 
+withr::local_options(dragonfarm.scan_workers = TRUE)   # file scope: restored after this file
+
 fake_procs <- function() {
   data.frame(
     pid = c(101L, 105L, 202L, 303L, 404L),

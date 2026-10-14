@@ -142,6 +142,15 @@ def judge(q, a, chunk, seen):
     return None
 
 
+def chunks_md5(set_dir):
+    """MD5 of the set's chunks.jsonl as written: recorded with a question set so a
+    later re-read of the documents (which renumbers chunk ids) can be noticed."""
+    import hashlib
+
+    with open(Path(set_dir) / "chunks.jsonl", "rb") as fh:
+        return hashlib.md5(fh.read()).hexdigest()
+
+
 def load_chunks(set_dir):
     with open(Path(set_dir) / "chunks.jsonl", encoding="utf-8") as f:
         return [json.loads(line) for line in f if line.strip()]
@@ -207,7 +216,8 @@ def generate(set_dir, out, model_id, n=3, load_in_4bit="auto", batch_size=4, max
     progress_path = Path(str(out) + ".progress.json")
     chunks = select_chunks(load_chunks(set_dir), include_quotes, include_code, include_changelog, chunk_ids)
     meta = {"generator": model_id, "n_per_chunk": n, "n_chunks": len(chunks), "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "include_quotes": include_quotes, "include_code": include_code, "include_changelog": include_changelog}
+            "include_quotes": include_quotes, "include_code": include_code, "include_changelog": include_changelog,
+            "chunks_md5": chunks_md5(set_dir)}
     write_json(progress_path, {"state": "loading", "done": 0, "total": len(chunks), "pairs": 0, "kept": 0})
     if not chunks:
         write_rows(out, [])
@@ -292,6 +302,7 @@ def main(argv=None):
         rows, unparsed = filter_outputs(chunks, [(r["chunk_id"], r["output"]) for r in raw])
         write_rows(a.out, rows)
         write_json(Path(a.out + ".meta.json"), {"generator": a.generator, "n_chunks": len(raw), "n_pairs": len(rows),
+                                                "chunks_md5": chunks_md5(a.dir),
                                                 "n_kept": sum(r["keep"] for r in rows), "unparsed": unparsed,
                                                 "finished_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
         print(json.dumps({"n_pairs": len(rows), "n_kept": sum(r["keep"] for r in rows), "unparsed": unparsed}))

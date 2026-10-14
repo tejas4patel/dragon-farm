@@ -227,6 +227,15 @@ dragon_questions_dataset <- function(qa, docs = NULL, k = 4, cite = TRUE) {
   docs <- as_documents(docs %||% attr(qa, "documents"))
   kept <- qa[qa$keep, , drop = FALSE]
   if (!nrow(kept)) cli::cli_abort("No kept questions. Review the set and keep at least a few.")
+  written_from <- attr(qa, "meta")$chunks_md5
+  now <- unname(tools::md5sum(file.path(docs$dir, "chunks.jsonl")))
+  if (!is.null(written_from) && !identical(written_from, now)) {
+    cli::cli_warn(c(
+      "The document set {.val {docs$name}} was re-read after these questions were written.",
+      "i" = "Chunk ids may now point at different text, so the source excerpt added to each prompt can be wrong.",
+      "i" = "Write the questions again with {.fn dragon_questions}, or review them again before training."
+    ))
+  }
   hits <- dragon_retrieve(docs, kept$question, k = k)
   if (is.null(hits$query)) hits$query <- kept$question[1]   # one question: dragon_retrieve drops the column
   chunks <- dragon_chunks(docs)

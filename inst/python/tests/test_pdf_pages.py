@@ -113,3 +113,24 @@ def test_pdf_chunks_record_the_page_they_start_on():
 def test_single_page_and_non_pdf_text_has_no_page():
     chunks = D.chunk_text("## A\n\n" + "word " * 50, "notes.md", min_words=10)
     assert all("page" not in c for c in chunks)
+
+
+def test_dot_leader_contents_entries_are_dropped_but_table_rows_kept():
+    page = "\n".join([
+        "PART I",
+        "Item 1. Business . . .. . .. .. . .. . .. . .. .. . .. . 4",
+        "Item 1A. Risk Factors . . .. .. . .. . .. . .. .. . .. . 10",
+        "Net cash used in investing activities . . . . . . . . (4,409) (4,972)",
+        "Total short-term investments . . . . . . . . $ 689 $ (1) $ 688",
+        "Certificates of deposit . . . . . . . . . . 550 — 550",
+    ])
+    text = D.pages_to_text([page, "filler line one.", "filler line two."])
+    assert "Item 1. Business" not in text and "Risk Factors" not in text
+    assert "(4,409) (4,972)" in text
+    assert "$ 689 $ (1) $ 688" in text
+    assert "550 — 550" in text
+
+
+def test_lost_apostrophes_are_restored():
+    assert D.LOST_APOSTROPHE.sub("\u2019", "Registrant\ufffds Common Equity; Costco\ufffds; don\ufffdt; M\ufffdxico") == \
+        "Registrant\u2019s Common Equity; Costco\u2019s; don\u2019t; M\ufffdxico"

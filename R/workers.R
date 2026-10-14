@@ -53,6 +53,12 @@ worker_kind <- function(cmdline) {
 # spawns share a command line, and killing the parent takes the child with
 # it. Never errors: a machine where process listing fails just reports none.
 other_workers <- function() {
+  # The test suite turns the scan off so its results do not depend on what
+  # else happens to be running on the machine.
+  if (!isTRUE(getOption("dragonfarm.scan_workers", TRUE))) {
+    return(data.frame(pid = integer(), kind = character(), started = as.POSIXct(character()),
+                      stringsAsFactors = FALSE))
+  }
   procs <- tryCatch(list_python_processes(), error = function(e) NULL)
   empty <- data.frame(pid = integer(), kind = character(), started = as.POSIXct(character()),
                       stringsAsFactors = FALSE)

@@ -129,3 +129,20 @@ test_that("questions are written by a local model for real", {
   expect_equal(dragon_questions_progress(job)$state, "done")
   expect_equal(nrow(dragon_questions_list(docs)), 1L)
 })
+
+test_that("building a dataset warns when the set was re-read after the questions were written", {
+  f <- write_fake_set()
+  path <- write_fake_questions(f$dir)
+  meta <- jsonlite::read_json(paste0(path, ".meta.json"))
+  meta$chunks_md5 <- unname(tools::md5sum(file.path(f$dir, "chunks.jsonl")))
+  jsonlite::write_json(meta, paste0(path, ".meta.json"), auto_unbox = TRUE)
+  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4) {
+    do.call(rbind, lapply(query, function(q) data.frame(
+      query = q, n = 1L, id = "abc-000", source = "policy.pdf", section = "Returns", page = NA_integer_,
+      text = "Thirty days.", score = 0.9, similarity = 0.9, weight = 1, stringsAsFactors = FALSE)))
+  })
+  qa <- dragon_questions_load(path)
+  expect_no_warning(dragon_questions_dataset(qa, k = 1))
+  cat("\n", file = file.path(f$dir, "chunks.jsonl"), append = TRUE)     # the set changed underneath
+  expect_warning(dragon_questions_dataset(qa, k = 1), "re-read after these questions were written")
+})
