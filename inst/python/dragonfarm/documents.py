@@ -62,6 +62,7 @@ def version_heading(section):
     words = len(rest.split())
     return prefixed or words == 0 or (parts >= 3 and words <= 2)
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
+ANCHOR_GLYPH = re.compile(r"\s*(?:[\u00b6\u00a7#\u2693\U0001f517]|Permalink(?: to this heading)?)+\s*$", re.I)
 JUNK = re.compile(r"[-​‌‍﻿]")
 USER_AGENT = "dragonfarm/0.4 (+https://dragonfarm.dev)"
 
@@ -94,7 +95,10 @@ class _Html(HTMLParser):
         t = t.strip("\n") if self.pre else t.strip()
         if t:
             if self.head:
-                self.out.append("#" * self.head + " " + re.sub(r"\s+", " ", t))
+                # Drop the anchor glyph many generators append to headings (pilcrow,
+                # section sign, hash, link emoji) so section names read cleanly.
+                t = ANCHOR_GLYPH.sub("", re.sub(r"\s+", " ", t)).strip()
+                self.out.append("#" * self.head + " " + t)
             elif self.pre:
                 self.out.append("```\n" + t + "\n```")
             elif self.quote:

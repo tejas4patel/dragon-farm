@@ -71,3 +71,12 @@ def test_a_paragraph_starting_with_hashes_is_not_a_heading():
     text = "## Setup\n\nInstall it.\n\n## first evaluation in S S> cube(2) " + "Error in sq(): Object n not found " * 20 + "\n\nMore text."
     chunks = D.chunk_text(text, "manual.pdf", max_words=170, min_words=5)
     assert all(c["section"] == "Setup" for c in chunks), [c["section"] for c in chunks]
+
+
+def test_html_heading_anchor_glyphs_are_stripped():
+    html = "<html><body><h2>2.8 Citing R ¶</h2><p>Use citation().</p><h3>Setup #</h3><p>Install.</p><h2>Links Permalink to this heading</h2><p>x</p></body></html>"
+    text = D.html_to_text(html)
+    assert "## 2.8 Citing R\n" in text + "\n"
+    assert "### Setup\n" in text + "\n"
+    assert "## Links\n" in text + "\n"
+    assert "¶" not in text and "Permalink" not in text
