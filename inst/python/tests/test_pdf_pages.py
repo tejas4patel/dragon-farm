@@ -202,3 +202,14 @@ def test_emphasised_paragraphs_become_headings_only_before_prose():
     assert "### Recorded Basis" not in text and "Recorded Basis" in text
     assert "### 2024" not in text
     assert "### This sentence" not in text
+
+
+def test_link_lists_without_nav_tags_are_dropped():
+    html = ("<html><body><div class='sidebar'><p><a href='/'>Home</a> <a href='/d'>Download</a> "
+            "<a href='/c'>CRAN</a> <a href='/a'>About R</a> <a href='/l'>Logo</a></p></div>"
+            "<div role='navigation'><p>Skip me entirely please, this is navigation text.</p></div>"
+            "<h2>Introduction to R</h2><p>R is a language and environment for statistical computing and "
+            "graphics, see <a href='/s'>S</a> for history.</p></body></html>")
+    text = D.html_to_text(html)
+    assert "Download" not in text and "Skip me" not in text
+    assert "R is a language and environment" in text and "see S for history" in text

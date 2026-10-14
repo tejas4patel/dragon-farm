@@ -64,7 +64,7 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 5
+READER_VERSION = 6
 # "(dollars in millions, except per share data)": the unit note a filing puts
 # once above a section or statement. Carried into later chunks that show money
 # without a unit word, so "$11,339" is not read as eleven thousand dollars.
@@ -100,6 +100,7 @@ class _Html(HTMLParser):
         self.skip_tag, self.skip_depth = None, 0
         self.title = None
         self._in_title = False
+        self.in_link, self.link_chars, self.n_links = 0, 0, 0
 
     def _active(self):
         return self.skip_tag is None and (not self.main_only or self.in_main > 0)
@@ -117,9 +118,12 @@ class _Html(HTMLParser):
                 self.out.append("```\n" + t + "\n```")
             elif self.quote:
                 self.out.append("\n".join("> " + line for line in t.splitlines() if line.strip()))
+            elif self.n_links >= 4 and self.link_chars >= 0.6 * len(re.sub(r"\s", "", t)):
+                pass   # a menu or link list without a <nav> tag: mostly links, no content
             else:
                 self.out.append(t)
         self.cur, self.head = [], None
+        self.link_chars, self.n_links = 0, 0
 
     def handle_starttag(self, tag, attrs):
         if tag == "title":
@@ -134,7 +138,9 @@ class _Html(HTMLParser):
                 self.skip_depth += 1
             return
         cls = a.get("class") or ""
-        if tag in self.SKIP or "visually-hidden" in cls or "sr-only" in cls:
+        role = (a.get("role") or "").lower()
+        if (tag in self.SKIP or "visually-hidden" in cls or "sr-only" in cls
+                or role in ("navigation", "banner", "contentinfo", "search")):
             self._flush()
             self.skip_tag, self.skip_depth = tag, 1
             return
@@ -152,6 +158,9 @@ class _Html(HTMLParser):
                 self.quote += 1
         if tag in ("td", "th") and self.cur:
             self.cur.append(" | ")
+        if tag == "a":
+            self.in_link += 1
+            self.n_links += 1
 
     def handle_endtag(self, tag):
         if tag == "title":
@@ -168,6 +177,8 @@ class _Html(HTMLParser):
             self._flush()
             self.in_main -= 1
             return
+        if tag == "a":
+            self.in_link = max(0, self.in_link - 1)
         if not self._active():
             return
         if tag in self.BLOCK:
@@ -182,6 +193,8 @@ class _Html(HTMLParser):
             self.title = d.strip()
         if self._active():
             self.cur.append(d if self.pre else re.sub(r"\s+", " ", d))
+            if self.in_link:
+                self.link_chars += len(re.sub(r"\s", "", d))
 
 
 def html_to_text(raw):
