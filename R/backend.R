@@ -155,6 +155,7 @@ worker_start <- function(backend = dragon_backend_local()) {
     env = python_env(), cleanup = TRUE, windows_hide_window = TRUE
   )
   the$worker <- p
+  the$worker_buf <- ""
   the$worker_log <- log
   # Wait for the ready line so the first request does not race the import.
   started <- Sys.time()
@@ -207,13 +208,50 @@ dragon_worker_stop <- function(all = FALSE) {
   invisible(TRUE)
 }
 
+# Write a whole line to the worker's stdin. processx's write_input() is
+# non-blocking and hands back whatever did not fit in the pipe buffer, so a
+# large request (hundreds of retrieval queries) silently stopped short of its
+# newline and the worker waited for the rest while R waited for a reply.
+worker_write <- function(p, text, timeout = 60) {
+  pending <- charToRaw(enc2utf8(text))
+  started <- Sys.time()
+  while (length(pending)) {
+    pending <- p$write_input(pending)
+    if (length(pending)) {
+      if (as.numeric(difftime(Sys.time(), started, units = "secs")) > timeout) {
+        cli::cli_abort("Could not send the request to the inference worker within {timeout} seconds.")
+      }
+      p$poll_io(50)
+    }
+  }
+  invisible(TRUE)
+}
+
+# Complete lines from the worker's stdout. read_output_lines() hands a line
+# longer than processx's buffer back in pieces, none of which parse as JSON,
+# so a retrieval reply for a few hundred questions (over 64 KB on one line)
+# was dropped piece by piece and R waited forever. Buffer the raw text and
+# split on newlines ourselves.
+worker_lines <- function(p) {
+  chunk <- tryCatch(p$read_output(), error = function(e) "")
+  if (is.null(chunk) || !nzchar(chunk)) return(character())
+  buf <- paste0(the$worker_buf %||% "", chunk)
+  parts <- strsplit(buf, "\n", fixed = TRUE)[[1]]
+  if (endsWith(buf, "\n")) {
+    the$worker_buf <- ""
+    return(parts)
+  }
+  the$worker_buf <- parts[length(parts)]
+  parts[-length(parts)]
+}
+
 worker_request <- function(req, on_token = NULL, timeout = 3600) {
   p <- the$worker
-  p$write_input(paste0(jsonlite::toJSON(req, auto_unbox = TRUE, null = "null", digits = NA), "\n"))
+  worker_write(p, paste0(jsonlite::toJSON(req, auto_unbox = TRUE, null = "null", digits = NA), "\n"))
   started <- Sys.time()
   repeat {
     p$poll_io(1000)
-    for (line in p$read_output_lines()) {
+    for (line in worker_lines(p)) {
       obj <- tryCatch(jsonlite::fromJSON(line, simplifyVector = FALSE), error = function(e) NULL)
       if (is.null(obj)) next
       if (!isTRUE(obj$ok)) {

@@ -1,5 +1,12 @@
 # dragonfarm (development version)
 
+* Large requests to the local inference worker no longer hang. A retrieval
+  for a few hundred questions (as `dragon_questions_dataset()` makes for a
+  real document set) produced a reply longer than processx's line buffer,
+  which came back in pieces that never parsed; R now buffers the worker's
+  output and splits lines itself, and writes big requests in a loop rather
+  than trusting a single non-blocking write.
+
 * `dragon_questions()` no longer dies when one batch runs out of GPU memory:
   the batch is retried one chunk at a time, a chunk that does not fit even
   alone is skipped and listed in the set's metadata (`skipped_oom`), and the
