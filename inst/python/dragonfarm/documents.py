@@ -195,7 +195,36 @@ def _need(module, pip_name, kind):
 
 def pdf_to_text(fh):
     pypdf = _need("pypdf", "pypdf", "PDF")
-    return pages_to_text([page.extract_text() or "" for page in pypdf.PdfReader(fh).pages])
+    pages = []
+    for page in pypdf.PdfReader(fh).pages:
+        text = page.extract_text() or ""
+        if fragmented(text):
+            # Some PDFs (typesetting tools that place every few glyphs as a
+            # separate text object: annual reports, brochures) come out of the
+            # plain extractor as two-letter lines, "De", "ce", "mb", "er".
+            # pypdf's layout mode reads those by position and gives words back.
+            try:
+                text = tidy_layout(page.extract_text(extraction_mode="layout") or text)
+            except Exception:   # older pypdf has no layout mode, and layout can fail on an odd page
+                pass
+        pages.append(text)
+    return pages_to_text(pages)
+
+
+def fragmented(text, max_median=4, min_lines=20):
+    """True when extracted text is mostly tiny lines: glyph runs, not words."""
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    if len(lines) < min_lines:
+        return False
+    lengths = sorted(len(l) for l in lines)
+    return lengths[len(lengths) // 2] <= max_median
+
+
+def tidy_layout(text):
+    """Layout-mode text keeps column positions as runs of spaces; collapse them
+    to single spaces and drop trailing blanks, keeping the blank lines that
+    separate paragraphs."""
+    return "\n".join(re.sub(r" {2,}", " ", l).strip() for l in text.splitlines())
 
 
 PAGE_NUMBER = re.compile(r"^[\divxlc]+$", re.I)
@@ -258,7 +287,8 @@ def pages_to_text(pages):
                     continue
             following = next((l for l in lines[i + 1:] if l), "")
             heading_like = (
-                len(line) < 55
+                4 <= len(line) < 55
+                and (len(line.split()) >= 2 or re.match(r"^\d", line))   # "In", "Mr": a wrapped word, not a title
                 and not re.search(r"[.,;:)\d]$", line)
                 and not re.match(r"^[\d\W]+$", line)
                 and re.match(r"^[A-Z\d]", line)

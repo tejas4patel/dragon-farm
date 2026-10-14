@@ -80,3 +80,20 @@ def test_html_heading_anchor_glyphs_are_stripped():
     assert "### Setup\n" in text + "\n"
     assert "## Links\n" in text + "\n"
     assert "¶" not in text and "Permalink" not in text
+
+
+def test_fragmented_extraction_is_detected_and_layout_text_tidied():
+    frag = "De\nce\nmb\ner\n11,\n202\n4\n" * 4
+    assert D.fragmented(frag)
+    assert not D.fragmented("December 11, 2024\n\nDear Costco Shareholders,\n")
+    assert not D.fragmented("a\nb\nc")          # too short to judge
+    tidy = D.tidy_layout("December    11,  2024   \n\nDear  Costco   Shareholders,\n")
+    assert tidy == "December 11, 2024\n\nDear Costco Shareholders,\n"
+
+
+def test_single_short_words_are_not_headings():
+    pages = ["\n".join(["In", "fiscal 2024 we opened 29 warehouses.", "", "Mr", "Jelinek retired.", "",
+                        "Dear Costco Shareholders", "The merchandise we sell is the lifeblood of the business."])]
+    text = D.pages_to_text(pages)
+    headings = [l for l in text.split("\n\n") if l.startswith("## ")]
+    assert headings == ["## Dear Costco Shareholders"], headings
