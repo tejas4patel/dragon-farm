@@ -2,6 +2,15 @@
 
 ## dragonfarm (development version)
 
+- Reading PDFs is cleaner, measured on R’s own manuals: running page
+  headers and footers, page numbers, and contents lines are dropped; a
+  sentence that breaks across a page is rejoined; code prompts, lead-in
+  lines before an example, and sentence fragments are no longer taken
+  for section headings (R-intro went from 97 section names, one of them
+  1,489 characters long, to 79 real ones). A manual or FAQ with numbered
+  sections (“2.1 What is R?”) is no longer mistaken for a changelog and
+  down-weighted.
+
 - [`dragon_check()`](https://dragonfarm.dev/reference/dragon_check.md)
   now reports how much GPU memory other programs already hold and lists
   dragonfarm Python processes started by other R sessions (an app left
