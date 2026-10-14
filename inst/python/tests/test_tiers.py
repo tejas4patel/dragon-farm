@@ -56,3 +56,14 @@ def test_explicit_settings_are_honoured_or_refused_clearly():
     assert wants_4bit(True, "Qwen/Qwen2.5-0.5B-Instruct", "cuda", 8.0, True) is True
     _raises(lambda: wants_4bit(True, "Qwen/Qwen2.5-7B-Instruct", "cpu", 0, True), "NVIDIA GPU")
     _raises(lambda: wants_4bit(True, "Qwen/Qwen2.5-7B-Instruct", "cuda", 8.0, False), "bitsandbytes")
+
+
+def test_describe_reports_memory_fields_only_with_cuda():
+    from dragonfarm.hardware import describe
+
+    info = describe()
+    if info["cuda_available"]:
+        assert info["gpu_used_gb"] is None or info["gpu_used_gb"] >= 0
+        assert info["gpu_free_gb"] is None or info["gpu_free_gb"] <= info["vram_gb"] + 0.01
+    else:
+        assert "gpu_used_gb" not in info

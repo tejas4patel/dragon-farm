@@ -1,0 +1,84 @@
+# dragonfarm Python processes that may belong to other R sessions: an app
+# left running in another console, a session that exited without stopping
+# its inference worker, a question-generation job. They keep GPU memory and
+# have twice made a training run look out of memory when it was not, so
+# dragon_check() reports them, training warns about them, and
+# dragon_worker_stop(all = TRUE) clears them.
+
+# Every Python process on this machine, with its command line. Columns:
+# pid, ppid, started, cmdline.
+list_python_processes <- function() {
+  procs <- ps::ps()
+  procs <- procs[grepl("python", procs$name, ignore.case = TRUE), , drop = FALSE]
+  if (nrow(procs) == 0) {
+    return(data.frame(pid = integer(), ppid = integer(), started = as.POSIXct(character()),
+                      cmdline = character(), stringsAsFactors = FALSE))
+  }
+  cmd <- vapply(procs$ps_handle, function(h) {
+    paste(tryCatch(ps::ps_cmdline(h), error = function(e) character()), collapse = " ")
+  }, character(1))
+  data.frame(pid = as.integer(procs$pid), ppid = as.integer(procs$ppid), started = procs$created,
+             cmdline = cmd, stringsAsFactors = FALSE)
+}
+
+own_worker_pid <- function() {
+  if (!worker_alive()) return(NA_integer_)
+  tryCatch(as.integer(the$worker$get_pid()), error = function(e) NA_integer_)
+}
+
+kill_pid <- function(pid) {
+  h <- tryCatch(ps::ps_handle(as.integer(pid)), error = function(e) NULL)
+  if (is.null(h)) return(FALSE)
+  kids <- tryCatch(ps::ps_children(h, recursive = TRUE), error = function(e) list())
+  for (k in kids) tryCatch(ps::ps_kill(k), error = function(e) NULL)
+  !inherits(tryCatch(ps::ps_kill(h), error = function(e) e), "error")
+}
+
+worker_kind <- function(cmdline) {
+  mod <- regmatches(cmdline, regexpr("dragonfarm[.][a-z_]+", cmdline))
+  kinds <- c(
+    "dragonfarm.worker" = "inference worker",
+    "dragonfarm.questions" = "question generator",
+    "dragonfarm.train" = "trainer",
+    "dragonfarm.evaluate" = "evaluator",
+    "dragonfarm.merge" = "merge"
+  )
+  out <- unname(kinds[mod])
+  out[is.na(out)] <- "dragonfarm process"
+  out
+}
+
+# dragonfarm processes other than this session's own inference worker, one
+# row per process tree: a venv's python.exe launcher and the interpreter it
+# spawns share a command line, and killing the parent takes the child with
+# it. Never errors: a machine where process listing fails just reports none.
+other_workers <- function() {
+  procs <- tryCatch(list_python_processes(), error = function(e) NULL)
+  empty <- data.frame(pid = integer(), kind = character(), started = as.POSIXct(character()),
+                      stringsAsFactors = FALSE)
+  if (is.null(procs) || nrow(procs) == 0) return(empty)
+  procs <- procs[grepl("-m dragonfarm[.]", procs$cmdline), , drop = FALSE]
+  own <- own_worker_pid()
+  procs <- procs[!(procs$pid %in% own | procs$ppid %in% own), , drop = FALSE]
+  procs <- procs[!procs$ppid %in% procs$pid, , drop = FALSE]
+  if (nrow(procs) == 0) return(empty)
+  data.frame(pid = procs$pid, kind = worker_kind(procs$cmdline), started = procs$started,
+             stringsAsFactors = FALSE)
+}
+
+describe_workers <- function(o) {
+  paste0(o$kind, " (pid ", o$pid, ")")
+}
+
+# Warn when another session's process is holding the GPU before something
+# heavy starts. Returns the processes invisibly.
+warn_other_workers <- function(what = "Training") {
+  o <- other_workers()
+  if (nrow(o) > 0) {
+    cli::cli_alert_warning(paste0(
+      "{nrow(o)} dragonfarm process{?es} from other R sessions {?is/are} running: {describe_workers(o)}. ",
+      "{what} shares the GPU with {cli::qty(nrow(o))}{?it/them}; if it runs out of memory, stop {?it/them} with {.code dragon_worker_stop(all = TRUE)}."
+    ))
+  }
+  invisible(o)
+}

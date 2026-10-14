@@ -1,5 +1,12 @@
 # dragonfarm (development version)
 
+* `dragon_check()` now reports how much GPU memory other programs already
+  hold and lists dragonfarm Python processes started by other R sessions (an
+  app left open elsewhere, a worker that outlived its console). Training
+  warns when such a process is running, and `dragon_worker_stop(all = TRUE)`
+  stops them. An orphaned worker has twice made a run look out of memory when
+  it was not.
+
 * `dragon_example_documents()`: three short policy documents for the
   fictional smart-home company behind the example tickets, so the document
   route can be tried before bringing your own files. The Documents tab has a

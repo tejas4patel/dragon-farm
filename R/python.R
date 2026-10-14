@@ -139,6 +139,13 @@ dragon_check <- function() {
     } else {
       cli::cli_alert_info("bitsandbytes not installed: models load in full precision only.")
     }
+    if (!is.null(info$gpu_used_gb) && !is.na(info$gpu_used_gb)) {
+      if (info$gpu_used_gb >= 1) {
+        cli::cli_alert_warning("GPU memory already in use by other programs: {info$gpu_used_gb} GB ({info$gpu_free_gb} GB free). Training and 4-bit answering need most of the card.")
+      } else {
+        cli::cli_alert_success("GPU memory free: {info$gpu_free_gb} GB ({info$gpu_used_gb} GB in use elsewhere).")
+      }
+    }
   } else if (identical(dev, "mps")) {
     cli::cli_alert_success("Device: Apple MPS")
   } else {
@@ -149,6 +156,11 @@ dragon_check <- function() {
     cli::cli_bullets(c(
       "i" = "No GPU here? Train on a cloud one instead: {.code run <- dragon_bundle(...)} then {.code dragon_remote(run, \"colab\")}. Google Colab and Kaggle are free; Lightning AI and RunPod also work. See {.help dragonfarm::dragon_remote}."
     ))
+  }
+  others <- other_workers()
+  result$other_workers <- others
+  if (nrow(others) > 0) {
+    cli::cli_alert_warning("{nrow(others)} dragonfarm process{?es} from other R sessions still running: {describe_workers(others)}. Stop {cli::qty(nrow(others))}{?it/them} with {.code dragon_worker_stop(all = TRUE)} before training.")
   }
   if (!is.null(info$tier)) {
     cli::cli_alert_info("Default model for answering and question generation here: {.val {info$tier$model}}{if (isTRUE(info$tier$load_in_4bit)) ' in 4-bit' else ''} ({info$tier$label}).")

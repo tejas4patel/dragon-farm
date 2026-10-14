@@ -93,6 +93,31 @@ def wants_4bit(setting, model_id, kind, vram_gb, bnb_available=None):
     return size * 2.1 > 0.9 * float(vram_gb or 0)
 
 
+def gpu_memory_gb():
+    """(used, free) gigabytes on the first GPU as other processes see it, or
+    (None, None). nvidia-smi is asked first because torch's own answer counts
+    the CUDA context this process just created; torch is the fallback."""
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=memory.used,memory.total", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=10,
+        )
+        if out.returncode == 0:
+            used_mb, total_mb = [float(x) for x in out.stdout.strip().splitlines()[0].split(",")[:2]]
+            return round(used_mb / 1024, 2), round((total_mb - used_mb) / 1024, 2)
+    except Exception:
+        pass
+    try:
+        import torch
+
+        free, total = torch.cuda.mem_get_info(0)
+        return round((total - free) / 1024**3, 2), round(free / 1024**3, 2)
+    except Exception:
+        return None, None
+
+
 def describe():
     """Facts about the machine, used by dragon_check()."""
     import torch
@@ -115,6 +140,9 @@ def describe():
         info["vram_gb"] = torch.cuda.get_device_properties(0).total_memory / 1024**3
         info["bf16"] = bool(torch.cuda.is_bf16_supported())
         info["cuda_version"] = torch.version.cuda
+        used, free = gpu_memory_gb()
+        info["gpu_used_gb"] = used
+        info["gpu_free_gb"] = free
     elif info["mps_available"]:
         info["device"] = "mps"
         info["device_name"] = "Apple MPS"

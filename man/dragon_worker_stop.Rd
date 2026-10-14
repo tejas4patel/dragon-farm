@@ -4,7 +4,10 @@
 \alias{dragon_worker_stop}
 \title{Stop the local inference worker}
 \usage{
-dragon_worker_stop()
+dragon_worker_stop(all = FALSE)
+}
+\arguments{
+\item{all}{Also stop dragonfarm processes started by other R sessions.}
 }
 \value{
 \code{TRUE} invisibly.
@@ -13,4 +16,13 @@ dragon_worker_stop()
 The local backend keeps a Python process alive with the last models
 loaded. Call this to free the memory (GPU included). It restarts on the
 next generation call.
+}
+\details{
+A worker started by another R session (an app left open in a second
+console, a session that ended without stopping it) keeps its GPU memory
+and is invisible to this one. \code{dragon_worker_stop(all = TRUE)} finds every
+dragonfarm Python process on the machine and stops it: inference workers,
+question generators, and trainers alike, so check \code{\link[=dragon_runs]{dragon_runs()}} first if
+a run might be in progress. \code{\link[=dragon_check]{dragon_check()}} lists them without stopping
+anything.
 }

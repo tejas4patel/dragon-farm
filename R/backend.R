@@ -178,15 +178,32 @@ worker_alive <- function() {
 #' loaded. Call this to free the memory (GPU included). It restarts on the
 #' next generation call.
 #'
+#' A worker started by another R session (an app left open in a second
+#' console, a session that ended without stopping it) keeps its GPU memory
+#' and is invisible to this one. `dragon_worker_stop(all = TRUE)` finds every
+#' dragonfarm Python process on the machine and stops it: inference workers,
+#' question generators, and trainers alike, so check [dragon_runs()] first if
+#' a run might be in progress. [dragon_check()] lists them without stopping
+#' anything.
+#'
+#' @param all Also stop dragonfarm processes started by other R sessions.
 #' @return `TRUE` invisibly.
 #' @export
-dragon_worker_stop <- function() {
+dragon_worker_stop <- function(all = FALSE) {
   if (worker_alive()) {
     try(the$worker$write_input('{"op": "quit"}\n'), silent = TRUE)
     try(the$worker$wait(timeout = 5000), silent = TRUE)
     if (the$worker$is_alive()) try(the$worker$kill(), silent = TRUE)
   }
   the$worker <- NULL
+  if (isTRUE(all)) {
+    o <- other_workers()
+    if (nrow(o) > 0) {
+      ok <- vapply(o$pid, kill_pid, logical(1))
+      cli::cli_alert_success("Stopped {sum(ok)} dragonfarm process{?es} from other sessions: {describe_workers(o[ok, , drop = FALSE])}")
+      if (any(!ok)) cli::cli_alert_warning("Could not stop: {describe_workers(o[!ok, , drop = FALSE])}")
+    }
+  }
   invisible(TRUE)
 }
 
