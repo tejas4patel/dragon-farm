@@ -55,9 +55,28 @@ test_that("the training dataset puts retrieved excerpts in front of each kept qu
   expect_match(ds$data$context[1], "\\[1\\] policy.pdf . Returns\nThirty days.")
   rows <- dragonfarm:::dataset_messages(ds)
   expect_match(rows[[1]]$messages[[1]]$content, "Question: How long is the return window\\?$")
-  expect_equal(rows[[1]]$messages[[2]]$content, "Thirty days from delivery.")
+  # the answer cites the excerpt its pair was written from, as dragon_ask() would
+  expect_equal(rows[[1]]$messages[[2]]$content, "Thirty days from delivery. [1]")
+  expect_equal(dragon_questions_dataset(qa, k = 2, cite = FALSE)$data$answer[1], "Thirty days from delivery.")
   qa$keep[] <- FALSE
   expect_error(dragon_questions_dataset(qa), "No kept questions")
+})
+
+test_that("a pair whose source chunk was not retrieved gets that chunk as its last excerpt", {
+  f <- write_fake_set()
+  qa <- dragon_questions_load(write_fake_questions(f$dir))
+  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4) {
+    do.call(rbind, lapply(query, function(q) data.frame(
+      query = q, n = 1:2, id = c("zzz-998", "zzz-999"), source = "other.pdf", section = "", text = c("Unrelated one.", "Unrelated two."),
+      score = c(0.4, 0.3), similarity = c(0.4, 0.3), weight = 1, stringsAsFactors = FALSE)))
+  })
+  ds <- dragon_questions_dataset(qa, k = 2)
+  ctx <- ds$data$context[1]
+  expect_match(ctx, "^\\[1\\] other.pdf")
+  expect_true(grepl("Unrelated one.", ctx, fixed = TRUE))
+  expect_false(grepl("Unrelated two.", ctx))            # the weakest hit made room
+  expect_match(ctx, "\\[2\\] policy.pdf")           # for the chunk the pair came from
+  expect_match(ds$data$answer[1], " \\[2\\]$")
 })
 
 test_that("dragon_questions validates and refuses an empty selection for a teacher", {

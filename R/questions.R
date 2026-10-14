@@ -215,21 +215,46 @@ dragon_questions_list <- function(docs) {
 #' @param qa A `dragon_questions` data frame (only rows with `keep = TRUE` are used).
 #' @param docs The document set; defaults to the one the questions came from.
 #' @param k Excerpts per prompt.
+#' @param cite Append the excerpt number of the chunk each pair was written
+#'   from to its answer (`" [2]"`), the way [dragon_ask()] cites, so the tuned
+#'   model keeps citing. Answers that already contain a `[n]` marker are left
+#'   alone. The source chunk is always among the excerpts: when retrieval
+#'   misses it, it takes the last slot.
 #' @return A mapped `dragon_dataset` ready for [dragon_train()].
 #' @export
-dragon_questions_dataset <- function(qa, docs = NULL, k = 4) {
+dragon_questions_dataset <- function(qa, docs = NULL, k = 4, cite = TRUE) {
   if (!inherits(qa, "dragon_questions")) cli::cli_abort("{.arg qa} must come from {.fn dragon_questions}.")
   docs <- as_documents(docs %||% attr(qa, "documents"))
   kept <- qa[qa$keep, , drop = FALSE]
   if (!nrow(kept)) cli::cli_abort("No kept questions. Review the set and keep at least a few.")
   hits <- dragon_retrieve(docs, kept$question, k = k)
   if (is.null(hits$query)) hits$query <- kept$question[1]   # one question: dragon_retrieve drops the column
-  context <- vapply(seq_len(nrow(kept)), function(i) {
+  chunks <- dragon_chunks(docs)
+  built <- lapply(seq_len(nrow(kept)), function(i) {
     h <- hits[hits$query == kept$question[i], , drop = FALSE]
-    paste(sprintf("[%d] %s%s\n%s", h$n, h$source, ifelse(nzchar(h$section), paste0(" \u203a ", h$section), ""), h$text), collapse = "\n\n")
-  }, character(1))
-  df <- data.frame(question = kept$question, context = context, answer = kept$answer, source = kept$source,
-                   stringsAsFactors = FALSE)
+    at <- match(kept$chunk_id[i], h$id)
+    if (is.na(at)) {
+      # The chunk this pair was written from was not retrieved for its own
+      # question (about one prompt in ten on a manual). Training on that would
+      # teach the model to answer without support, so put the chunk in the last
+      # slot instead of the weakest hit.
+      src <- chunks[match(kept$chunk_id[i], chunks$id), , drop = FALSE]
+      if (nrow(src)) {
+        at <- max(1L, min(k, nrow(h) + if (nrow(h) < k) 1L else 0L))
+        if (nrow(h) >= at) h <- h[-at, , drop = FALSE]
+        h <- rbind(h[, c("id", "source", "section", "text"), drop = FALSE],
+                   data.frame(id = src$id, source = src$source, section = src$section, text = src$text, stringsAsFactors = FALSE))
+        at <- nrow(h)
+      }
+    }
+    h$n <- seq_len(nrow(h))
+    context <- paste(sprintf("[%d] %s%s\n%s", h$n, h$source, ifelse(nzchar(h$section), paste0(" \u203a ", h$section), ""), h$text), collapse = "\n\n")
+    answer <- kept$answer[i]
+    if (isTRUE(cite) && !is.na(at) && !grepl("\\[\\d+\\]", answer)) answer <- paste0(answer, " [", at, "]")
+    list(context = context, answer = answer)
+  })
+  df <- data.frame(question = kept$question, context = vapply(built, `[[`, "", "context"),
+                   answer = vapply(built, `[[`, "", "answer"), source = kept$source, stringsAsFactors = FALSE)
   ds <- dragon_dataset(df, name = paste0(docs$name, " questions"))
   dragon_map(ds, prompt = "Documentation excerpts:\n{context}\n\nQuestion: {question}", response = "answer")
 }

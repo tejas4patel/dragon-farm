@@ -1,5 +1,12 @@
 # dragonfarm (development version)
 
+* `dragon_questions_dataset()` now guarantees that the chunk a pair was
+  written from is among the excerpts in its training prompt (retrieval missed
+  it for about one pair in ten on R's manuals, which would have taught the
+  model to answer without support), and appends that excerpt's number to the
+  answer (`cite = TRUE`) so a tuned model keeps citing the way `dragon_ask()`
+  expects. A 0.5B trained on uncited pairs had stopped citing altogether.
+
 * Large requests to the local inference worker no longer hang. A retrieval
   for a few hundred questions (as `dragon_questions_dataset()` makes for a
   real document set) produced a reply longer than processx's line buffer,

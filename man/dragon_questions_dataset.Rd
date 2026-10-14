@@ -4,7 +4,7 @@
 \alias{dragon_questions_dataset}
 \title{Training data from reviewed questions}
 \usage{
-dragon_questions_dataset(qa, docs = NULL, k = 4)
+dragon_questions_dataset(qa, docs = NULL, k = 4, cite = TRUE)
 }
 \arguments{
 \item{qa}{A \code{dragon_questions} data frame (only rows with \code{keep = TRUE} are used).}
@@ -12,6 +12,12 @@ dragon_questions_dataset(qa, docs = NULL, k = 4)
 \item{docs}{The document set; defaults to the one the questions came from.}
 
 \item{k}{Excerpts per prompt.}
+
+\item{cite}{Append the excerpt number of the chunk each pair was written
+from to its answer (\code{" [2]"}), the way \code{\link[=dragon_ask]{dragon_ask()}} cites, so the tuned
+model keeps citing. Answers that already contain a \verb{[n]} marker are left
+alone. The source chunk is always among the excerpts: when retrieval
+misses it, it takes the last slot.}
 }
 \value{
 A mapped \code{dragon_dataset} ready for \code{\link[=dragon_train]{dragon_train()}}.
