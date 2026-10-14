@@ -69,10 +69,14 @@
   to 8 GB, a 7B in 4-bit at 8 GB and up. `bitsandbytes` is added to the
   Python requirements on Linux and Windows.
   `dragon_hardware(load_in_4bit = TRUE)` (QLoRA training) is no longer
-  refused on Windows. Measured on an 8 GB RTX 4060: one epoch of
+  refused on Windows. Measured on an 8 GB RTX 4060: three epochs of
   Qwen2.5-7B-Instruct on the 190 example tickets, batch 1 x 8, 512
-  tokens, gradient checkpointing on, took 26 minutes and peaked at 7.9
+  tokens, gradient checkpointing on, took 22 minutes with the weights
+  already cached (a cold first load adds about five) and peaked at 7.9
   GB, so an 8 GB card is the floor and longer sequences will not fit.
+  The result reproduced the example policies on held-out tickets where
+  the 0.5B had drifted (held-out loss 0.02 against 0.24); one epoch was
+  not enough and produced fluent replies that blended policies.
 
 - New:
   [`dragon_documents()`](https://dragonfarm.dev/reference/dragon_documents.md)
