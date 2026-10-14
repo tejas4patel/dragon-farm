@@ -2,6 +2,13 @@
 
 ## dragonfarm (development version)
 
+- Web pages without a `<nav>` or `<main>` tag no longer leak their menus
+  into the first chunk: blocks that are mostly links (four or more, over
+  60 percent of the text) are dropped, as are ARIA navigation, banner,
+  footer, and search regions. On r-project.org’s About page the menu
+  (“\[Home\] Download. CRAN R Project. About R Logo…”) was the first
+  chunk.
+
 - Word files read better, tested on the Word version of a 10-K. A unit
   note styled as a heading (“(amounts in millions)”, alone or in front
   of the real title) sets the unit instead of becoming a section; dot
