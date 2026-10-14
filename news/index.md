@@ -2,6 +2,15 @@
 
 ## dragonfarm (development version)
 
+- PDFs whose text comes out of the plain extractor as two-letter
+  fragments (“De”, “ce”, “mb”, “er”: typesetting that places every few
+  glyphs as its own text object, common in annual reports and brochures)
+  are now re-read page by page in pypdf’s layout mode. A 76-page annual
+  report went from 726 chunks of “Co st co Wh ol es al e” under section
+  names like “In” and “Mr” to 273 readable chunks under “Item 1A—Risk
+  Factors” and “Employee Base”. A single short word is no longer taken
+  for a heading.
+
 - Generating for several prompts at once
   ([`dragon_generate()`](https://dragonfarm.dev/reference/dragon_generate.md)
   with a vector, the post-training samples,
