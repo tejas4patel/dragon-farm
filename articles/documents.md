@@ -159,6 +159,12 @@ dragon_merge(run, "models/support-0.5b")        # a standalone model that loads 
 - Fine-tuning on a few dozen unreviewed machine-written pairs barely
   helped a 0.5B and made its mistakes confident. Review, or use a
   stronger generator, before you train.
+- Fine-tuning a 7B is possible on 8 GB with
+  `dragon_hardware(load_in_4bit = TRUE)` (QLoRA), but only just: batch
+  1, 512 tokens, gradient checkpointing, 26 minutes per epoch on 190
+  short tickets, 7.9 GB peak. For documents prompts of about a thousand
+  tokens, that card is not enough; use a 0.5B to 1.5B base model locally
+  or a cloud GPU for the 7B.
 - PDFs with tables read poorly for now (text comes out, structure does
   not). Markdown, HTML, Word, and spreadsheets come through cleanly.
 - The first question in a session loads the model. For a 7B in 4-bit

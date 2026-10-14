@@ -67,10 +67,12 @@
   reports whether 4-bit loading is available and which model it would
   reach for on this machine, by GPU memory: a 1.5B under 6 GB, a 3B at 6
   to 8 GB, a 7B in 4-bit at 8 GB and up. `bitsandbytes` is added to the
-  Python requirements on Linux and Windows. The earlier
+  Python requirements on Linux and Windows.
   `dragon_hardware(load_in_4bit = TRUE)` (QLoRA training) is no longer
-  refused on Windows, but training a 7B that way has not been measured
-  yet.
+  refused on Windows. Measured on an 8 GB RTX 4060: one epoch of
+  Qwen2.5-7B-Instruct on the 190 example tickets, batch 1 x 8, 512
+  tokens, gradient checkpointing on, took 26 minutes and peaked at 7.9
+  GB, so an 8 GB card is the floor and longer sequences will not fit.
 
 - New:
   [`dragon_documents()`](https://dragonfarm.dev/reference/dragon_documents.md)
