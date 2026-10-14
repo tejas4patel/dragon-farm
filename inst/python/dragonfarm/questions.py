@@ -39,9 +39,46 @@ META = re.compile(r"\b(the passage|this passage|the text|this text|the document|
 GROUNDING_THRESHOLD = 0.55
 
 
+MAX_PASSAGE_WORDS = 450
+
+
+def passage(chunk, max_words=MAX_PASSAGE_WORDS):
+    """The chunk text as shown to the generator: whole for prose, cut for a long code block."""
+    words = chunk["text"].split()
+    if len(words) <= max_words:
+        return chunk["text"]
+    return " ".join(words[:max_words]) + " ..."
+
+
 def prompt_for(chunk, n):
     fmt = "\n".join(f"Q{i}: ...\nA{i}: ..." for i in range(1, n + 1))
-    return PROMPT.format(n=n, source=chunk["source"], section=chunk.get("section") or "", text=chunk["text"]) + fmt
+    return PROMPT.format(n=n, source=chunk["source"], section=chunk.get("section") or "", text=passage(chunk)) + fmt
+
+
+def generate_batch(batch, gen_fn, log=None):
+    """Outputs for a batch of chunks as (chunk id, text), surviving GPU memory errors:
+    a batch that does not fit is retried one chunk at a time, and a single chunk that
+    still does not fit is skipped and reported. gen_fn(list of chunks) -> list of texts."""
+    from .evaluate_utils import free_gpu_memory, is_oom
+
+    try:
+        return [(c["id"], t) for c, t in zip(batch, gen_fn(batch))], []
+    except Exception as e:
+        if not is_oom(e) or len(batch) == 0:
+            raise
+        free_gpu_memory()
+    if len(batch) == 1:
+        if log:
+            log(f"[dragonfarm] chunk {batch[0]['id']} ({batch[0].get('source')}) does not fit in GPU memory even alone; skipped")
+        return [], [batch[0]["id"]]
+    if log:
+        log(f"[dragonfarm] batch of {len(batch)} ran out of GPU memory; retrying one chunk at a time")
+    outputs, skipped = [], []
+    for c in batch:
+        o, sk = generate_batch([c], gen_fn, log)
+        outputs += o
+        skipped += sk
+    return outputs, skipped
 
 
 def parse(output):
@@ -189,17 +226,23 @@ def generate(set_dir, out, model_id, n=3, load_in_4bit="auto", batch_size=4, max
     print(f"[dragonfarm] writing questions for {len(chunks)} chunks with {model_id}" + (" (4-bit)" if four_bit else ""),
           file=sys.stderr, flush=True)
 
-    outputs, rows, seen = [], [], []
-    for i in range(0, len(chunks), batch_size):
-        batch = chunks[i:i + batch_size]
+    def gen_fn(batch):
         texts = [tok.apply_chat_template([{"role": "user", "content": prompt_for(c, n)}], tokenize=False,
                                          add_generation_prompt=True) for c in batch]
-        enc = tok(texts, return_tensors="pt", padding=True).to(hw.device)
+        enc = tok(texts, return_tensors="pt", padding=True, truncation=True, max_length=2048).to(hw.device)
         with torch.no_grad():
             gen = model.generate(**enc, max_new_tokens=max_new_tokens, do_sample=False, pad_token_id=tok.pad_token_id)
-        for c, seq in zip(batch, gen):
-            text = tok.decode(seq[enc["input_ids"].shape[1]:], skip_special_tokens=True)
-            outputs.append((c["id"], text))
+        return [tok.decode(seq[enc["input_ids"].shape[1]:], skip_special_tokens=True) for seq in gen]
+
+    def log(msg):
+        print(msg, file=sys.stderr, flush=True)
+
+    outputs, rows, skipped = [], [], []
+    for i in range(0, len(chunks), batch_size):
+        batch = chunks[i:i + batch_size]
+        o, sk = generate_batch(batch, gen_fn, log)
+        outputs += o
+        skipped += sk
         # Filter what we have so far so the progress file can show the yield as it grows.
         rows, _ = filter_outputs(chunks, outputs)
         write_rows(out, rows)
@@ -210,7 +253,8 @@ def generate(set_dir, out, model_id, n=3, load_in_4bit="auto", batch_size=4, max
     with open(Path(str(out) + ".raw.json"), "w", encoding="utf-8") as f:
         json.dump([{"chunk_id": cid, "output": text} for cid, text in outputs], f, ensure_ascii=False)
     write_json(Path(str(out) + ".meta.json"), {**meta, "n_pairs": len(rows), "n_kept": sum(r["keep"] for r in rows),
-                                                 "unparsed": unparsed, "finished_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+                                                 "unparsed": unparsed, "skipped_oom": skipped,
+                                                 "finished_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
     write_json(progress_path, {"state": "done", "done": len(chunks), "total": len(chunks), "pairs": len(rows),
                                "kept": sum(r["keep"] for r in rows)})
 

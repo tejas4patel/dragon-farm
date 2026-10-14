@@ -1,5 +1,12 @@
 # dragonfarm (development version)
 
+* `dragon_questions()` no longer dies when one batch runs out of GPU memory:
+  the batch is retried one chunk at a time, a chunk that does not fit even
+  alone is skipped and listed in the set's metadata (`skipped_oom`), and the
+  passage shown to the generator is capped at 450 words so a long code block
+  cannot blow the budget. Seen with the 7B generator on an 8 GB card, 236
+  chunks into R's own manuals.
+
 * Reading PDFs is cleaner, measured on R's own manuals: running page headers
   and footers, page numbers, and contents lines are dropped; a sentence that
   breaks across a page is rejoined; code prompts, lead-in lines before an
