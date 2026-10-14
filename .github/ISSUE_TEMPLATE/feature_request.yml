@@ -1,0 +1,27 @@
+name: Feature request
+description: Something dragonfarm should do, or do differently
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: The task in your own words, and where dragonfarm gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would help
+      description: A function, an option, a change in the app. Rough is fine.
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - The R functions
+        - The app
+        - Documents and retrieval
+        - Training and evaluation
+        - Documentation
+        - Not sure

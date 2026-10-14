@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation and articles
+    url: https://dragonfarm.dev
+    about: The quickstart, the documents walkthrough, and the reference live here.
+  - name: Setup problems
+    url: https://dragonfarm.dev/articles/under-the-hood.html
+    about: Driver versions, GPU memory per model, and environment variables, before opening an issue.

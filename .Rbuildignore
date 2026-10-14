@@ -20,3 +20,4 @@
 ^.*\.Rcheck$
 ^dragonfarm_.*\.tar\.gz$
 ^vignettes/articles$
+^CONTRIBUTING\.md$

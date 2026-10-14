@@ -1,0 +1,38 @@
+name: Bug report
+description: Something did not work as documented
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead. Paste error messages as text.
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Code to reproduce
+      description: The smallest R code that shows the problem. If it happened in the app, the steps you took.
+      render: r
+  - type: textarea
+    id: check
+    attributes:
+      label: Output of dragon_check()
+      description: Run `dragonfarm::dragon_check()` and paste everything it prints.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Run log (training problems)
+      description: For a training run, the last 50 lines of `log.txt` from the run folder under `dragon_runs_dir()`.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: dragonfarm version and how you installed it
+      placeholder: "0.3.4 from CRAN / dev from GitHub"
+    validations:
+      required: true
