@@ -115,8 +115,11 @@ run <- dragon_train(ds, "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
 
 Each training prompt is the retrieved excerpts followed by the question,
 retrieved by the question rather than taken from the chunk it was written
-from, so training matches what happens at answer time. This matters more
-than it sounds. In the prototypes, a model trained this way recalled 89
+from, so training matches what happens at answer time; the chunk the pair
+came from is always among them, and each answer ends with that excerpt's
+number, so the tuned model keeps citing the way `dragon_ask()` expects (on
+R's own manuals a model trained on uncited pairs stopped citing altogether).
+This matters more than it sounds. In the prototypes, a model trained this way recalled 89
 percent of the facts in a held-out test against 68 percent for a plain
 fine-tune, and when the documents were edited after training it followed the
 new text in 88 percent of answers while the plain fine-tune kept repeating
