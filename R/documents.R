@@ -168,7 +168,7 @@ dragon_chunks <- function(docs) {
   if (!file.exists(path)) {
     return(data.frame(id = character(), source = character(), section = character(), text = character(),
                       n_words = integer(), quoted = logical(), code = logical(), weight = numeric(),
-                      stringsAsFactors = FALSE))
+                      page = integer(), stringsAsFactors = FALSE))
   }
   recs <- read_jsonl(path)
   data.frame(
@@ -180,8 +180,19 @@ dragon_chunks <- function(docs) {
     quoted = vapply(recs, function(r) isTRUE(r$quoted), NA),
     code = vapply(recs, function(r) isTRUE(r$code), NA),
     weight = vapply(recs, function(r) as.numeric(r$weight %||% 1), 0),
+    page = vapply(recs, function(r) as.integer(r$page %||% NA_integer_), 0L),
     stringsAsFactors = FALSE
   )
+}
+
+# "report.pdf, p. 12 \u203a Risk Factors": where an excerpt came from, as
+# shown in answers, footnotes, and the excerpt headers of a prompt.
+source_label <- function(source, section, page = NA_integer_) {
+  page <- rep_len(as.integer(page %||% NA_integer_), length(source))
+  section <- rep_len(section %||% "", length(source))
+  section[is.na(section)] <- ""
+  paste0(source, ifelse(is.na(page), "", paste0(", p. ", page)),
+         ifelse(nzchar(section), paste0(" \u203a ", section), ""))
 }
 
 as_documents <- function(x) {

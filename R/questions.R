@@ -242,13 +242,15 @@ dragon_questions_dataset <- function(qa, docs = NULL, k = 4, cite = TRUE) {
       if (nrow(src)) {
         at <- max(1L, min(k, nrow(h) + if (nrow(h) < k) 1L else 0L))
         if (nrow(h) >= at) h <- h[-at, , drop = FALSE]
-        h <- rbind(h[, c("id", "source", "section", "text"), drop = FALSE],
-                   data.frame(id = src$id, source = src$source, section = src$section, text = src$text, stringsAsFactors = FALSE))
+        if (is.null(h$page)) h$page <- NA_integer_
+        h <- rbind(h[, c("id", "source", "section", "page", "text"), drop = FALSE],
+                   data.frame(id = src$id, source = src$source, section = src$section, page = src$page,
+                              text = src$text, stringsAsFactors = FALSE))
         at <- nrow(h)
       }
     }
     h$n <- seq_len(nrow(h))
-    context <- paste(sprintf("[%d] %s%s\n%s", h$n, h$source, ifelse(nzchar(h$section), paste0(" \u203a ", h$section), ""), h$text), collapse = "\n\n")
+    context <- paste(sprintf("[%d] %s\n%s", h$n, source_label(h$source, h$section, h$page %||% NA), h$text), collapse = "\n\n")
     answer <- kept$answer[i]
     if (isTRUE(cite) && !is.na(at) && !grepl("\\[\\d+\\]", answer)) answer <- paste0(answer, " [", at, "]")
     list(context = context, answer = answer)

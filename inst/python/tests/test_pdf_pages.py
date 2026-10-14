@@ -97,3 +97,19 @@ def test_single_short_words_are_not_headings():
     text = D.pages_to_text(pages)
     headings = [l for l in text.split("\n\n") if l.startswith("## ")]
     assert headings == ["## Dear Costco Shareholders"], headings
+
+
+def test_pdf_chunks_record_the_page_they_start_on():
+    pages = ["## Letter\n\n" + "Sales grew five percent this year. " * 30,
+             "## Results\n\n" + "Net income rose seventeen percent. " * 30,
+             "Membership fees were 4.8 billion dollars. " * 10]
+    chunks = D.chunk_text(D.pages_to_text(pages), "report.pdf", max_words=170, min_words=20)
+    assert all("\x01" not in c["text"] for c in chunks)
+    pages_seen = [c.get("page") for c in chunks]
+    assert pages_seen[0] == 1 and 2 in pages_seen and pages_seen == sorted(pages_seen)
+    assert {c["section"] for c in chunks if c.get("page") == 2} == {"Results"}
+
+
+def test_single_page_and_non_pdf_text_has_no_page():
+    chunks = D.chunk_text("## A\n\n" + "word " * 50, "notes.md", min_words=10)
+    assert all("page" not in c for c in chunks)

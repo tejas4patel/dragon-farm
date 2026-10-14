@@ -45,14 +45,15 @@ dragon_retrieve <- function(docs, query, k = 4) {
       h <- res$hits[[qi]][[n]]
       ch <- chunks[match(h$id, chunks$id), , drop = FALSE]
       rows[[length(rows) + 1]] <- data.frame(
-        query = query[qi], n = n, id = h$id, source = ch$source, section = ch$section, text = ch$text,
-        score = h$score, similarity = h$similarity, weight = ch$weight, stringsAsFactors = FALSE
+        query = query[qi], n = n, id = h$id, source = ch$source, section = ch$section, page = ch$page,
+        text = ch$text, score = h$score, similarity = h$similarity, weight = ch$weight, stringsAsFactors = FALSE
       )
     }
   }
   out <- if (length(rows)) do.call(rbind, rows) else data.frame(
     query = character(), n = integer(), id = character(), source = character(), section = character(),
-    text = character(), score = numeric(), similarity = numeric(), weight = numeric(), stringsAsFactors = FALSE)
+    page = integer(), text = character(), score = numeric(), similarity = numeric(), weight = numeric(),
+    stringsAsFactors = FALSE)
   if (length(query) == 1L) out$query <- NULL
   rownames(out) <- NULL
   out
@@ -133,8 +134,7 @@ print.dragon_answer <- function(x, ...) {
     cat("\n")
     for (i in seq_len(nrow(src))) {
       mark <- if (isTRUE(src$cited[i])) "*" else " "
-      sec <- if (nzchar(src$section[i])) paste0(" \u203a ", src$section[i]) else ""
-      cat(sprintf("[%d]%s %s%s\n", src$n[i], mark, src$source[i], sec))
+      cat(sprintf("[%d]%s %s\n", src$n[i], mark, source_label(src$source[i], src$section[i], src$page[i] %||% NA)))
     }
     if (any(src$cited)) cat("* cited in the answer. Excerpt text is in $sources$text.\n")
   }
@@ -161,8 +161,7 @@ documents_system <- function(extra = NULL) {
 documents_prompt <- function(question, hits) {
   if (!nrow(hits)) return(paste0("No excerpts were found in the documents.\n\nQuestion: ", question))
   parts <- vapply(seq_len(nrow(hits)), function(i) {
-    where <- if (nzchar(hits$section[i])) paste0(hits$source[i], " \u203a ", hits$section[i]) else hits$source[i]
-    sprintf("[%d] %s\n%s", hits$n[i], where, hits$text[i])
+    sprintf("[%d] %s\n%s", hits$n[i], source_label(hits$source[i], hits$section[i], hits$page[i] %||% NA), hits$text[i])
   }, character(1))
   paste0("Excerpts from the documents:\n\n", paste(parts, collapse = "\n\n"), "\n\nQuestion: ", question)
 }
@@ -172,8 +171,7 @@ documents_prompt <- function(question, hits) {
 sources_footnotes <- function(src) {
   if (is.null(src) || !nrow(src)) return(NULL)
   items <- lapply(seq_len(nrow(src)), function(i) {
-    where <- if (nzchar(src$section[i])) paste0(src$source[i], " \u203a ", src$section[i]) else src$source[i]
-    label <- sprintf("[%d] %s", src$n[i], where)
+    label <- sprintf("[%d] %s", src$n[i], source_label(src$source[i], src$section[i], src$page[i] %||% NA))
     shiny::tags$details(class = "source",
       shiny::tags$summary(if (isTRUE(src$cited[i])) shiny::strong(label) else label),
       shiny::div(class = "source-text", src$text[i])

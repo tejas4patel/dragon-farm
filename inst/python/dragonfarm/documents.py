@@ -62,6 +62,11 @@ def version_heading(section):
     words = len(rest.split())
     return prefixed or words == 0 or (parts >= 3 and words <= 2)
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
+# Bumped whenever a reader or the chunker changes what a file turns into, so a
+# set built by an older version is re-read rather than reused by checksum.
+READER_VERSION = 2
+# One per PDF page in the text handed to chunk_text(); never shown to anyone.
+PAGE_MARK = re.compile(r"^\x01page (\d+)$")
 ANCHOR_GLYPH = re.compile(r"\s*(?:[\u00b6\u00a7#\u2693\U0001f517]|Permalink(?: to this heading)?)+\s*$", re.I)
 JUNK = re.compile(r"[-​‌‍﻿]")
 USER_AGENT = "dragonfarm/0.4 (+https://dragonfarm.dev)"
@@ -260,10 +265,20 @@ def pages_to_text(pages):
             paras.append(" ".join(buf))
             buf.clear()
 
-    def open_sentence():
-        return bool(paras) and not paras[-1].startswith("## ") and not re.search(r"[.:?!)]$", paras[-1])
+    def last_text():
+        for k in range(len(paras) - 1, -1, -1):
+            if not PAGE_MARK.match(paras[k]):
+                return k
+        return None
 
-    for text in pages:
+    def open_sentence():
+        k = last_text()
+        return k is not None and not paras[k].startswith("## ") and not re.search(r"[.:?!)]$", paras[k])
+
+    for page_no, text in enumerate(pages, 1):
+        flush()
+        if len(pages) > 1:
+            paras.append("\x01page %d" % page_no)
         lines = [l.strip() for l in text.splitlines()]
         nonblank = [i for i, l in enumerate(lines) if l]
         edges = set(nonblank[:2] + nonblank[-2:])
@@ -279,8 +294,9 @@ def pages_to_text(pages):
             if page_start:
                 page_start = False
                 if open_sentence() and not re.match(r"^\d+(\.\d+)*\s", line):
-                    # The sentence ran off the previous page: carry on with it.
-                    buf.append(paras.pop())
+                    # The sentence ran off the previous page: carry on with it
+                    # (it is then credited to the page where it ends).
+                    buf.append(paras.pop(last_text()))
                     buf.append(line)
                     if re.search(r"[.:]$", line) and len(line) < 60:
                         flush()
@@ -442,6 +458,7 @@ def chunk_text(text, source, max_words=170, min_words=35):
                 units.append(block)
 
     chunks, section, cur, cur_w = [], "", [], 0
+    page, cur_page = None, None
 
     def emit():
         nonlocal cur, cur_w
@@ -455,6 +472,8 @@ def chunk_text(text, source, max_words=170, min_words=35):
         major = max(kinds, key=kinds.get) if kinds else "text"
         rec = {"source": source, "section": section, "text": body, "n_words": n,
                "quoted": major == "quote", "code": major == "code"}
+        if cur_page is not None:
+            rec["page"] = cur_page
         if rec["code"] or n >= min_words:
             # Code blocks stand on their own however short: they are self-contained and
             # folding them into prose would hide the marker that lets generation skip them.
@@ -471,6 +490,10 @@ def chunk_text(text, source, max_words=170, min_words=35):
         cur, cur_w = [], 0
 
     for u in units:
+        pm = PAGE_MARK.match(u)
+        if pm:
+            page = int(pm.group(1))
+            continue
         m = re.match(r"^(#{1,6})\s+(.*)", u)
         if m and "\n" not in u and len(u) <= 200:
             emit()
@@ -479,6 +502,8 @@ def chunk_text(text, source, max_words=170, min_words=35):
         w = words(u)
         if cur and cur_w + w > max_words:
             emit()
+        if not cur:
+            cur_page = page
         cur.append((u, _unit_kind(u)))
         cur_w += w
     emit()
@@ -555,7 +580,8 @@ def build(paths, out_dir, name, max_words=170, min_words=35, log=None):
     log = log or (lambda *_: None)
     old = load_manifest(out_dir)
     old_sources = {s["locator"]: s for s in (old or {}).get("sources", [])}
-    same_chunking = bool(old) and old.get("chunking") == {"max_words": max_words, "min_words": min_words}
+    chunking = {"max_words": max_words, "min_words": min_words, "reader": READER_VERSION}
+    same_chunking = bool(old) and old.get("chunking") == chunking
     old_chunks = load_chunks(out_dir) if same_chunking else []
 
     sources, all_chunks = [], []
@@ -609,7 +635,7 @@ def build(paths, out_dir, name, max_words=170, min_words=35, log=None):
         "name": name,
         "created_at": (old or {}).get("created_at") or now,
         "updated_at": now,
-        "chunking": {"max_words": max_words, "min_words": min_words},
+        "chunking": chunking,
         "sources": sources,
         "n_chunks": len(all_chunks),
         "index": (old or {}).get("index") if same_chunking and n_reused == len(sources) and all(not s["error"] for s in sources) else None,
