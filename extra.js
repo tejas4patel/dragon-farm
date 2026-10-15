@@ -59,6 +59,15 @@
       : { width: 1000, height: 156, showSub: true };
     var cur = 0, idx = 0, timer = null, resumeTimer = null;
 
+    // The stepper sits on the hero, which is light in light mode; redraw it
+    // with matching colours when the theme switch is used.
+    var LIGHT = { bg: "#FFFFFF", check: "#1B1206", track: "#E3DED5", muted: "#8A93A8", text: "#0B1020",
+                  amber: "#F08A00", coral: "#E4502A", ring: "#D5CFC4" };
+    function palette() { return document.documentElement.getAttribute("data-bs-theme") === "light" ? LIGHT : {}; }
+    opts.colors = palette();
+    new MutationObserver(function () { opts.colors = palette(); P.render(d3, svg, cur, opts); })
+      .observe(document.documentElement, { attributes: true, attributeFilter: ["data-bs-theme"] });
+
     P.render(d3, svg, 0, opts);
     function show(i) {
       shots.forEach(function (im, k) { im.classList.toggle("on", k === i); });
