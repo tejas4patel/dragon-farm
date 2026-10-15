@@ -32,7 +32,7 @@ spreadsheet.
   example tickets, so the route can be tried before bringing your own
   files.
 - PDFs. Pages whose text comes out of the standard extractor as
-  two-letter fragments (“Co st co Wh ol es al e”, common in annual
+  two-letter fragments (`Co st co Wh ol es al e`, common in annual
   reports) are re-read in a layout-aware mode: a 76-page annual report
   went from 726 unreadable chunks to 273 readable ones under real
   section names. Running headers, page numbers, contents entries with
@@ -49,9 +49,10 @@ spreadsheet.
   “\$4,409”.
 - Word. Unit notes styled as headings set the unit instead of becoming a
   section; short paragraphs set entirely in bold or italic become
-  headings when prose follows them (a 10-K’s sub-headings are italic),
-  while table column labels, which look the same, stay text. The Word
-  annual report went from one 38-chunk “Note 1” to 123 real sections.
+  headings when prose follows them (the sub-headings of a 10-K are
+  italic), while table column labels, which look the same, stay text.
+  The Word annual report went from one 38-chunk “Note 1” to 123 real
+  sections.
 - Web pages. Blocks made mostly of links and regions marked as
   navigation, banner, footer, or search are dropped, so a page without a
   `<nav>` tag no longer leaks its menu into the first chunk. Heading
@@ -84,15 +85,15 @@ spreadsheet.
   gains `documents` and `k`; `$sources()` shows the excerpts behind the
   last reply.
 - Retrieval is hybrid by default: the embedding ranking is combined with
-  a keyword (BM25) ranking, counting only chunks that share a word with
-  the question, so exact terms and figures a small embedding model ranks
-  a few places too low still reach the answer. The share of questions
-  whose source chunk was among the four excerpts rose from 90.6 to 93.0
-  percent on R’s manuals, 88 to 100 on the package documentation, 91 to
-  100 on questions about an annual report, and 83 to 100 on a
-  spreadsheet. `dragon_retrieve(method = "dense")` keeps the embedding
-  ranking alone, and `scripts/retrieval_eval.py` measures both on any
-  indexed sets.
+  a keyword (`BM25`) ranking, counting only chunks that share a word
+  with the question, so exact terms and figures a small embedding model
+  ranks a few places too low still reach the answer. The share of
+  questions whose source chunk was among the four excerpts rose from
+  90.6 to 93.0 percent on R’s manuals, 88 to 100 on the package
+  documentation, 91 to 100 on questions about an annual report, and 83
+  to 100 on a spreadsheet. `dragon_retrieve(method = "dense")` keeps the
+  embedding ranking alone, and `scripts/retrieval_eval.py` measures both
+  on any indexed sets.
 - On the annual report the default 7B in 4-bit answered 12 of 13 factual
   questions correctly from the right page; the miss was a total printed
   inside a map graphic, and it said so rather than guessing.
