@@ -85,7 +85,7 @@
 <li>
 <code><a href="https://pkgdown.r-lib.org/reference/check_pkgdown.html" class="external-link">pkgdown::check_pkgdown()</a></code> if you added an exported function; every exported topic has to appear in the reference index in <code>_pkgdown.yml</code>, and a unit test enforces this.</li>
 <li>Add a line to <code>NEWS.md</code> for anything a user would notice.</li>
-<li>Changed how a file is read or chunked (<code>inst/python/dragonfarm/documents.py</code>)? Bump <code>READER_VERSION</code> there. Sets are reused by checksum, so without the bump existing document sets keep the chunks the old code produced. Then rerun the offline retrieval check on a few real documents before and after.</li>
+<li>Changed how a file is read or chunked (<code>inst/python/dragonfarm/documents.py</code>)? Bump <code>READER_VERSION</code> there. Sets are reused by checksum, so without the bump existing document sets keep the chunks the old code produced. Then run <code>python scripts/retrieval_eval.py</code> with the package’s Python before and after on a few real document sets; it prints <a href="mailto:hit@1" class="email">hit@1</a>/4/8 for both search modes.</li>
 <li>Add a test. Shiny modules are tested with <code><a href="https://rdrr.io/pkg/shiny/man/testServer.html" class="external-link">shiny::testServer</a></code>; Python helpers have tests under <code>inst/python/tests</code>.</li>
 <li>Never commit credentials, API keys, or tokens, including in scripts under <code>scripts/</code>. API keys come from environment variables such as <code>ANTHROPIC_API_KEY</code>, never from a file in the repository.</li>
 </ul></div>
