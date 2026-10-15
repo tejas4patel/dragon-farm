@@ -54,8 +54,10 @@ suite on a CPU runner, so a change that passes locally should pass there.
 - Add a line to `NEWS.md` for anything a user would notice.
 - Changed how a file is read or chunked (`inst/python/dragonfarm/documents.py`)?
   Bump `READER_VERSION` there. Sets are reused by checksum, so without the bump
-  existing document sets keep the chunks the old code produced. Then rerun the
-  offline retrieval check on a few real documents before and after.
+  existing document sets keep the chunks the old code produced. Then run
+  `python scripts/retrieval_eval.py` with the package's Python before and
+  after on a few real document sets; it prints hit@1/4/8 for both search
+  modes.
 - Add a test. Shiny modules are tested with `shiny::testServer`; Python
   helpers have tests under `inst/python/tests`.
 - Never commit credentials, API keys, or tokens, including in scripts under
