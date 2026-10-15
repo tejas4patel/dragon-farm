@@ -44,3 +44,28 @@ preset_for <- function(model) {
   hit <- p[p$id == model, , drop = FALSE]
   if (nrow(hit)) hit else NULL
 }
+
+# Parameter count in billions read from a model id ("Qwen2.5-7B-Instruct" ->
+# 7, "SmolLM2-135M-Instruct" -> 0.135), or NA when the id does not say. Same
+# rule as model_size_b() in the Python package.
+model_size_b <- function(model_id) {
+  name <- basename(sub("/+$", "", as.character(model_id %||% "")))
+  m <- regmatches(name, gregexpr("[0-9]+([.][0-9]+)?[bBmM](?![A-Za-z])", name, perl = TRUE))[[1]]
+  if (!length(m)) return(NA_real_)
+  num <- as.numeric(sub("[bBmM]$", "", m))
+  unit <- tolower(substring(m, nchar(m)))
+  max(ifelse(unit == "m", num / 1000, num))
+}
+
+# Should training load this model in 4-bit (QLoRA)? Training needs room for
+# activations as well as the weights, so the bar is lower than for answering:
+# bf16 weights (about 2.1 GB per billion parameters) over 60% of GPU memory.
+# On an 8 GB card a 3B or 7B trains in 4-bit and a 1.5B does not. NA when
+# there is no NVIDIA GPU or the model id does not give a size.
+suggest_train_4bit <- function(model_id, hw = NULL) {
+  size <- model_size_b(model_id)
+  if (is.na(size)) return(NA)
+  if (is.null(hw)) return(if (size >= 6) TRUE else NA)
+  if (!identical(hw$device, "cuda")) return(NA)
+  size * 2.1 > 0.6 * as.numeric(hw$vram_gb %||% 0)
+}

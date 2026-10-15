@@ -14,6 +14,8 @@ mod_train_ui <- function(id) {
         shiny::numericInput(ns("batch_size"), "Batch size", value = 4, min = 1, step = 1),
         shiny::numericInput(ns("grad_accum"), "Gradient accumulation", value = 4, min = 1, step = 1)
       ),
+      shiny::checkboxInput(ns("four_bit"), "Load the model in 4-bit (QLoRA): fits a 7B on an 8 GB NVIDIA card", value = FALSE),
+      shiny::uiOutput(ns("four_bit_hint")),
       bslib::accordion(
         open = FALSE,
         bslib::accordion_panel(
@@ -148,6 +150,25 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       dragon_run(dir)
     })
 
+    # Tick 4-bit (and gradient checkpointing with it) when the chosen model's
+    # full-precision weights would not leave room to train on this GPU; untick
+    # it again when a smaller model is chosen.
+    shiny::observeEvent(list(state$model$id, state$hardware), {
+      s <- suggest_train_4bit(state$model$id, state$hardware)
+      if (is.na(s)) return()
+      shiny::updateCheckboxInput(session, "four_bit", value = s)
+      if (isTRUE(s)) shiny::updateCheckboxInput(session, "grad_ckpt", value = TRUE)
+    }, ignoreNULL = FALSE)
+
+    output$four_bit_hint <- shiny::renderUI({
+      hw <- state$hardware
+      if (!isTRUE(input$four_bit)) return(NULL)
+      if (!is.null(hw) && !identical(hw$device, "cuda")) {
+        return(shiny::p(class = "small text-danger", "4-bit needs an NVIDIA GPU; this machine has none. Untick it, or train on a cloud GPU."))
+      }
+      shiny::p(class = "hint", "The base model loads in 4-bit and the LoRA adapter trains in full precision. On an 8 GB card a 7B trains at about one batch of 16 rows every 13 seconds on short prompts, minutes per batch on long document prompts.")
+    })
+
     problems <- shiny::reactive({
       out <- character()
       if (is.null(state$dataset)) out <- c(out, "Load a table of training rows (Data tab; from the Documents tab, follow \"Have a table instead?\").")
@@ -169,7 +190,8 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       b <- base()
       shiny::tags$ul(class = "checklist ok",
         shiny::tags$li(sprintf("%d %s, %d held out", n - n_eval, switch(kind(), pairs = "training pairs", prompts = "prompts", "training rows"), n_eval)),
-        shiny::tags$li(if (is.null(b)) shiny::code(state$model$id) else shiny::span("Continue from run ", shiny::code(b$id))),
+        shiny::tags$li(if (is.null(b)) shiny::span(shiny::code(state$model$id), if (isTRUE(input$four_bit)) " in 4-bit")
+                       else shiny::span("Continue from run ", shiny::code(b$id))),
         shiny::tags$li(if (is_pairs()) sprintf("%s, beta %s", toupper(input$method %||% "dpo"), input$beta %||% 0.1)
                        else if (is_rl()) sprintf("GRPO, %d samples per prompt, rewards: %s", input$group_size %||% 4, paste(input$reward_types %||% "numeric", collapse = ", "))
                        else "Supervised fine-tuning"),
@@ -230,7 +252,7 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       run <- tryCatch({
         s <- settings()
         shiny::withProgress(message = "Launching trainer", detail = "Preparing Python on first use", {
-          launch(s, dragon_hardware(device = input$device, dtype = input$dtype))
+          launch(s, dragon_hardware(device = input$device, dtype = input$dtype, load_in_4bit = isTRUE(input$four_bit)))
         })
       }, error = function(e) { notify_error(e); NULL })
       if (!is.null(run)) {

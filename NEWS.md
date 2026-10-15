@@ -118,6 +118,10 @@ Word, live web pages, and a spreadsheet.
   drop slots and the Try it cards are no longer clipped. A message now says
   to wait for "Upload complete" when Read and index is pressed while a large
   file is still uploading.
+* The Training step can load the model in 4-bit (QLoRA), so a 7B trains from
+  the app on an 8 GB NVIDIA card. The box ticks itself, with gradient
+  checkpointing, when the chosen model's full-precision weights would crowd
+  the GPU (a 3B or 7B on 8 GB), and says so when there is no NVIDIA GPU.
 
 ## Hardware and models
 
