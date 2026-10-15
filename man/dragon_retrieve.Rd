@@ -15,7 +15,7 @@ fly if it has no index yet.}
 \item{k}{Chunks to return per query.}
 
 \item{method}{\code{"hybrid"} (the default) ranks chunks by combining the
-embedding similarity with a keyword (BM25) match, which catches exact
+embedding similarity with a keyword (\code{BM25}) match, which catches exact
 terms and figures a small embedding model ranks too low; \code{"dense"} uses
 the embedding alone. On three document sets hybrid raised the share of
 questions whose source chunk was among the top four from 90.6 to 93.0,

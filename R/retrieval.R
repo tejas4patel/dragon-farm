@@ -28,7 +28,7 @@ dragon_index <- function(docs, model = "BAAI/bge-small-en-v1.5", force = FALSE) 
 #' @param query One question, or several.
 #' @param k Chunks to return per query.
 #' @param method `"hybrid"` (the default) ranks chunks by combining the
-#'   embedding similarity with a keyword (BM25) match, which catches exact
+#'   embedding similarity with a keyword (`BM25`) match, which catches exact
 #'   terms and figures a small embedding model ranks too low; `"dense"` uses
 #'   the embedding alone. On three document sets hybrid raised the share of
 #'   questions whose source chunk was among the top four from 90.6 to 93.0,
