@@ -72,6 +72,22 @@ test_that("background pipelines serialize their spec and build a loader script",
   expect_match(script, "dragonfarm", fixed = TRUE)
 })
 
+test_that("a background pipeline runs from a script file, not Rscript -e", {
+  run <- fixture_with_samples()
+  runs <- tempfile("runs-")
+  dir.create(runs)
+  launched <- NULL
+  testthat::local_mocked_bindings(launch_rscript = function(script_path, log_path) {
+    launched <<- list(script = script_path, log = log_path)
+    structure(list(), class = "fake_process")
+  })
+  p <- suppressMessages(dragon_pipeline(run, list(dragon_step_evaluate()), runs_dir = runs, background = TRUE))
+  expect_true(file.exists(launched$script))
+  expect_match(launched$script, paste0(p$id, ".R"), fixed = TRUE)
+  expect_match(paste(readLines(launched$script), collapse = "\n"), "run_pipeline_file", fixed = TRUE)
+  expect_equal(launched$log, p$log)
+})
+
 test_that("lineage ordering nests children under parents", {
   o <- dragonfarm:::lineage_order(c("a", "b", "c", "d"), c(NA, "a", "b", NA))
   expect_equal(o$id, c("a", "b", "c", "d"))
@@ -143,8 +159,15 @@ test_that("dragon_pipeline_cancel marks the record, asks running runs to stop, a
   dragonfarm:::write_json(list(created_at = "2026-09-01T00:00:00Z", stage = "sft", model = list(id = "x/y")), file.path(old_dir, "config.json"))
   dragonfarm:::write_json(list(state = "running"), file.path(old_dir, "status.json"))
 
-  sleeper <- processx::process$new(file.path(R.home("bin"), "Rscript"), c("-e", "Sys.sleep(120)"), windows_hide_window = TRUE)
-  withr::defer(if (sleeper$is_alive()) sleeper$kill())
+  # A script file and a private temp folder: a killed `Rscript -e` leaves an
+  # "Rscript*" file in the temp folder, which R CMD check reports as detritus.
+  sleep_tmp <- tempfile("sleeper-")
+  dir.create(sleep_tmp)
+  sleep_script <- file.path(sleep_tmp, "sleep.R")
+  writeLines("Sys.sleep(120)", sleep_script)
+  sleeper <- processx::process$new(file.path(R.home("bin"), "Rscript"), sleep_script, windows_hide_window = TRUE,
+                                   env = c("current", TMPDIR = sleep_tmp, TMP = sleep_tmp, TEMP = sleep_tmp))
+  withr::defer({ if (sleeper$is_alive()) sleeper$kill(); unlink(sleep_tmp, recursive = TRUE) })
   rec_path <- file.path(dragonfarm:::pipelines_dir(runs), "p-live.json")
   dragonfarm:::write_json(list(id = "p-live", status = "running", runs_dir = runs, started_at = "2026-09-16T11:59:00Z",
                                pid = sleeper$get_pid(),

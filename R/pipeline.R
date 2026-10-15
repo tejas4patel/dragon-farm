@@ -189,16 +189,26 @@ dragon_pipeline <- function(model, steps, runs_dir = dragon_runs_dir(), name = "
     spec_path <- file.path(pipelines_dir(runs_dir), paste0(id, ".rds"))
     saveRDS(list(model = strip_handles(model), steps = strip_handles(steps), runs_dir = runs_dir, record_path = record_path), spec_path)
     log_path <- file.path(pipelines_dir(runs_dir), paste0(id, ".log"))
-    p <- processx::process$new(
-      file.path(R.home("bin"), "Rscript"), c("-e", pipeline_script(spec_path)),
-      stdout = log_path, stderr = "2>&1", cleanup = FALSE, cleanup_tree = FALSE, windows_hide_window = TRUE
-    )
+    # A script file rather than `Rscript -e`: on Windows, -e writes the code to
+    # an "Rscript*" file in the temp folder that is left behind when the
+    # process is stopped (a cancelled pipeline).
+    script_path <- file.path(pipelines_dir(runs_dir), paste0(id, ".R"))
+    writeLines(pipeline_script(spec_path), script_path)
+    p <- launch_rscript(script_path, log_path)
     cli::cli_alert_success("Pipeline {.strong {id}} started in the background ({length(steps)} step{?s}).")
     cli::cli_text("Follow it with {.code dragon_pipeline_status(\"{id}\")}; log at {.path {log_path}}.")
     return(structure(list(id = id, path = record_path, log = log_path, process = p, runs_dir = runs_dir),
                      class = "dragon_pipeline"))
   }
   run_pipeline(model, steps, runs_dir, record, record_path)
+}
+
+# Run an R script file in a detached background process, output to a log.
+launch_rscript <- function(script_path, log_path) {
+  processx::process$new(
+    file.path(R.home("bin"), "Rscript"), script_path,
+    stdout = log_path, stderr = "2>&1", cleanup = FALSE, cleanup_tree = FALSE, windows_hide_window = TRUE
+  )
 }
 
 # R code the background process runs. Uses the installed package, or the
