@@ -24,21 +24,28 @@ mod_model_server <- function(id, state, nav_to) {
     ns <- session$ns
     presets <- dragon_presets()
 
+    # One selectable card per preset: name, size, memory, licence, and the note.
     output$preset_cards <- shiny::renderUI({
-      choices <- stats::setNames(presets$id, presets$id)
-      shiny::tagList(
-        shiny::radioButtons(ns("preset"), NULL, choices = choices, selected = "Qwen/Qwen2.5-0.5B-Instruct", width = "100%"),
-        shiny::div(class = "table-wrap", shiny::tableOutput(ns("preset_table")))
-      )
+      cards <- lapply(seq_len(nrow(presets)), function(i) {
+        p <- presets[i, ]
+        org <- sub("/.*$", "", p$id)
+        shiny::tags$span(class = "df-model",
+          shiny::tags$span(class = "df-model-head",
+            shiny::tags$span(class = "df-model-name", sub("^.*/", "", p$id)),
+            shiny::tags$span(class = "df-chip size", p$params)
+          ),
+          shiny::tags$span(class = "df-model-org", org),
+          shiny::tags$span(class = "df-model-note", p$notes),
+          shiny::tags$span(class = "df-model-meta",
+            shiny::tags$span(class = "df-chip", sprintf("%s GB+", p$min_vram_gb)),
+            shiny::tags$span(class = "df-chip", p$license),
+            if (isTRUE(p$gated)) shiny::tags$span(class = "df-chip warn", "token")
+          )
+        )
+      })
+      shiny::radioButtons(ns("preset"), NULL, choiceNames = cards, choiceValues = presets$id,
+                          selected = "Qwen/Qwen2.5-0.5B-Instruct", width = "100%")
     })
-
-    output$preset_table <- shiny::renderTable({
-      data.frame(
-        Model = presets$id, Size = presets$params, License = presets$license,
-        Token = ifelse(presets$gated, "required", ""), `Min VRAM` = paste(presets$min_vram_gb, "GB"),
-        Notes = presets$notes, check.names = FALSE
-      )
-    }, spacing = "xs", width = "100%")
 
     chosen <- shiny::reactive({
       custom <- trimws(input$custom %||% "")

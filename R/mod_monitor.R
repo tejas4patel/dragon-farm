@@ -173,12 +173,13 @@ mod_monitor_server <- function(id, state, runs_dir) {
       }
       if (nrow(train)) {
         p <- plotly::add_trace(p, x = train$step, y = train$loss, type = "scatter", mode = "lines",
-                               name = "train loss", line = list(color = "#2F6F8F", width = 2))
+                               name = "train loss", line = list(color = "#FF6B35", width = 2.5, shape = "spline"),
+                               fill = "tozeroy", fillcolor = "rgba(255, 107, 53, 0.08)")
       }
       if (nrow(ev)) {
         p <- plotly::add_trace(p, x = ev$step, y = ev$eval_loss, type = "scatter", mode = "markers+lines",
-                               name = "eval loss", marker = list(color = "#B8702A", size = 9),
-                               line = list(color = "#B8702A", dash = "dot"))
+                               name = "eval loss", marker = list(color = "#2F6F8F", size = 9, line = list(color = "#FFFFFF", width = 1.5)),
+                               line = list(color = "#2F6F8F", dash = "dot"))
       }
       rw <- if ("reward" %in% names(pr)) pr[!is.na(pr$reward), , drop = FALSE] else pr[0, , drop = FALSE]
       if (nrow(rw)) {
@@ -190,8 +191,10 @@ mod_monitor_server <- function(id, state, runs_dir) {
         p <- plotly::layout(p, annotations = list(text = "Waiting for the first logged step", showarrow = FALSE, x = 0.5, y = 0.5, xref = "paper", yref = "paper"))
       }
       plotly::config(plotly::layout(p,
-        xaxis = list(title = "step", zeroline = FALSE),
-        yaxis = list(title = "loss", zeroline = FALSE, rangemode = "tozero"),
+        xaxis = list(title = "step", zeroline = FALSE, gridcolor = "rgba(138, 147, 168, 0.18)"),
+        yaxis = list(title = "loss", zeroline = FALSE, rangemode = "tozero", gridcolor = "rgba(138, 147, 168, 0.18)"),
+        font = list(family = "Inter, Segoe UI, sans-serif", color = "#8A93A8", size = 12),
+        hoverlabel = list(bgcolor = "#0B1020", bordercolor = "#26324D", font = list(color = "#F1F5FF")),
         yaxis2 = list(title = "reward", overlaying = "y", side = "right", zeroline = FALSE, showgrid = FALSE),
         margin = list(l = 50, r = 20, t = 10, b = 40),
         legend = list(orientation = "h", x = 0, y = 1.1),

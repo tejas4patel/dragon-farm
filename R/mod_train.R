@@ -38,7 +38,7 @@ mod_train_ui <- function(id) {
     ),
     bslib::card(
       bslib::card_header("Ready?"),
-      shiny::selectInput(ns("base_run"), "Start from", choices = c("The model chosen in step 3" = ""), width = "100%"),
+      shiny::selectInput(ns("base_run"), "Start from", choices = c("The model chosen in the Model step" = ""), width = "100%"),
       shiny::uiOutput(ns("checklist")),
       shiny::actionButton(ns("start"), "Start training", class = "btn-primary btn-lg", width = "100%"),
       shiny::uiOutput(ns("launched")),
@@ -136,7 +136,7 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
     shiny::observe({
       df <- base_runs()
       labels <- if (nrow(df)) sprintf("%s  [%s, %s]", df$id, df$stage, basename(df$model)) else character()
-      choices <- c("The model chosen in step 3" = "", stats::setNames(df$id, labels))
+      choices <- c("The model chosen in the Model step" = "", stats::setNames(df$id, labels))
       selected <- shiny::isolate(input$base_run)
       shiny::updateSelectInput(session, "base_run", choices = choices,
                                selected = if (!is.null(selected) && selected %in% choices) selected else "")

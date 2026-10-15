@@ -31,36 +31,41 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), route = c("documents", "tab
   titles <- route_titles(route)
 
   ui <- bslib::page_navbar(
-    title = shiny::tags$span(shiny::tags$span(class = "brand-mark", "\u25b2"), "dragon-farm"),
+    title = shiny::tags$span(class = "df-brand", brand_mark(), shiny::tags$span("dragonfarm")),
+    window_title = "dragonfarm",
     id = "nav",
     # Not fillable: otherwise every card shares one screenful of height and
     # panels such as the drag-and-drop slots and the Try it controls get clipped.
     fillable = FALSE,
     theme = bslib::bs_theme(
-      version = 5, preset = "shiny",
-      primary = "#2F6F8F", "navbar-bg" = "#1B2230",
-      base_font = bslib::font_collection("IBM Plex Sans", "Segoe UI", "sans-serif"),
-      heading_font = bslib::font_collection("IBM Plex Serif", "Georgia", "serif"),
-      code_font = bslib::font_collection("IBM Plex Mono", "Consolas", "monospace")
+      version = 5,
+      primary = "#E4572E", secondary = "#5A6580", success = "#2E8B57", danger = "#C2410C",
+      "navbar-bg" = "#0B1020",
+      base_font = bslib::font_collection("Inter", "Segoe UI", "system-ui", "sans-serif"),
+      heading_font = bslib::font_collection("Space Grotesk", "Segoe UI", "system-ui", "sans-serif"),
+      code_font = bslib::font_collection("JetBrains Mono", "Cascadia Code", "Consolas", "monospace"),
+      "border-radius" = "0.65rem", "card-border-radius" = "1.1rem"
     ),
     header = shiny::tags$head(
-      shiny::tags$link(rel = "stylesheet", href = paste0("dragonfarm/dragonfarm.css?v=", css_version())),
+      shiny::tags$link(rel = "preconnect", href = "https://fonts.googleapis.com"),
       shiny::tags$link(rel = "stylesheet",
-                       href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&family=IBM+Plex+Mono&display=swap"),
+                       href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"),
+      shiny::tags$link(rel = "stylesheet", href = paste0("dragonfarm/dragonfarm.css?v=", css_version())),
       shiny::tags$script(src = paste0("dragonfarm/dragonfarm.js?v=", css_version()))
     ),
     # Titles are renumbered client-side for the active route (route_titles()).
-    bslib::nav_panel(titles[["documents"]], value = "documents", mod_documents_ui("documents")),
-    bslib::nav_panel(titles[["data"]], value = "data", mod_data_ui("data")),
-    bslib::nav_panel(titles[["map"]], value = "map", mod_mapping_ui("map")),
-    bslib::nav_panel(titles[["model"]], value = "model", mod_model_ui("model")),
-    bslib::nav_panel(titles[["train"]], value = "train", mod_train_ui("train")),
-    bslib::nav_panel(titles[["monitor"]], value = "monitor", mod_monitor_ui("monitor")),
-    bslib::nav_panel(titles[["tryit"]], value = "tryit", mod_tryit_ui("tryit")),
-    bslib::nav_panel(titles[["chat"]], value = "chat", mod_chat_ui("chat")),
-    bslib::nav_panel(titles[["pipeline"]], value = "pipeline", mod_pipeline_ui("pipeline")),
+    bslib::nav_panel(titles[["documents"]], value = "documents", step_page("documents", mod_documents_ui("documents"))),
+    bslib::nav_panel(titles[["data"]], value = "data", step_page("data", mod_data_ui("data"))),
+    bslib::nav_panel(titles[["map"]], value = "map", step_page("map", mod_mapping_ui("map"))),
+    bslib::nav_panel(titles[["model"]], value = "model", step_page("model", mod_model_ui("model"))),
+    bslib::nav_panel(titles[["train"]], value = "train", step_page("train", mod_train_ui("train"))),
+    bslib::nav_panel(titles[["monitor"]], value = "monitor", step_page("monitor", mod_monitor_ui("monitor"))),
+    bslib::nav_panel(titles[["tryit"]], value = "tryit", step_page("tryit", mod_tryit_ui("tryit"))),
+    bslib::nav_panel(titles[["chat"]], value = "chat", step_page("chat", mod_chat_ui("chat"))),
+    bslib::nav_panel(titles[["pipeline"]], value = "pipeline", step_page("pipeline", mod_pipeline_ui("pipeline"))),
     bslib::nav_spacer(),
-    bslib::nav_item(shiny::uiOutput("hw_badge", inline = TRUE))
+    bslib::nav_item(shiny::uiOutput("hw_badge", inline = TRUE)),
+    bslib::nav_item(shiny::tags$span(class = "df-mode", bslib::input_dark_mode(id = "dark_mode", mode = "light")))
   )
 
   server <- function(input, output, session) {
@@ -97,6 +102,50 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), route = c("documents", "tab
   }
 
   shiny::shinyApp(ui, server, options = list(...))
+}
+
+# The logo: the website's amber-to-coral triangle on a navy tile.
+brand_mark <- function() {
+  shiny::HTML(paste0(
+    '<svg class="df-logo" viewBox="0 0 64 64" width="26" height="26" aria-hidden="true">',
+    '<defs><linearGradient id="dfLogoGrad" x1="0" y1="0" x2="1" y2="1">',
+    '<stop offset="0" stop-color="#FFB547"/><stop offset="1" stop-color="#FF6B35"/></linearGradient></defs>',
+    '<rect width="64" height="64" rx="14" fill="#151E3A"/><polygon points="32,13 52,49 12,49" fill="url(#dfLogoGrad)"/></svg>'
+  ))
+}
+
+# A short heading over each step: what it is for, in one line.
+step_intros <- list(
+  documents = c("Start here", "Bring your documents",
+                "Drop in files or web pages, ask them questions with cited sources, then have a model write training questions for you to review."),
+  data = c("Table route", "Load your examples",
+           "A CSV, Excel sheet, JSONL file, or data frame of prompts and replies."),
+  map = c("Table route", "Show the model what each column means",
+          "Drag columns into the prompt, response, and system slots, or start from a template."),
+  model = c("Choose", "Pick a base model",
+            "Small models train in minutes and suit fixed formats. A 7B in 4-bit gives the best answers on an 8 GB NVIDIA card."),
+  train = c("Train", "Set it and start",
+            "LoRA trains a small adapter on top of the base model. Training runs in the background, so the app stays usable."),
+  monitor = c("Watch", "Watch it learn",
+              "Training loss shows the model fitting your examples; held-out loss shows whether it carries over to new ones."),
+  tryit = c("Compare", "Try it side by side",
+            "Ask the fine-tuned and the base model the same question, let a judge compare them, then export or publish."),
+  chat = c("Talk", "Chat with a model",
+           "Multi-turn chat with context, answers from your documents, and feedback that becomes training data."),
+  pipeline = c("Automate", "Run the whole loop",
+               "Chain training, judging, and preference tuning into one recipe, and follow each run's lineage.")
+)
+
+step_page <- function(key, ui) {
+  s <- step_intros[[key]]
+  shiny::tagList(
+    shiny::div(class = "df-intro",
+      shiny::p(class = "df-kicker", s[1]),
+      shiny::h2(class = "df-title", s[2]),
+      shiny::p(class = "df-sub", s[3])
+    ),
+    ui
+  )
 }
 
 # Tab titles for a route: the steps the route shows, numbered in order.
