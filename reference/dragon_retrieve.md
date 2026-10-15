@@ -26,8 +26,8 @@ dragon_retrieve(docs, query, k = 4, method = c("hybrid", "dense"))
 - method:
 
   `"hybrid"` (the default) ranks chunks by combining the embedding
-  similarity with a keyword (BM25) match, which catches exact terms and
-  figures a small embedding model ranks too low; `"dense"` uses the
+  similarity with a keyword (`BM25`) match, which catches exact terms
+  and figures a small embedding model ranks too low; `"dense"` uses the
   embedding alone. On three document sets hybrid raised the share of
   questions whose source chunk was among the top four from 90.6 to 93.0,
   88 to 100, and 91 to 100 percent.
