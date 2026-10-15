@@ -1,222 +1,141 @@
 # dragonfarm (development version)
 
-* Spreadsheets: a two-column label-and-value sheet (a "Notes" or "About"
-  tab) is no longer read as a header row plus data, a first row of numbers
-  is not taken for column names, and each sheet starts its own chunk, so a
-  short notes sheet is not folded into the last rows of the data sheet.
-* Hybrid retrieval no longer gives a keyword boost to chunks that share no
-  word with the question. Ranking the zero scores handed the first chunks
-  of a file an unearned lift; on a spreadsheet it pushed the source notes out
-  of the top four. Equal or better on all five test sets.
+The headline of this release is a document route: drop in PDFs, Word files,
+web pages, or spreadsheets, ask questions with cited sources, have a model
+write training questions from them, review those, and fine-tune. The app now
+opens on it. Everything below was measured on an 8 GB laptop GPU (RTX 4060)
+and on real documents: R's own manuals, a 76-page annual report as PDF and as
+Word, live web pages, and a spreadsheet.
 
-* A PDF with no text layer (a scan, a photo, a fax) is now reported by name
-  with advice to run OCR first, instead of silently adding nothing to the
-  set. Other files in the same set are read as usual.
+## Documents
 
-* Web pages without a `<nav>` or `<main>` tag no longer leak their menus
-  into the first chunk: blocks that are mostly links (four or more, over 60
-  percent of the text) are dropped, as are ARIA navigation, banner, footer,
-  and search regions. On r-project.org's About page the menu ("[Home]
-  Download. CRAN R Project. About R Logo...") was the first chunk.
-
-* Word files read better, tested on the Word version of a 10-K. A unit note
-  styled as a heading ("(amounts in millions)", alone or in front of the real
-  title) sets the unit instead of becoming a section; dot leaders are dropped
-  from table cells and PDF lines; and short paragraphs set entirely in bold
-  or italic become headings when prose follows them, which recovers
-  sub-headings such as "Basis of Presentation" without turning table column
-  labels into sections. The Word report went from one 38-chunk "Note 1" to
-  123 real sections, and answered 12 of 13 test questions.
-
-* A unit note such as "(dollars in millions, except per share data)" is
-  carried into later chunks that show money without a unit word, so answers
-  from financial tables say "$11,339 million" rather than "$11,339". On a
-  10-K this tags 76 of 272 chunks.
-
-* Retrieval is now hybrid by default: the embedding ranking and a BM25
-  keyword ranking are combined (reciprocal-rank fusion), so exact terms and
-  figures that a small embedding model ranks a few places too low still
-  reach the answer. The share of generated questions whose source chunk was
-  among the four excerpts rose from 90.6 to 93.0 percent on R's manuals, 88
-  to 100 on the package documentation, and 91 to 100 on hand-written
-  questions about an annual report, where "How many employees..." went from
-  "the documents do not cover this" to the right figure.
-  `dragon_retrieve(method = "dense")` keeps the previous behaviour.
-
-* PDF reading drops dot-leader contents entries ("Item 1A. Risk Factors .
-  . .. 10", the table of contents of a 10-K) while keeping financial table
-  rows, and restores apostrophes a font did not map ("Registrant’s"
-  instead of a replacement character).
-* A question set now records a checksum of the chunks it was written from,
-  and `dragon_questions_dataset()` warns when the document set has been
-  re-read since: re-reading renumbers chunks, so the source excerpt added to
-  each prompt could otherwise be the wrong one.
-
-* Excerpts from PDFs now carry the page they start on, and answers,
-  footnotes, prompts, and training contexts show it: "report.pdf, p. 68 ›
-  Item 14". On a 76-page annual report most answers had cited the bare file
-  name. `dragon_chunks()` gains a `page` column (`NA` for other sources). A
-  set built by an older reader is re-read on the next `dragon_documents()`
-  call instead of being reused by checksum.
-
-* PDFs whose text comes out of the plain extractor as two-letter fragments
-  ("De", "ce", "mb", "er": typesetting that places every few glyphs as its own
-  text object, common in annual reports and brochures) are now re-read page
-  by page in pypdf's layout mode. A 76-page annual report went from 726
-  chunks of "Co st co Wh ol es al e" under section names like "In" and "Mr" to
-  273 readable chunks under "Item 1A—Risk Factors" and "Employee Base". A
-  single short word is no longer taken for a heading.
-
-* Generating for several prompts at once (`dragon_generate()` with a vector,
-  the post-training samples, `dragon_judge()`) now runs them in batches of
-  eight with left padding instead of one at a time: eight short prompts
-  through a 0.5B took 17 to 37 seconds and now take 6. A batch that runs out
-  of GPU memory falls back to single prompts. Greedy outputs can differ
-  marginally from the one-at-a-time result because batching changes the
-  arithmetic; `batch_size` on the worker request controls it.
-
-* `dragon_questions_dataset()` now guarantees that the chunk a pair was
-  written from is among the excerpts in its training prompt (retrieval missed
-  it for about one pair in ten on R's manuals, which would have taught the
-  model to answer without support), and appends that excerpt's number to the
-  answer (`cite = TRUE`) so a tuned model keeps citing the way `dragon_ask()`
-  expects. A 0.5B trained on uncited pairs had stopped citing altogether.
-
-* Large requests to the local inference worker no longer hang. A retrieval
-  for a few hundred questions (as `dragon_questions_dataset()` makes for a
-  real document set) produced a reply longer than processx's line buffer,
-  which came back in pieces that never parsed; R now buffers the worker's
-  output and splits lines itself, and writes big requests in a loop rather
-  than trusting a single non-blocking write.
-
-* `dragon_questions()` no longer dies when one batch runs out of GPU memory:
-  the batch is retried one chunk at a time, a chunk that does not fit even
-  alone is skipped and listed in the set's metadata (`skipped_oom`), and the
-  passage shown to the generator is capped at 450 words so a long code block
-  cannot blow the budget. Seen with the 7B generator on an 8 GB card, 236
-  chunks into R's own manuals.
-
-* Reading PDFs is cleaner, measured on R's own manuals: running page headers
-  and footers, page numbers, and contents lines are dropped; a sentence that
-  breaks across a page is rejoined; code prompts, lead-in lines before an
-  example, and sentence fragments are no longer taken for section headings
-  (R-intro went from 97 section names, one of them 1,489 characters long, to
-  79 real ones). A manual or FAQ with numbered sections ("2.1 What is R?") is
-  no longer mistaken for a changelog and down-weighted. HTML headings lose
-  the anchor glyph some generators append (the pilcrow after every R FAQ
-  heading, for example).
-
-* `dragon_check()` now reports how much GPU memory other programs already
-  hold and lists dragonfarm Python processes started by other R sessions (an
-  app left open elsewhere, a worker that outlived its console). Training
-  warns when such a process is running, and `dragon_worker_stop(all = TRUE)`
-  stops them. An orphaned worker has twice made a run look out of memory when
-  it was not.
-
+* New: `dragon_documents()` reads PDF, HTML, Markdown, text, Word,
+  spreadsheet files, directories of them, and web pages into a *document
+  set*: chunks of about 170 words that never cross a heading, each keeping
+  its file, section, and (for PDFs) page, stored under
+  `runs_dir/documents/<name>/`. Reading again re-reads only files whose
+  contents changed, and a set built by an older version of the readers is
+  re-read rather than reused. `dragon_chunks()` (with a `page` column),
+  `dragon_documents_load()`, and `dragon_documents_list()` go with it. The
+  Python environment gains `pypdf`, `python-docx`, and `openpyxl`.
 * `dragon_example_documents()`: three short policy documents for the
-  fictional smart-home company behind the example tickets, so the document
-  route can be tried before bringing your own files. The Documents tab has a
-  "Load the example policies" button.
+  fictional company behind the example tickets, so the route can be tried
+  before bringing your own files.
+* PDFs. Pages whose text comes out of the standard extractor as two-letter
+  fragments ("Co st co Wh ol es al e", common in annual reports) are re-read
+  in a layout-aware mode: a 76-page annual report went from 726 unreadable
+  chunks to 273 readable ones under real section names. Running headers,
+  page numbers, contents entries with dot leaders, and dot leaders inside
+  table rows are dropped; a sentence broken across pages is rejoined; code,
+  lead-in lines, rows of numbers, and single words are no longer taken for
+  headings (R-intro went from 97 section names, one 1,489 characters long, to
+  79 real ones); apostrophes a font did not map are restored. A PDF with no
+  text layer (a scan) is reported by name with advice to run OCR first,
+  instead of silently adding nothing.
+* Units. A note such as "(dollars in millions, except per share data)" is
+  carried into later chunks that show money without a unit word, so answers
+  from financial tables say "$4,409 million" rather than "$4,409".
+* Word. Unit notes styled as headings set the unit instead of becoming a
+  section; short paragraphs set entirely in bold or italic become headings
+  when prose follows them (a 10-K's sub-headings are italic), while table
+  column labels, which look the same, stay text. The Word annual report went
+  from one 38-chunk "Note 1" to 123 real sections.
+* Web pages. Blocks made mostly of links and regions marked as navigation,
+  banner, footer, or search are dropped, so a page without a `<nav>` tag no
+  longer leaks its menu into the first chunk. Heading anchor glyphs (the
+  pilcrow after every R FAQ heading) are removed.
+* Spreadsheets. Each row becomes "column: value" pairs; a two-column
+  label-and-value sheet is read as such rather than as a header plus data; a
+  first row of numbers is not taken for column names; and each sheet starts
+  its own chunk.
+* A manual or FAQ with numbered sections ("2.1 What is R?") is no longer
+  mistaken for a changelog; changelog-like files are still flagged and
+  down-weighted, and quoted material and code blocks are marked on each chunk.
 
-* New: documents to training data. `dragon_questions()` has a model write
-  questions and answers from each chunk of a document set (the local model
-  recommended for the machine, in the background; or a teacher such as
-  `dragon_llm_anthropic()`), runs simple deterministic filters, and returns
-  every pair with `keep` and a `reason`, because the measured yield of usable
-  pairs is 20 to 60 percent depending on the model and a review step is not
-  optional. `dragon_questions_save()` records your decisions;
-  `dragon_questions_dataset()` builds the training set with retrieved
-  excerpts placed in front of each question, the setup that beat a plain
-  fine-tune in the prototypes. The Documents tab gains a **Teach** card:
-  generate, watch the yield grow, review pairs grouped by chunk, tick and
-  untick, then Continue to Model, which skips Data and Map.
+## Asking documents
 
-* The app now starts with documents. A new **Documents** tab is tab 1: drop
-  files or add web pages, press Read and index, ask questions and see the
-  sources, then continue in Chat with the same set. The default route runs
-  Documents, Model, Train, Monitor, Try it, Chat, Pipeline; the table route
-  (Data and Map first, today's app) is one link away ("Have a table of
-  prompts and replies instead?") or `dragon_app(route = "table")`. The Chat
-  and Try it pickers preselect the set open on the Documents tab.
+* New: `dragon_index()` embeds a document set with a small encoder
+  (`BAAI/bge-small-en-v1.5`, kept warm in the inference worker),
+  `dragon_retrieve()` returns the most relevant chunks, and `dragon_ask()`
+  puts them in front of a model as numbered excerpts and returns the answer
+  with its sources, marking which were cited: "report.pdf, p. 68 › Item 14".
+  The model defaults to the one `dragon_check()` recommends for the GPU and
+  can be any run, model id, or server backend. `dragon_chat()` gains
+  `documents` and `k`; `$sources()` shows the excerpts behind the last reply.
+* Retrieval is hybrid by default: the embedding ranking is combined with a
+  keyword (BM25) ranking, counting only chunks that share a word with the
+  question, so exact terms and figures a small embedding model ranks a few
+  places too low still reach the answer. The share of questions whose source
+  chunk was among the four excerpts rose from 90.6 to 93.0 percent on R's
+  manuals, 88 to 100 on the package documentation, 91 to 100 on questions
+  about an annual report, and 83 to 100 on a spreadsheet.
+  `dragon_retrieve(method = "dense")` keeps the embedding ranking alone, and
+  `scripts/retrieval_eval.py` measures both on any indexed sets.
+* On the annual report the default 7B in 4-bit answered 12 of 13 factual
+  questions correctly from the right page; the miss was a total printed
+  inside a map graphic, and it said so rather than guessing.
 
-* New: ask questions of your documents, no training needed. `dragon_index()`
-  embeds a document set with a small encoder (`BAAI/bge-small-en-v1.5` by
-  default, kept warm in the inference worker), `dragon_retrieve()` returns
-  the most relevant chunks, and `dragon_ask()` puts them in front of a model
-  as numbered excerpts and returns the answer with its sources, marking which
-  were cited. The model defaults to the one `dragon_check()` recommends for
-  the GPU and can be any run, model id, or server backend. `dragon_chat()`
-  gains `documents` and `k`: each turn is answered from retrieved excerpts
-  while the transcript keeps the plain questions, and `$sources()` shows the
-  excerpts behind the last reply. `dragon_documents()` now indexes right away
-  (`index = FALSE` to postpone). Changelog-like sources are down-weighted at
-  retrieval time.
+## From documents to training data
+
+* New: `dragon_questions()` has a model write questions and answers from each
+  chunk (the local model recommended for the machine, in the background, or
+  a teacher such as `dragon_llm_anthropic()`), runs deterministic filters,
+  and returns every pair with `keep` and a `reason`. With the default 7B,
+  78 to 87 percent of pairs passed on real documents; a small generator does
+  far worse, so review is part of the workflow. A batch that runs out of GPU
+  memory is retried one chunk at a time, and long passages are capped.
+  `dragon_questions_save()` records your decisions.
+* `dragon_questions_dataset()` builds the training set with retrieved
+  excerpts in front of each question, always including the chunk the pair
+  was written from, and appends that excerpt's number to the answer
+  (`cite = TRUE`) so a tuned model keeps citing. It warns if the document
+  set was re-read after the questions were written.
+
+## The app
+
+* The app starts with documents. A new **Documents** tab is tab 1: drop
+  files or add web pages, read and index, ask with sources, continue in Chat.
+  Its **Teach** card generates questions in the background, shows the yield
+  as it grows, and lets you tick and untick pairs grouped by chunk before
+  Continue to Model, which skips Data and Map. The table route (Data and Map
+  first) is one link away or `dragon_app(route = "table")`.
+* Panels take their natural height and the page scrolls; the Map step's
+  drop slots and the Try it cards are no longer clipped. A message now says
+  to wait for "Upload complete" when Read and index is pressed while a large
+  file is still uploading.
+
+## Hardware and models
 
 * 4-bit loading for generation, on Windows as well as Linux.
-  `dragon_backend_local()` gains `load_in_4bit`: `"auto"` (the default)
-  quantizes a model to NF4 through bitsandbytes only when its full weights
-  would not fit the GPU, so `dragon_generate("Qwen/Qwen2.5-7B-Instruct", ...)`
-  now works on an 8 GB card (about 5.5 GB of weights, 7.2 GB peak) while a 3B
-  still loads in full precision. `dragon_check()` reports whether 4-bit
-  loading is available and which model it would reach for on this machine,
-  by GPU memory: a 1.5B under 6 GB, a 3B at 6 to 8 GB, a 7B in 4-bit at 8 GB
-  and up. `bitsandbytes` is added to the Python requirements on Linux and
-  Windows. `dragon_hardware(load_in_4bit = TRUE)` (QLoRA training) is no
-  longer refused on Windows. Measured on an 8 GB RTX 4060: three epochs of
-  Qwen2.5-7B-Instruct on the 190 example tickets, batch 1 x 8, 512 tokens,
-  gradient checkpointing on, took 22 minutes with the weights already cached
-  (a cold first load adds about five) and peaked at 7.9 GB, so an 8 GB card
-  is the floor and longer sequences will not fit. The result reproduced the
-  example policies on held-out tickets where the 0.5B had drifted (held-out
-  loss 0.02 against 0.24); one epoch was not enough and produced fluent
-  replies that blended policies.
+  `dragon_backend_local(load_in_4bit = "auto")` quantizes a model to NF4 only
+  when its full weights would not fit the GPU, so a 7B runs on an 8 GB card
+  (about 5.5 GB of weights) while a 3B still loads in full precision.
+  `dragon_check()` reports whether 4-bit loading is available and which model
+  it would use: a 1.5B under 6 GB, a 3B at 6 to 8 GB, a 7B in 4-bit at 8 GB
+  and up. QLoRA training (`dragon_hardware(load_in_4bit = TRUE)`) works on
+  Windows: three epochs of Qwen2.5-7B-Instruct on the 190 example tickets
+  took 22 minutes on the 8 GB card, peaked at 7.9 GB, and reproduced the
+  example policies on held-out tickets where the 0.5B had drifted.
+* `dragon_check()` reports GPU memory already held by other programs and
+  lists dragonfarm processes started by other R sessions; training warns
+  about them, and `dragon_worker_stop(all = TRUE)` stops them.
+* Generating for several prompts at once runs them in batches of eight:
+  eight short prompts through a 0.5B went from 17 to 37 seconds to 6.
 
-* New: `dragon_documents()` reads PDF, HTML, Markdown, text, Word, spreadsheet
-  files, directories of them, and web pages into a *document set*: chunks of
-  about 170 words that never cross a heading, each keeping its file and
-  section, stored under `runs_dir/documents/<name>/`. Reading again re-reads
-  only files whose contents changed. Changelog-like files are flagged and
-  down-weighted; quoted material and code blocks are marked on each chunk.
-  `dragon_chunks()`, `dragon_documents_load()`, and `dragon_documents_list()`
-  go with it. This is the first piece of the document route (drop in
-  documents, ask, then fine-tune); retrieval and answering follow. The Python
-  environment gains `pypdf`, `python-docx`, and `openpyxl`.
+## Fixes
 
-* A run can no longer be marked failed by an out-of-memory error in the
-  evaluation that follows training. Scoring the held-out rows materialized
-  the full `batch x tokens x vocabulary` logits tensor; with a 150k-token
-  vocabulary, a long `max_seq_len`, and the training batch size, that tensor
-  alone was several gigabytes, and on an 8 GB GPU that was also holding a
-  loaded inference worker from the app, the run failed *after* the adapter
-  had been saved. Held-out loss is now computed in chunks of 256 positions
-  through the output layer, both in the Trainer's end-of-epoch evaluation
-  and in the end-of-run one, so the full tensor is never built; the trainer's
-  optimizer state is released before the final evaluation; evaluation falls
-  back to one row at a time if a batch still does not fit; and if even that
-  fails the run succeeds with an `eval_warning` in `status.json` (shown in
-  the Monitor panel and by `print()`) instead of failing. `dragon_train_args()`
-  gains `eval_batch_size` (default 1; it was silently the training batch size
-  before). Measured on `Qwen2.5-0.5B-Instruct` with a batch of 4 x 1536
-  tokens: peak evaluation memory fell from 7.9 GB to 2.4 GB, with the same
-  loss to the last decimal.
-
-* `dragon_example_data()` no longer contains duplicate tickets. The 200 example
-  support tickets used to be drawn with replacement from 315 possible ones, so
-  about a quarter were repeats and a "held-out" row often had an identical twin
-  in the training rows, which made held-out loss and perplexity look nearly
-  perfect. The tickets are now 200 distinct ones, and each issue is answered in
-  one of three wordings instead of a single fixed reply, so held-out numbers
-  are no longer inflated by verbatim repeats. The tickets are still synthetic
-  and built from templates, so treat the example as a smoke test, not a
-  benchmark.
-
-* Fixed the Shiny app clipping its own controls. The navbar page was
-  "fillable", so every card on a panel shared a single screenful of height:
-  on the Map step the drag-and-drop slots were cut off to a thin strip, and on
-  the Try it panel the Generate button and the Judge, Improve, Export, and
-  Publish cards were squeezed into short scroll boxes. Panels now take their
-  natural height and the page scrolls. The Monitor loss plot is given a fixed
-  height so it does not stretch to match the taller Runs card beside it.
+* A run is no longer marked failed by an out-of-memory error in the
+  evaluation after training. Held-out loss is computed in chunks through the
+  output layer, optimizer state is released first, and a run whose
+  evaluation still cannot fit succeeds with an `eval_warning`. Peak
+  evaluation memory at 4 x 1536 tokens fell from 7.9 GB to 2.4 GB with the
+  same loss. `dragon_train_args()` gains `eval_batch_size` (default 1).
+* Large requests to the inference worker no longer hang: replies longer than
+  processx's line buffer are reassembled, and big requests are written in a
+  loop.
+* `dragon_example_data()` no longer contains duplicate tickets, so held-out
+  numbers are not inflated by verbatim repeats. The tickets are synthetic;
+  treat them as a smoke test, not a benchmark.
 
 # dragonfarm 0.3.4
 
