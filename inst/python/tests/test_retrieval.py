@@ -203,3 +203,17 @@ def test_hybrid_keeps_the_embeddings_best_match_among_the_excerpts():
     assert "5" in hits and hits[-1] == "5"           # kept, in the last slot
     top1 = idx.search(q, k=1, queries=["How many Costco locations are there"])[0]
     assert len(top1) == 1                            # k below 3: the combined ranking alone
+
+
+def test_keyword_index_includes_the_section_title():
+    import numpy as np
+
+    idx = R.LoadedIndex.__new__(R.LoadedIndex)
+    idx.ids = ["a", "b"]
+    idx.chunks = [{"text": "Figures for the year.", "section": "Consolidated statements of income"},
+                  {"text": "Figures for the year.", "section": "Legal proceedings"}]
+    idx.vectors = np.eye(2, dtype="float32")
+    idx.weights = np.ones(2, dtype="float32")
+    idx.bm25 = R.BM25([R.chunk_text_for_index(c) for c in idx.chunks])
+    s = idx.bm25.scores("income statement")
+    assert s[0] > s[1]

@@ -198,7 +198,7 @@ class LoadedIndex:
             raise RuntimeError(f"the index in {set_dir} no longer matches its chunks; run dragon_index() again")
         self.chunks = [chunks[i] for i in self.ids]
         self.weights = np.array([float(c.get("weight", 1.0)) for c in self.chunks], dtype="float32")
-        self.bm25 = BM25([c.get("text", "") for c in self.chunks])
+        self.bm25 = BM25([chunk_text_for_index(c) for c in self.chunks])
         self.stamp = os.path.getmtime(set_dir / "index" / "embeddings.npy")
 
     def stale(self):
