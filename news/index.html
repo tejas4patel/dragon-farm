@@ -81,7 +81,9 @@
 </ul></div>
 <div class="section level3">
 <h3 id="fixes-development-version">Fixes<a class="anchor" aria-label="anchor" href="#fixes-development-version"></a></h3>
-<ul><li>A run is no longer marked failed by an out-of-memory error in the evaluation after training. Held-out loss is computed in chunks through the output layer, optimizer state is released first, and a run whose evaluation still cannot fit succeeds with an <code>eval_warning</code>. Peak evaluation memory at 4 x 1536 tokens fell from 7.9 GB to 2.4 GB with the same loss. <code><a href="../reference/dragon_train_args.html">dragon_train_args()</a></code> gains <code>eval_batch_size</code> (default 1).</li>
+<ul><li>
+<code><a href="../reference/dragon_questions.html">dragon_questions()</a></code> no longer errors at the very end of a long run. The generator reports every chunk done a moment before it writes “done”; the progress bar closed itself at 100 percent and the next update failed with “Cannot find progress bar”, after all the questions had been written.</li>
+<li>A run is no longer marked failed by an out-of-memory error in the evaluation after training. Held-out loss is computed in chunks through the output layer, optimizer state is released first, and a run whose evaluation still cannot fit succeeds with an <code>eval_warning</code>. Peak evaluation memory at 4 x 1536 tokens fell from 7.9 GB to 2.4 GB with the same loss. <code><a href="../reference/dragon_train_args.html">dragon_train_args()</a></code> gains <code>eval_batch_size</code> (default 1).</li>
 <li>Large requests to the inference worker no longer hang: replies longer than processx’s line buffer are reassembled, and big requests are written in a loop.</li>
 <li>
 <code><a href="../reference/dragon_example_data.html">dragon_example_data()</a></code> no longer contains duplicate tickets, so held-out numbers are not inflated by verbatim repeats. The tickets are synthetic; treat them as a smoke test, not a benchmark.</li>
