@@ -246,3 +246,23 @@ def test_year_labels_stop_after_the_table():
     out = D.label_year_columns(lines)
     assert out[1] == "Revenue (2024: 10; 2023: 9)"
     assert out[5] == "Another row 5 4"
+
+
+def test_word_tables_collapse_merged_cells_and_label_years():
+    try:
+        import docx
+    except ImportError:
+        return
+    d = docx.Document()
+    t = d.add_table(rows=4, cols=4)
+    t.cell(0, 1).text = "September 1, 2024"; t.cell(0, 2).text = "September 3, 2023"; t.cell(0, 3).text = "August 28, 2022"
+    t.cell(1, 0).merge(t.cell(1, 3)).text = "REVENUE"
+    for k, v in enumerate(["Net sales", "$ 249,625", "$ 237,710", "$ 222,730"]):
+        t.cell(2, k).text = v
+    for k, v in enumerate(["Dividend", "—", "—", "(208)"]):
+        t.cell(3, k).text = v
+    rows = D.docx_table_rows(t)
+    assert rows[0] == "September 1, 2024 | September 3, 2023 | August 28, 2022"
+    assert rows[1] == "REVENUE"                                   # merged across four columns, once
+    assert rows[2] == "Net sales (2024: $249,625; 2023: $237,710; 2022: $222,730)"
+    assert rows[3] == "Dividend (2024: —; 2023: —; 2022: (208))"  # equal neighbours are kept

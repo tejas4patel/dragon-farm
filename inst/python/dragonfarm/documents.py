@@ -64,7 +64,7 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 10
+READER_VERSION = 11
 # "(dollars in millions, except per share data)": the unit note a filing puts
 # once above a section or statement. Carried into later chunks that show money
 # without a unit word, so "$11,339" is not read as eleven thousand dollars.
@@ -444,6 +444,41 @@ def prose(text):
     return len(text.split()) >= 12 and text.rstrip().endswith((".", ".)", ".\u201d", ":"))
 
 
+def docx_table_rows(table):
+    """Text rows of a Word table. A merged cell is returned by python-docx once
+    per grid column it spans, so "249,625" came out twice and a section label
+    seven times; cells are collapsed by identity, which keeps two genuinely
+    equal neighbours. Under a row whose cells carry years ("September 1,
+    2024 | September 3, 2023 | ..."), rows with one figure per year get the
+    years attached, as label_year_columns() does for PDFs."""
+    rows, years = [], None
+    for row in table.rows:
+        seen, cells = set(), []
+        for c in row.cells:
+            if id(c._tc) in seen:
+                continue
+            seen.add(id(c._tc))
+            text = re.sub(r"\s+", " ", DOT_LEADER.sub(" ", c.text)).strip()
+            cells.append(re.sub(r"\$ (?=[\d(])", "$", text))
+        while len(cells) > 1 and not cells[-1]:
+            cells.pop()
+        if not any(cells):
+            continue
+        filled = [c for c in cells if c]
+        found = [re.search(r"\b(?:19|20)\d\d\b", c) for c in filled]
+        if len(filled) >= 2 and all(found) and not any(YEAR_VALUE.match(c.replace(" ", "")) and len(c) > 4 for c in filled):
+            years = [m.group(0) for m in found]
+            rows.append(" | ".join(filled))
+            continue
+        label, values = (cells[0], [c for c in cells[1:] if c]) if cells else ("", [])
+        if (years and label and re.search(r"[A-Za-z]{3,}", label) and len(values) == len(years)
+                and all(YEAR_VALUE.match(v.replace(" ", "")) for v in values)):
+            rows.append(f"{label} (" + "; ".join(f"{y}: {v}" for y, v in zip(years, values)) + ")")
+            continue
+        rows.append(" | ".join(c for k, c in enumerate(cells) if c or k == 0))
+    return rows
+
+
 def read_docx(path):
     docx = _need("docx", "python-docx", "Word")
     doc = docx.Document(path)
@@ -471,12 +506,7 @@ def read_docx(path):
             else:
                 out.append(text)
         elif tag == "tbl":
-            table = docx.table.Table(block, doc)
-            for row in table.rows:
-                cells = [DOT_LEADER.sub(" ", c.text).strip().replace("\n", " ") for c in row.cells]
-                cells = [c for k, c in enumerate(cells) if c or k == 0]   # leader-only cells drop out
-                if any(cells):
-                    out.append(" | ".join(cells))
+            out.extend(docx_table_rows(docx.table.Table(block, doc)))
     resolved = []
     for i, item in enumerate(out):
         if isinstance(item, tuple):
