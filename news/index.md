@@ -43,6 +43,14 @@ spreadsheet.
   apostrophes a font did not map are restored. A PDF with no text layer
   (a scan) is reported by name with advice to run OCR first, instead of
   silently adding nothing.
+- Year columns. In a financial table the years are printed once, above
+  the figures; flattened into text, nothing said which figure was which
+  year, and answers came from the wrong column. Rows under a year header
+  that end in one figure per year now carry the years: “Net cash used in
+  investing activities (2024: (4,409); 2023: (4,972); 2022: (3,915))”.
+  On ten questions about an annual report that need a specific year’s
+  figure, correct answers went from 5 to 9, and confident wrong-column
+  answers from 2 to none.
 - Units. A note such as “(dollars in millions, except per share data)”
   is carried into later chunks that show money without a unit word, so
   answers from financial tables say “\$4,409 million” rather than
