@@ -25,7 +25,7 @@ zip), and \code{steps} (a character vector).
 \description{
 Prints the steps for running a bundled run on the chosen provider and, by
 default in an interactive session, opens the provider in the browser with
-the dragon-farm notebook loaded. Runs that were not bundled yet are bundled
+the dragonfarm notebook loaded. Runs that were not bundled yet are bundled
 first, so a run that failed locally for lack of memory can be sent to the
 cloud as is.
 }

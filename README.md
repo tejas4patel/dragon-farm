@@ -1,4 +1,4 @@
-# dragonfarm
+# dragonfarm <img src="man/figures/logo.png" align="right" height="139" alt="dragonfarm hex logo" />
 
 [![CRAN status](https://www.r-pkg.org/badges/version/dragonfarm)](https://CRAN.R-project.org/package=dragonfarm)
 [![R-CMD-check](https://github.com/tejas4patel/dragon-farm/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tejas4patel/dragon-farm/actions/workflows/R-CMD-check.yaml)
@@ -41,12 +41,15 @@ slots, and carry on from Model.
 ## Install
 
 ```r
-install.packages("dragonfarm")   # from CRAN
+# The current version, with documents and the new app, as a ready-built package:
+install.packages("dragonfarm", repos = c("https://tejas4patel.r-universe.dev", "https://cloud.r-project.org"))
+
+# or the CRAN release: install.packages("dragonfarm")
 library(dragonfarm)
 dragon_check()                   # first run builds the Python environment: 2 to 3 GB
 ```
 
-The development version: `pak::pak("tejas4patel/dragon-farm")`. Then open the
+Or build it from GitHub with `pak::pak("tejas4patel/dragon-farm")`. Then open the
 app with `dragon_app()`.
 
 ## Start with documents

@@ -49,6 +49,9 @@ Config/testthat/edition: 3
 Language: en-GB
 SystemRequirements: 'Python' (>= 3.10). The 'uv' tool is installed
     automatically by 'reticulate' to build the 'Python' environment.
+X-schema.org-keywords: fine-tuning, LoRA, QLoRA, large-language-models, llm,
+    retrieval-augmented-generation, rag, documents, transformers, peft,
+    shiny, local-llm, huggingface
 URL: https://dragonfarm.dev, https://github.com/tejas4patel/dragon-farm
 BugReports: https://github.com/tejas4patel/dragon-farm/issues
 Config/roxygen2/version: 8.1.0

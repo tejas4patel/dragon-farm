@@ -13,7 +13,7 @@ to \code{\link[=dragon_remote]{dragon_remote()}}), \code{name}, \code{cost}, and
 \description{
 Machines without a GPU can still fine-tune: \code{\link[=dragon_bundle]{dragon_bundle()}} packages a
 run as a zip, \code{\link[=dragon_remote]{dragon_remote()}} opens one of these providers with the
-dragon-farm notebook, and \code{\link[=dragon_import]{dragon_import()}} brings the trained adapter
+dragonfarm notebook, and \code{\link[=dragon_import]{dragon_import()}} brings the trained adapter
 back. Google Colab and Kaggle have free GPU tiers. Lightning AI gives free
 monthly credits. RunPod is pay per hour.
 }

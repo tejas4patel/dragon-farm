@@ -2,7 +2,7 @@
 % Please edit documentation in R/app.R
 \name{dragon_app}
 \alias{dragon_app}
-\title{Launch the dragon-farm app}
+\title{Launch the dragonfarm app}
 \usage{
 dragon_app(runs_dir = dragon_runs_dir(), route = c("documents", "table"), ...)
 }

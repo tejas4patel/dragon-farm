@@ -17,7 +17,7 @@ notebook_github_url <- function() {
 #'
 #' Machines without a GPU can still fine-tune: [dragon_bundle()] packages a
 #' run as a zip, [dragon_remote()] opens one of these providers with the
-#' dragon-farm notebook, and [dragon_import()] brings the trained adapter
+#' dragonfarm notebook, and [dragon_import()] brings the trained adapter
 #' back. Google Colab and Kaggle have free GPU tiers. Lightning AI gives free
 #' monthly credits. RunPod is pay per hour.
 #'
@@ -333,7 +333,7 @@ remote_readme <- function(run, paths = bundle_paths(run)) {
 #'
 #' Prints the steps for running a bundled run on the chosen provider and, by
 #' default in an interactive session, opens the provider in the browser with
-#' the dragon-farm notebook loaded. Runs that were not bundled yet are bundled
+#' the dragonfarm notebook loaded. Runs that were not bundled yet are bundled
 #' first, so a run that failed locally for lack of memory can be sent to the
 #' cloud as is.
 #'
