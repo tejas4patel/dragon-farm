@@ -116,17 +116,22 @@ dragon_questions_wait <- function(job) {
   repeat {
     p <- dragon_questions_progress(job)
     if (!is.na(p$total) && p$total > 0) {
-      cli::cli_progress_update(id = id, set = p$done, total = p$total,
-                               status = sprintf("%d of %d chunks, %d pairs, %d kept", p$done, p$total, p$pairs, p$kept))
+      # cli closes a bar by itself when `set` reaches `total`, and the generator
+      # reports every chunk done a moment before it writes "done"; hold the bar
+      # one short of full until then, and never let a closed bar end the wait.
+      at <- if (identical(p$state, "done")) p$total else min(p$done, p$total - 1L)
+      try(cli::cli_progress_update(id = id, set = at, total = p$total,
+                                   status = sprintf("%d of %d chunks, %d pairs, %d kept", p$done, p$total, p$pairs, p$kept)),
+          silent = TRUE)
     }
     if (identical(p$state, "done")) break
     if (identical(p$state, "failed")) {
-      cli::cli_progress_done(id = id)
+      try(cli::cli_progress_done(id = id), silent = TRUE)
       cli::cli_abort(c("Question generation failed.", "i" = "Last lines of the log:", " " = paste(tail_lines(job$log, 12), collapse = "\n")))
     }
     Sys.sleep(1)
   }
-  cli::cli_progress_done(id = id)
+  try(cli::cli_progress_done(id = id), silent = TRUE)
   qa <- dragon_questions_load(job$out)
   report_questions(qa)
   qa

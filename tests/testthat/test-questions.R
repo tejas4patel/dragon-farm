@@ -146,3 +146,25 @@ test_that("building a dataset warns when the set was re-read after the questions
   cat("\n", file = file.path(f$dir, "chunks.jsonl"), append = TRUE)     # the set changed underneath
   expect_warning(dragon_questions_dataset(qa, k = 1), "re-read after these questions were written")
 })
+
+test_that("waiting survives the generator reporting every chunk before it says done", {
+  # Seen in a real run: the progress file said 388 of 388 while still
+  # "running"; cli closed the bar at 388/388 and the next update errored after
+  # all the work was done.
+  f <- write_fake_set()
+  out <- write_fake_questions(f$dir)
+  states <- list(list(state = "running", done = 1L, total = 2L, pairs = 2L, kept = 1L),
+                 list(state = "running", done = 2L, total = 2L, pairs = 4L, kept = 3L),
+                 list(state = "running", done = 2L, total = 2L, pairs = 4L, kept = 3L),
+                 list(state = "done", done = 2L, total = 2L, pairs = 4L, kept = 3L))
+  i <- 0L
+  testthat::local_mocked_bindings(
+    dragon_questions_progress = function(job) { i <<- min(i + 1L, length(states)); states[[i]] },
+    report_questions = function(qa) invisible(qa)
+  )
+  testthat::local_mocked_bindings(Sys.sleep = function(time) invisible(NULL), .package = "base")
+  job <- structure(list(out = out, log = tempfile()), class = "dragon_questions_job")
+  qa <- dragon_questions_wait(job)
+  expect_s3_class(qa, "dragon_questions")
+  expect_equal(i, 4L)
+})

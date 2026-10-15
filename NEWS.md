@@ -124,6 +124,11 @@ Word, live web pages, and a spreadsheet.
 
 ## Fixes
 
+* `dragon_questions()` no longer errors at the very end of a long run. The
+  generator reports every chunk done a moment before it writes "done";
+  the progress bar closed itself at 100 percent and the next update failed
+  with "Cannot find progress bar", after all the questions had been
+  written.
 * A run is no longer marked failed by an out-of-memory error in the
   evaluation after training. Held-out loss is computed in chunks through the
   output layer, optimizer state is released first, and a run whose
