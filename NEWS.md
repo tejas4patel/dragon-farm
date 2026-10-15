@@ -22,7 +22,7 @@ Word, live web pages, and a spreadsheet.
   fictional company behind the example tickets, so the route can be tried
   before bringing your own files.
 * PDFs. Pages whose text comes out of the standard extractor as two-letter
-  fragments ("Co st co Wh ol es al e", common in annual reports) are re-read
+  fragments (`Co st co Wh ol es al e`, common in annual reports) are re-read
   in a layout-aware mode: a 76-page annual report went from 726 unreadable
   chunks to 273 readable ones under real section names. Running headers,
   page numbers, contents entries with dot leaders, and dot leaders inside
@@ -37,7 +37,7 @@ Word, live web pages, and a spreadsheet.
   from financial tables say "$4,409 million" rather than "$4,409".
 * Word. Unit notes styled as headings set the unit instead of becoming a
   section; short paragraphs set entirely in bold or italic become headings
-  when prose follows them (a 10-K's sub-headings are italic), while table
+  when prose follows them (the sub-headings of a 10-K are italic), while table
   column labels, which look the same, stay text. The Word annual report went
   from one 38-chunk "Note 1" to 123 real sections.
 * Web pages. Blocks made mostly of links and regions marked as navigation,
@@ -63,7 +63,7 @@ Word, live web pages, and a spreadsheet.
   can be any run, model id, or server backend. `dragon_chat()` gains
   `documents` and `k`; `$sources()` shows the excerpts behind the last reply.
 * Retrieval is hybrid by default: the embedding ranking is combined with a
-  keyword (BM25) ranking, counting only chunks that share a word with the
+  keyword (`BM25`) ranking, counting only chunks that share a word with the
   question, so exact terms and figures a small embedding model ranks a few
   places too low still reach the answer. The share of questions whose source
   chunk was among the four excerpts rose from 90.6 to 93.0 percent on R's
