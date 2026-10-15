@@ -1,4 +1,4 @@
-# Launch the dragon-farm app
+# Launch the dragonfarm app
 
 A Shiny app that walks through the same steps as the R API. The default
 route starts from documents: drop in files or web pages, ask questions

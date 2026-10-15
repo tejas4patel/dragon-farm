@@ -190,4 +190,4 @@ questions, build the training set.
 ## App
 
 - [`dragon_app()`](https://dragonfarm.dev/reference/dragon_app.md) :
-  Launch the dragon-farm app
+  Launch the dragonfarm app
