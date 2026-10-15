@@ -72,6 +72,7 @@
 <h3 id="the-app-development-version">The app<a class="anchor" aria-label="anchor" href="#the-app-development-version"></a></h3>
 <ul><li>The app starts with documents. A new <strong>Documents</strong> tab is tab 1: drop files or add web pages, read and index, ask with sources, continue in Chat. Its <strong>Teach</strong> card generates questions in the background, shows the yield as it grows, and lets you tick and untick pairs grouped by chunk before Continue to Model, which skips Data and Map. The table route (Data and Map first) is one link away or <code>dragon_app(route = "table")</code>.</li>
 <li>Panels take their natural height and the page scrolls; the Map step’s drop slots and the Try it cards are no longer clipped. A message now says to wait for “Upload complete” when Read and index is pressed while a large file is still uploading.</li>
+<li>A new look that matches dragonfarm.dev: a dark navbar whose tabs read as numbered steps, a one-line introduction on each step, the website’s fonts and amber-to-coral accents, model presets as selectable cards with size, memory, and licence, a loss chart in the same colours, and a dark mode switch in the navbar.</li>
 <li>The Training step can load the model in 4-bit (QLoRA), so a 7B trains from the app on an 8 GB NVIDIA card. The box ticks itself, with gradient checkpointing, when the chosen model’s full-precision weights would crowd the GPU (a 3B or 7B on 8 GB), and says so when there is no NVIDIA GPU.</li>
 </ul></div>
 <div class="section level3">

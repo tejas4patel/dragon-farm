@@ -149,6 +149,11 @@ spreadsheet.
   drop slots and the Try it cards are no longer clipped. A message now
   says to wait for “Upload complete” when Read and index is pressed
   while a large file is still uploading.
+- A new look that matches dragonfarm.dev: a dark navbar whose tabs read
+  as numbered steps, a one-line introduction on each step, the website’s
+  fonts and amber-to-coral accents, model presets as selectable cards
+  with size, memory, and licence, a loss chart in the same colours, and
+  a dark mode switch in the navbar.
 - The Training step can load the model in 4-bit (QLoRA), so a 7B trains
   from the app on an 8 GB NVIDIA card. The box ticks itself, with
   gradient checkpointing, when the chosen model’s full-precision weights
