@@ -50,7 +50,10 @@ spreadsheet.
   investing activities (2024: (4,409); 2023: (4,972); 2022: (3,915))”.
   On ten questions about an annual report that need a specific year’s
   figure, correct answers went from 5 to 9, and confident wrong-column
-  answers from 2 to none.
+  answers from 2 to none. Word tables get the same treatment from a
+  header row of dates, and their merged cells are no longer repeated
+  once per column they span (“249,625 \| 249,625”); the Word copy of the
+  report went from 8 to 10 of 10.
 - Units. A note such as “(dollars in millions, except per share data)”
   is carried into later chunks that show money without a unit word, so
   answers from financial tables say “\$4,409 million” rather than
