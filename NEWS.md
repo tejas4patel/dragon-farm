@@ -153,6 +153,12 @@ Word, live web pages, and a spreadsheet.
 
 ## Fixes
 
+* After the local model stopped answering in time (or a request was
+  interrupted), its late reply was taken as the answer to the next question,
+  so every later answer was one question behind. Requests to the inference
+  worker now carry an id and replies to another request are skipped; a worker
+  that times out is stopped and the next call starts a fresh one.
+
 * `dragon_questions()` no longer errors at the very end of a long run. The
   generator reports every chunk done a moment before it writes "done";
   the progress bar closed itself at 100 percent and the next update failed

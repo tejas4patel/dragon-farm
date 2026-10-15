@@ -19,6 +19,9 @@ Responses:
   {"ok": true, "outputs": [...], "device": "cuda:0"}      (generate)
   {"ok": true, "token": "..."}  ... {"ok": true, "done": true, "output": "..."}   (streaming, one conversation)
   {"ok": false, "error": "..."}
+
+A request may carry "id"; every response line written for it then carries
+the same "id".
 """
 
 import json
@@ -28,7 +31,15 @@ import traceback
 from collections import OrderedDict
 
 
+# The id of the request being served. Every line written for it carries the
+# id, so R can drop a late reply to a request it stopped waiting for (a
+# timeout, an interrupt) instead of taking it as the answer to the next one.
+_current_id = None
+
+
 def emit(obj):
+    if _current_id is not None and "id" not in obj:
+        obj = {**obj, "id": _current_id}
     sys.stdout.write(json.dumps(obj, ensure_ascii=False) + "\n")
     sys.stdout.flush()
 
@@ -133,6 +144,7 @@ def generate_stream(tok, model, hw, req):
 
 
 def main():
+    global _current_id
     cache = ModelCache()
     retriever = None   # created on first use; holds the small embedding model and loaded indexes
     emit({"ok": True, "ready": True})
@@ -140,8 +152,10 @@ def main():
         line = line.strip()
         if not line:
             continue
+        _current_id = None
         try:
             req = json.loads(line)
+            _current_id = req.get("id")
             op = req.get("op")
             if op == "ping":
                 emit({"ok": True, "pong": True, "loaded": len(cache.items)})

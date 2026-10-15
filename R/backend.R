@@ -245,8 +245,15 @@ worker_lines <- function(p) {
   parts[-length(parts)]
 }
 
+# Each request carries a fresh id and the worker stamps every line it writes
+# for that request with it. Lines for another id are late replies to a
+# request R gave up on (a timeout, an interrupt in the console or the app);
+# taking them as the answer shifted every later answer by one question.
 worker_request <- function(req, on_token = NULL, timeout = 3600) {
   p <- the$worker
+  the$worker_seq <- (the$worker_seq %||% 0L) + 1L
+  id <- the$worker_seq
+  req$id <- id
   worker_write(p, paste0(jsonlite::toJSON(req, auto_unbox = TRUE, null = "null", digits = NA), "\n"))
   started <- Sys.time()
   repeat {
@@ -254,6 +261,7 @@ worker_request <- function(req, on_token = NULL, timeout = 3600) {
     for (line in worker_lines(p)) {
       obj <- tryCatch(jsonlite::fromJSON(line, simplifyVector = FALSE), error = function(e) NULL)
       if (is.null(obj)) next
+      if (!is.null(obj$id) && !identical(as.integer(obj$id), id)) next
       if (!isTRUE(obj$ok)) {
         cli::cli_abort(c("The inference worker reported an error.", "x" = "{obj$error %||% 'unknown'}"))
       }
@@ -268,7 +276,11 @@ worker_request <- function(req, on_token = NULL, timeout = 3600) {
       cli::cli_abort(c("The inference worker died.", "i" = paste(tail_lines(the$worker_log, 15), collapse = "\n")))
     }
     if (as.numeric(difftime(Sys.time(), started, units = "secs")) > timeout) {
-      cli::cli_abort("The inference worker did not answer within {timeout} seconds.")
+      # A worker this slow is stuck (a GPU that went through sleep, a hung
+      # driver); stop it so the next call starts a fresh one.
+      dragon_worker_stop()
+      cli::cli_abort(c("The inference worker did not answer within {timeout} seconds.",
+                       "i" = "It was stopped; the next call starts a new one."))
     }
   }
 }
