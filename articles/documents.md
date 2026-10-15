@@ -168,11 +168,14 @@ dragon_merge(run, "models/support-0.5b")        # a standalone model that loads 
   it finds, so a question that has to look at every row of a spreadsheet
   or every year of a table (“which state had the highest murder rate?”,
   “in which year did margins peak?”) is out of reach; ask those in R on
-  the data itself. Tables in PDFs are flattened into lines of text, so
-  the right figure can come back from the wrong column. Scanned PDFs
-  have no text to read: they are reported by name, and need OCR (for
-  example `ocrmypdf`) first. Numbers inside charts and maps are usually
-  lost.
+  the data itself. Tables are flattened into lines of text; where a
+  table puts the years in a header row, each figure is labelled with its
+  year (“Net sales (2024: \$249,625; 2023: \$237,710; …)”), which took
+  questions about a specific year’s figure in an annual report from 5 of
+  10 right to 9 (PDF) and 10 (Word). Tables without such a header can
+  still be misread. Scanned PDFs have no text to read: they are reported
+  by name, and need OCR (for example `ocrmypdf`) first. Numbers inside
+  charts and maps are usually lost.
 - On real PDFs it holds up. R’s own manuals (*An Introduction to R* as
   PDF plus the R FAQ as HTML, 425 chunks) read and indexed in 41
   seconds; the 7B in 4-bit answered nine of ten questions from the right
