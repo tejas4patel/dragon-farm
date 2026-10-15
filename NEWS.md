@@ -1,11 +1,12 @@
-# dragonfarm (development version)
+# dragonfarm 0.4.0
 
 The headline of this release is a document route: drop in PDFs, Word files,
 web pages, or spreadsheets, ask questions with cited sources, have a model
 write training questions from them, review those, and fine-tune. The app now
-opens on it. Everything below was measured on an 8 GB laptop GPU (RTX 4060)
-and on real documents: R's own manuals, a 76-page annual report as PDF and as
-Word, live web pages, and a spreadsheet.
+opens on it, has a new look with a dark mode, and can train a 7B model in
+4-bit on an 8 GB GPU. Everything below was measured on an 8 GB laptop GPU
+(RTX 4060) and on real documents: R's own manuals, a 76-page annual report as
+PDF and as Word, live web pages, and a spreadsheet.
 
 ## Documents
 
@@ -161,6 +162,10 @@ Word, live web pages, and a spreadsheet.
   eight short prompts through a 0.5B went from 17 to 37 seconds to 6.
 
 ## Fixes
+
+* A background pipeline that was cancelled or stopped left an `Rscript*`
+  file in the temporary folder on Windows, because the code was passed with
+  `Rscript -e`. Pipelines now run from a script file next to their record.
 
 * After the local model stopped answering in time (or a request was
   interrupted), its late reply was taken as the answer to the next question,

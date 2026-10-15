@@ -3,7 +3,7 @@
 <div class="df-wrap">
 <p class="df-eyebrow"><span class="df-dot"></span>R package · on CRAN · MIT licensed</p>
 <h1 class="df-h1">Fine-tune a language model<br>from R. <span class="df-grad">In minutes.</span></h1>
-<p class="df-lede">Drop in your documents, ask them questions, then teach a small model from them. Or start from a table of prompts and replies. dragonfarm runs on your own GPU or a free cloud one, and the model you get is yours.</p>
+<p class="df-lede">Drop in your documents, ask them questions with cited sources, then teach a model from them: a 7B fits an 8 GB laptop GPU. Or start from a table of prompts and replies. dragonfarm runs on your own GPU or a free cloud one, and the model you get is yours.</p>
 <div class="df-cta">
 <div class="df-install"><code>install.packages(&quot;dragonfarm&quot;)</code><button class="df-copy" type="button" data-copy="install.packages(&quot;dragonfarm&quot;)">Copy</button></div>
 <a class="df-btn df-btn-primary" href="articles/quickstart.html">Get started</a>

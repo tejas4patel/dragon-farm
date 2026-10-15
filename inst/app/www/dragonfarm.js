@@ -8,7 +8,9 @@
     link.innerHTML = "";
     var n = document.createElement("span"); n.className = "df-step-n"; n.textContent = m[1];
     var t = document.createElement("span"); t.className = "df-step-t"; t.textContent = m[2];
-    link.appendChild(n); link.appendChild(t);
+    // The space keeps the accessible name "3 Train" rather than "3Train";
+    // the flex layout ignores it visually.
+    link.appendChild(n); link.appendChild(document.createTextNode(" ")); link.appendChild(t);
     link.setAttribute("title", m[2]);
   }
 

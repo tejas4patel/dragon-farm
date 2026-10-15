@@ -1,15 +1,21 @@
-# dragon-farm
+# dragonfarm
 
 [![CRAN status](https://www.r-pkg.org/badges/version/dragonfarm)](https://CRAN.R-project.org/package=dragonfarm)
+[![R-CMD-check](https://github.com/tejas4patel/dragon-farm/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tejas4patel/dragon-farm/actions/workflows/R-CMD-check.yaml)
+[![Website](https://img.shields.io/badge/docs-dragonfarm.dev-FF6B35)](https://dragonfarm.dev)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tejas4patel/dragon-farm/blob/main/inst/remote/dragonfarm_remote.ipynb)
 
 ![dragonfarm: fine-tune a language model from R in minutes. Six steps: Documents, Ask, Teach, Train, Monitor, Try it.](https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/banner.svg)
 
-`dragonfarm` takes a table of prompts and replies, teaches a 100M to 3B parameter
-model to answer in your format and your domain, and gives you back an adapter
-or a merged model that loads with plain Hugging Face `transformers`. Training
-runs in a background Python process that the package sets up for you, on your
-own GPU or on a free cloud one.
+**Fine-tune a language model on your own documents, from R.** Drop in PDFs,
+Word files, web pages, or spreadsheets and ask them questions: answers come
+back with cited sources before anything is trained. Then have a model write
+training questions from the documents, review them, and fine-tune. A 7B model
+trains in 4-bit on an 8 GB laptop GPU; small models train in minutes and suit
+fixed formats such as JSON extraction. You get back an adapter or a merged
+model that loads with plain Hugging Face `transformers`. Training runs in a
+background Python process that the package sets up for you, on your own GPU
+or on a free cloud one.
 
 ![The app, step by step: drop in documents, ask them with sources, review generated questions, train, watch the loss, compare against the base model.](https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/demo/dragonfarm-demo.gif)
 
@@ -56,7 +62,10 @@ dragon_ask(docs, "How long is the return window?")   # answer with [1] [2] footn
 
 qa <- dragon_questions(docs)        # questions and answers per chunk, filtered, every one kept with a reason
 dragon_questions_save(qa)           # after you have looked at them
-run <- dragon_train(dragon_questions_dataset(qa, docs), "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+run <- dragon_train(dragon_questions_dataset(qa, docs), "Qwen/Qwen2.5-7B-Instruct",
+                    hardware = dragon_hardware(load_in_4bit = TRUE),   # QLoRA: fits an 8 GB GPU
+                    args = dragon_train_args(max_seq_len = 1536, gradient_checkpointing = TRUE),
+                    wait = TRUE)                     # about 4 hours for 600 pairs on a laptop RTX 4060
 dragon_chat(run, documents = docs)$say("A customer wants to return an opened device.")
 ```
 
@@ -145,8 +154,9 @@ model](https://dragonfarm.dev/articles/documents.html).
 ## Requirements
 
 R 4.1 or newer and about 3 GB of disk for the Python environment, which the
-package sets up on first use. An NVIDIA GPU or Apple Silicon makes training
-fast; the smallest models also run on a CPU. `dragon_check()` reports what it
+package sets up on first use. An NVIDIA GPU with 8 GB or more trains and runs
+a 7B model in 4-bit (4-bit loading needs NVIDIA). Apple Silicon and smaller
+GPUs train smaller models, and the smallest also run on a CPU. `dragon_check()` reports what it
 found and how to fix it. Driver versions, GPU memory per model, and
 environment variables are in
 [Requirements, models, and settings](https://dragonfarm.dev/articles/under-the-hood.html).

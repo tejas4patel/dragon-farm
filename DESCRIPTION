@@ -1,18 +1,19 @@
 Package: dragonfarm
-Title: Fine-Tune Small Language Models with LoRA from R
-Version: 0.3.4.9000
+Title: Fine-Tune Language Models with LoRA on Your Documents and Data
+Version: 0.4.0
 Authors@R:
     person("Tejas", "Patel", role = c("aut", "cre"), email = "algocrat@gmail.com")
-Description: Fine-tune small causal language models with LoRA (Low-Rank
+Description: Fine-tune causal language models with LoRA (Low-Rank
     Adaptation) from R, and answer questions from your own documents.
     Documents (PDF, Word, HTML, Markdown, spreadsheets, web pages) are read
-    into chunks, retrieved for each question, and answered from with cited
-    sources; a model can write training questions from them for review.
-    Tables of prompts and responses work too. Training runs in a background
-    'Python' process built on Hugging Face 'transformers' and 'peft', with
-    4-bit loading so a 7B model fits an 8 GB GPU, and a 'shiny' app covers
-    the whole workflow. 'Python' dependencies are declared through
-    'reticulate' and resolved automatically on first use.
+    into chunks, retrieved for each question by combined keyword and
+    embedding search, and answered with cited sources; a model can then
+    write training questions from them for review. Tables of prompts and
+    responses work too. Training runs in a background 'Python' process
+    built on Hugging Face 'transformers' and 'peft', with 4-bit loading
+    (QLoRA) so a 7-billion-parameter model trains on an 8 GB GPU, and a
+    'shiny' app covers the whole workflow. 'Python' dependencies are
+    declared through 'reticulate' and resolved automatically on first use.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
