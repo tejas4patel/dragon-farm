@@ -189,11 +189,19 @@ spreadsheet.
 
 ### Fixes
 
+- After the local model stopped answering in time (or a request was
+  interrupted), its late reply was taken as the answer to the next
+  question, so every later answer was one question behind. Requests to
+  the inference worker now carry an id and replies to another request
+  are skipped; a worker that times out is stopped and the next call
+  starts a fresh one.
+
 - [`dragon_questions()`](https://dragonfarm.dev/reference/dragon_questions.md)
   no longer errors at the very end of a long run. The generator reports
   every chunk done a moment before it writes “done”; the progress bar
   closed itself at 100 percent and the next update failed with “Cannot
   find progress bar”, after all the questions had been written.
+
 - A run is no longer marked failed by an out-of-memory error in the
   evaluation after training. Held-out loss is computed in chunks through
   the output layer, optimizer state is released first, and a run whose
@@ -202,9 +210,11 @@ spreadsheet.
   the same loss.
   [`dragon_train_args()`](https://dragonfarm.dev/reference/dragon_train_args.md)
   gains `eval_batch_size` (default 1).
+
 - Large requests to the inference worker no longer hang: replies longer
   than processx’s line buffer are reassembled, and big requests are
   written in a loop.
+
 - [`dragon_example_data()`](https://dragonfarm.dev/reference/dragon_example_data.md)
   no longer contains duplicate tickets, so held-out numbers are not
   inflated by verbatim repeats. The tickets are synthetic; treat them as
