@@ -79,8 +79,13 @@ Word, live web pages, and a spreadsheet.
   chunk was among the four excerpts rose from 90.6 to 93.0 percent on R's
   manuals, 88 to 100 on the package documentation, 91 to 100 on questions
   about an annual report, and 83 to 100 on a spreadsheet.
-  `dragon_retrieve(method = "dense")` keeps the embedding ranking alone, and
-  `scripts/retrieval_eval.py` measures both on any indexed sets.
+  When four or more excerpts are asked for, the embedding's own best match is
+  always among them, in the last slot if the combined ranking left it out:
+  hit@4 on R's manuals rose further to 94.3 percent, and "How many Costco
+  locations are there in California?" is answered from the Word copy of the
+  report, which other chunks repeating "Costco" and "locations" had pushed
+  out. `dragon_retrieve(method = "dense")` keeps the embedding ranking
+  alone, and `scripts/retrieval_eval.py` measures both on any indexed sets.
 * On the annual report the default 7B in 4-bit answered 12 of 13 factual
   questions correctly from the right page; the miss was a total printed
   inside a map graphic, and it said so rather than guessing.

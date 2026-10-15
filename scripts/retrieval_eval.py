@@ -73,12 +73,14 @@ def hand_questions(path, set_name, set_dir):
 def score(idx, enc, items, mode):
     qs = [q for q, _ in items]
     vecs = enc.encode_queries(qs)
-    hits = idx.search(vecs, k=max(KS), queries=qs, mode=mode)
     res = {k: 0 for k in KS}
-    for (_, targets), found in zip(items, hits):
-        ranked = [h["id"] for h in found]
-        for k in KS:
-            res[k] += any(t in ranked[:k] for t in targets)
+    for k in KS:
+        # One search per k, as dragon_ask() does: the top k is not always the
+        # first k of a longer list (hybrid search keeps the embedding's best
+        # match in the last slot).
+        hits = idx.search(vecs, k=k, queries=qs, mode=mode)
+        for (_, targets), found in zip(items, hits):
+            res[k] += any(h["id"] in targets for h in found)
     return {k: res[k] / len(items) for k in KS}
 
 

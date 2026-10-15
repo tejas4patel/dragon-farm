@@ -177,3 +177,29 @@ def test_chunks_without_any_keyword_match_get_no_keyword_boost():
     q = Vec([[0.3, 0.29, 0.28, 0.9]])                   # the embedding prefers the notes chunk
     top = idx.search(q, k=1, queries=["Where does this come from?"])[0][0]["id"]   # no word in common with any chunk
     assert top == "notes"
+
+
+def test_hybrid_keeps_the_embeddings_best_match_among_the_excerpts():
+    import numpy as np
+
+    class Vec:
+        def __init__(self, a):
+            self.a = np.asarray(a, dtype="float32")
+
+        def numpy(self):
+            return self.a
+
+    texts = ["Costco locations Costco locations in Japan", "Costco locations in Korea and Costco",
+             "Costco locations Costco in Canada", "Costco locations Costco Spain",
+             "Costco locations Costco Mexico", "CALIFORNIA 140 ALABAMA 5 ALASKA 5"]
+    idx = R.LoadedIndex.__new__(R.LoadedIndex)
+    idx.ids = [str(i) for i in range(len(texts))]
+    idx.chunks = [{"text": t} for t in texts]
+    idx.vectors = np.eye(len(texts), dtype="float32")
+    idx.weights = np.ones(len(texts), dtype="float32")
+    idx.bm25 = R.BM25(texts)
+    q = Vec([[0.5, 0.5, 0.5, 0.5, 0.5, 0.9]])        # the embedding's best match is the state list
+    hits = [h["id"] for h in idx.search(q, k=4, queries=["How many Costco locations are there"])[0]]
+    assert "5" in hits and hits[-1] == "5"           # kept, in the last slot
+    top1 = idx.search(q, k=1, queries=["How many Costco locations are there"])[0]
+    assert len(top1) == 1                            # k below 3: the combined ranking alone
