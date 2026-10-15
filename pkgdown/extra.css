@@ -196,3 +196,72 @@ code, pre, kbd, samp { font-variant-ligatures: none; font-feature-settings: "lig
 .df-final .df-cta > p { margin: 0; }
 footer { padding: 18px 24px; }
 @media (max-width: 880px) { .df-ways { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---- Light mode ----------------------------------------------------------
+   The navbar, hero, app window and closing section were always dark, so in
+   light mode the page opened dark and the navbar's light-mode text colours
+   (version, theme switch) were near-invisible on it. Give them a warm light
+   palette when the light theme is on; dark mode is unchanged. */
+[data-bs-theme="light"] {
+  --df-l-bg: #FBF8F3;
+  --df-l-ink: #0B1020;
+  --df-l-body: #3B4660;
+  --df-l-muted: #5A6580;
+  --df-l-line: #E6E1D8;
+  --df-l-code: #B4540F;
+}
+[data-bs-theme="light"] .navbar {
+  background: rgba(251, 248, 243, 0.9) !important; border-bottom: 1px solid var(--df-l-line);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px); backdrop-filter: saturate(1.4) blur(10px);
+}
+[data-bs-theme="light"] .navbar .navbar-brand, [data-bs-theme="light"] .navbar .nav-link { color: var(--df-l-ink) !important; }
+[data-bs-theme="light"] .navbar .nav-link:hover, [data-bs-theme="light"] .navbar .nav-link:focus { color: var(--df-coral) !important; }
+[data-bs-theme="light"] .navbar .nav-text { color: var(--df-l-muted) !important; }
+[data-bs-theme="light"] .navbar .form-control { background: #fff; border-color: var(--df-l-line); }
+
+[data-bs-theme="light"] .df-hero {
+  color: var(--df-l-ink);
+  background:
+    radial-gradient(900px 480px at 82% -10%, rgba(255, 181, 71, 0.30), transparent 60%),
+    radial-gradient(760px 520px at 8% 20%, rgba(47, 111, 143, 0.14), transparent 60%),
+    var(--df-l-bg);
+}
+[data-bs-theme="light"] .df-hero::before { background-image: radial-gradient(rgba(11, 16, 32, 0.10) 1px, transparent 1px); }
+[data-bs-theme="light"] .df-eyebrow { background: rgba(255, 255, 255, 0.75); border-color: var(--df-l-line); color: var(--df-l-muted); }
+[data-bs-theme="light"] .df-h1 { color: var(--df-l-ink); }
+[data-bs-theme="light"] .df-grad { background-image: linear-gradient(90deg, #F08A00, #E4502A); }
+[data-bs-theme="light"] .df-lede { color: var(--df-l-body); }
+[data-bs-theme="light"] .df-install { background: #fff; border-color: var(--df-l-line); box-shadow: 0 6px 20px rgba(11, 16, 32, 0.06); }
+[data-bs-theme="light"] .df-install code { color: var(--df-l-code); }
+[data-bs-theme="light"] .df-copy { background: #F1ECE4; color: #2B3247; }
+[data-bs-theme="light"] .df-copy:hover { background: #E7E0D5; }
+[data-bs-theme="light"] .df-btn-ghost { background: #fff; border-color: #D8D2C7; color: var(--df-l-ink) !important; }
+[data-bs-theme="light"] .df-btn-ghost:hover { background: #F6F2EC; }
+[data-bs-theme="light"] .df-hero code, [data-bs-theme="light"] .df-final code { color: var(--df-l-code); background: rgba(11, 16, 32, 0.06); }
+[data-bs-theme="light"] .df-install code { background: none; }
+
+[data-bs-theme="light"] .df-screen {
+  background: #fff; border-color: #E2DED6;
+  box-shadow: 0 30px 70px rgba(11, 16, 32, 0.14), 0 0 0 1px rgba(255, 181, 71, 0.10), 0 0 80px rgba(255, 107, 53, 0.08);
+}
+[data-bs-theme="light"] .df-chrome { background: #F3F0EA; border-bottom-color: var(--df-l-line); }
+[data-bs-theme="light"] .df-chrome em { color: #7A8399; }
+[data-bs-theme="light"] .df-shots::after { background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.85)); }
+[data-bs-theme="light"] .df-stagecap { color: var(--df-l-muted); }
+[data-bs-theme="light"] .df-stagecap strong { color: var(--df-l-ink); }
+
+[data-bs-theme="light"] .df-final {
+  color: var(--df-l-ink);
+  background: radial-gradient(700px 360px at 50% 120%, rgba(255, 107, 53, 0.22), transparent 70%), var(--df-l-bg);
+  border-top: 1px solid var(--df-l-line);
+}
+[data-bs-theme="light"] .df-final .df-h2 { color: var(--df-l-ink); }
+[data-bs-theme="light"] .df-final .df-wrap > p { color: var(--df-l-body); }
+[data-bs-theme="light"] .df-links a { color: var(--df-l-body) !important; }
+[data-bs-theme="light"] .df-links a:hover { color: var(--df-coral) !important; }
+[data-bs-theme="light"] .df-card .df-tag { color: #A35A00; }
+/* Phones: the install box ran 2px past the edge at 375px wide. */
+@media (max-width: 480px) {
+  .df-install { max-width: 100%; padding-left: 14px; gap: 8px; }
+  .df-install code { font-size: 0.8rem; }
+}

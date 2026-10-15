@@ -22,8 +22,11 @@
     { n: 6, name: "Try it", sub: "Compare with base" },
   ];
 
-  var C = {
+  // Default palette, for a dark background. render() takes options.colors
+  // to override any of these (the website passes a light set in light mode).
+  var COLORS = {
     bg: "#0B1020",
+    check: "#0B1020",
     track: "#26324D",
     muted: "#7C89A6",
     text: "#F1F5FF",
@@ -51,6 +54,7 @@
 
   function render(d3, svg, t, options) {
     var o = options || {};
+    var C = Object.assign({}, COLORS, o.colors || {});
     var W = o.width || 960, H = o.height || 150;
     var g = geometry(W, H, o);
     var fontHead = o.fontHeading || "'Space Grotesk', 'Segoe UI', system-ui, sans-serif";
@@ -117,7 +121,7 @@
         .attr("fill", s.kind === "active" ? C.amber : C.muted)
         .attr("opacity", s.kind === "done" ? 0 : 1).text(d.n);
       node.select("path.check").attr("d", "M-7.5 0.5 L-2.5 6 L8 -6")
-        .attr("fill", "none").attr("stroke", C.bg).attr("stroke-width", 3.4)
+        .attr("fill", "none").attr("stroke", C.check).attr("stroke-width", 3.4)
         .attr("stroke-linecap", "round").attr("stroke-linejoin", "round")
         .attr("opacity", s.kind === "done" ? 1 : 0);
       var lit = s.kind === "done" || s.kind === "active";
@@ -131,5 +135,5 @@
     return { geometry: g, t: t };
   }
 
-  return { STEPS: STEPS, COLORS: C, geometry: geometry, render: render };
+  return { STEPS: STEPS, COLORS: COLORS, geometry: geometry, render: render };
 });
