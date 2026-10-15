@@ -64,7 +64,7 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 11
+READER_VERSION = 12
 # "(dollars in millions, except per share data)": the unit note a filing puts
 # once above a section or statement. Carried into later chunks that show money
 # without a unit word, so "$11,339" is not read as eleven thousand dollars.
@@ -281,6 +281,20 @@ def running_lines(pages):
     return {k for k, n in counts.items() if n >= floor}
 
 
+def all_caps_title(line):
+    """Two or more words in capitals ("CONSOLIDATED STATEMENTS OF INCOME"): a
+    title, never the continuation of a sentence from the previous page."""
+    letters = [c for c in line if c.isalpha()]
+    return len(line.split()) >= 2 and len(letters) >= 6 and sum(c.isupper() for c in letters) >= 0.9 * len(letters)
+
+
+def repetitive(line):
+    """A column header such as "52 Weeks Ended 53 Weeks Ended 52 Weeks Ended":
+    most of its words are repeats."""
+    words = line.lower().split()
+    return len(words) >= 4 and len(set(words)) <= len(words) / 2
+
+
 def mostly_letters(line):
     """At least half of the non-space characters are letters: true of "2.3
     Generating regular sequences", false of a row of numbers."""
@@ -376,7 +390,7 @@ def pages_to_text(pages):
                 continue
             if page_start:
                 page_start = False
-                if open_sentence() and not re.match(r"^\d+(\.\d+)*\s", line):
+                if open_sentence() and not re.match(r"^\d+(\.\d+)*\s", line) and not all_caps_title(line):
                     # The sentence ran off the previous page: carry on with it
                     # (it is then credited to the page where it ends).
                     buf.append(paras.pop(last_text()))
@@ -395,6 +409,7 @@ def pages_to_text(pages):
                 and ". " not in line                       # a sentence, not a title
                 and not CODE_LINE.search(following)        # "A call such as" before an example
                 and mostly_letters(line)                   # "59.75 93.0 900 5 1.9 yes" is a data row
+                and not repetitive(line)                   # "52 Weeks Ended 53 Weeks Ended 52 Weeks Ended"
                 and not re.match(r"^[a-z]", following)     # the sentence continues on the next line
             )
             if heading_like and not buf:

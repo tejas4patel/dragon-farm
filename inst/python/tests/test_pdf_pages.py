@@ -266,3 +266,19 @@ def test_word_tables_collapse_merged_cells_and_label_years():
     assert rows[1] == "REVENUE"                                   # merged across four columns, once
     assert rows[2] == "Net sales (2024: $249,625; 2023: $237,710; 2022: $222,730)"
     assert rows[3] == "Dividend (2024: —; 2023: —; 2022: (208))"  # equal neighbours are kept
+
+
+def test_a_capitalised_title_starts_a_section_even_after_an_unfinished_page():
+    pages = ["Report of the auditors, signed in Seattle, Washington October 8, 2024",
+             "\n".join(["COSTCO WHOLESALE CORPORATION", "CONSOLIDATED STATEMENTS OF INCOME",
+                        "52 Weeks Ended 53 Weeks Ended 52 Weeks Ended", "2024 2023 2022",
+                        "Net sales ... $ 249,625 $ 237,710 $ 222,730",
+                        "Revenue is recognised when goods are delivered to members in the warehouse."]),
+             "filler text for a third page."]
+    text = D.pages_to_text(pages)
+    headings = [l for l in text.split("\n\n") if l.startswith("## ")]
+    assert "## CONSOLIDATED STATEMENTS OF INCOME" in headings
+    assert not any("Weeks Ended" in h for h in headings)
+    assert D.repetitive("52 Weeks Ended 53 Weeks Ended 52 Weeks Ended")
+    assert not D.repetitive("Opinion on the Consolidated Financial Statements")
+    assert D.all_caps_title("CONSOLIDATED STATEMENTS OF INCOME") and not D.all_caps_title("Net sales")
