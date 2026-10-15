@@ -337,8 +337,13 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       if (is.null(qa)) return(NULL)
       if (!nrow(qa)) return(shiny::p(class = "hint", "The model wrote nothing usable. Try a larger generator."))
       groups <- split(seq_len(nrow(qa)), factor(qa$chunk_id, levels = unique(qa$chunk_id)))
+      # PDF pages, as answers show them: looked up from the set's chunks.
+      pages <- tryCatch({
+        ch <- dragon_chunks(attr(qa, "documents"))
+        ch$page[match(qa$chunk_id, ch$id)]
+      }, error = function(e) rep(NA_integer_, nrow(qa)))
       blocks <- lapply(groups, function(idx) {
-        where <- paste0(qa$source[idx[1]], if (nzchar(qa$section[idx[1]])) paste0(" \u203a ", qa$section[idx[1]]) else "")
+        where <- source_label(qa$source[idx[1]], qa$section[idx[1]], pages[idx[1]])
         names_html <- lapply(idx, function(i) {
           shiny::div(class = paste("qa", if (!qa$keep[i]) "rejected"),
             shiny::div(class = "q", qa$question[i]),
