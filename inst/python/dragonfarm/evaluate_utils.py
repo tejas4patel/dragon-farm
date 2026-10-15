@@ -60,6 +60,46 @@ def token_loss_sum(model, input_ids, attention_mask, labels, chunk=LOSS_CHUNK):
     return total
 
 
+def chunked_train_loss(model, input_ids, attention_mask, labels, num_items_in_batch=None, chunk=LOSS_CHUNK):
+    """Training loss computed through the output layer one chunk of positions
+    at a time, with each chunk recomputed in the backward pass.
+
+    A causal LM's own loss builds the full [batch, seq, vocab] logits and keeps
+    them for the backward pass; with a 151k-token vocabulary at 1,536 tokens
+    that is about a gigabyte per row in float32, which is what ran an 8 GB GPU
+    out of memory on document prompts. Here only one chunk's logits exist at a
+    time. The value and gradients match the model's own loss: summed
+    cross-entropy over the labelled tokens, divided by num_items_in_batch when
+    the trainer passes it (gradient accumulation), else by this batch's count.
+    Returns None when the model cannot be split (the caller falls back)."""
+    from torch.utils.checkpoint import checkpoint
+
+    dec, head = _decoder_and_head(model)
+    if dec is None:
+        return None
+    hidden = dec(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state[:, :-1]
+    shifted = labels[:, 1:]
+
+    def ce(h, lab):
+        logits = head(h).float()
+        return F.cross_entropy(logits.reshape(-1, logits.size(-1)), lab.reshape(-1),
+                               ignore_index=IGNORE_INDEX, reduction="sum")
+
+    total = hidden.new_zeros((), dtype=torch.float32)
+    for s in range(0, hidden.size(1), chunk):
+        lab = shifted[:, s:s + chunk]
+        if not bool((lab != IGNORE_INDEX).any()):
+            continue
+        total = total + checkpoint(ce, hidden[:, s:s + chunk], lab, use_reentrant=False)
+    if num_items_in_batch is not None:
+        denom = num_items_in_batch
+    else:
+        denom = (shifted != IGNORE_INDEX).sum().clamp(min=1)
+    if torch.is_tensor(denom):
+        denom = denom.to(total.device)
+    return total / denom
+
+
 def free_gpu_memory():
     gc.collect()
     if torch.cuda.is_available():
