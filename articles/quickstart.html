@@ -138,12 +138,12 @@ MB). Reading the same set again re-reads only files that changed.</p>
 <span><span class="co">#&gt;</span></span>
 <span><span class="co">#&gt; [1]* returns-and-warranty.md › Returns, refunds, and warranty</span></span>
 <span><span class="co">#&gt; [2]  orders-and-support.md › Duplicate or unexpected charges: refunds</span></span>
-<span><span class="co">#&gt; [3]  returns-and-warranty.md › Returns: refunds and setup</span></span>
-<span><span class="co">#&gt; [4]  orders-and-support.md › Account data</span></span>
+<span><span class="co">#&gt; [3]  returns-and-warranty.md › Damaged on arrival: replacement</span></span>
+<span><span class="co">#&gt; [4]  returns-and-warranty.md › Returns: refunds and setup</span></span>
 <span><span class="co">#&gt; * cited in the answer. Excerpt text is in $sources$text.</span></span></code></pre></div>
 <p>The most relevant chunks go in front of the model as numbered
 excerpts, with an instruction to answer only from them and to cite them.
-The first question in a session loads the model: this one took 48
+The first question in a session loads the model: this one took 52
 seconds with the 7B in 4-bit when its weights were already cached on
 disk, and about five minutes the first time after a reboot, when 15 GB
 had to be read from disk first. Later questions take a few seconds. For
@@ -164,8 +164,8 @@ across turns.</p>
 answers them from that chunk alone; deterministic filters then mark
 pairs that are not grounded in the chunk, name things it does not, refer
 to “the passage”, or repeat another question. Nothing is thrown away:
-each pair has <code>keep</code> and a <code>reason</code>. This took two
-and a half minutes for the eleven chunks with the 7B. On a CPU, pass a
+each pair has <code>keep</code> and a <code>reason</code>. This took a
+minute and a half for the eleven chunks with the 7B. On a CPU, pass a
 small generator such as
 <code>generator = "Qwen/Qwen2.5-0.5B-Instruct"</code> and expect to keep
 far fewer; a stronger teacher such as
@@ -205,13 +205,14 @@ Model.</p>
 <span>                    lora <span class="op">=</span> <span class="fu"><a href="../reference/dragon_lora.html">dragon_lora</a></span><span class="op">(</span>r <span class="op">=</span> <span class="fl">8</span>, alpha <span class="op">=</span> <span class="fl">16</span><span class="op">)</span>,</span>
 <span>                    args <span class="op">=</span> <span class="fu"><a href="../reference/dragon_train_args.html">dragon_train_args</a></span><span class="op">(</span>epochs <span class="op">=</span> <span class="fl">2</span>, batch_size <span class="op">=</span> <span class="fl">2</span>, grad_accum <span class="op">=</span> <span class="fl">4</span>, max_seq_len <span class="op">=</span> <span class="fl">1024</span><span class="op">)</span>,</span>
 <span>                    wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ✔ Launched run 20261013-181855-smollm2-135m-instruct (28 training rows, 1 held out).</span></span>
-<span><span class="co">#&gt; ✔ Run 20261013-181855-smollm2-135m-instruct succeeded. Eval loss 0.42, perplexity 1.52.</span></span></code></pre></div>
-<p>Each training prompt is the excerpts retrieved for that question,
-then the question; the answer is the response. The model learns the
-style and how to use excerpts, and the documents stay the source of
-truth, so they can change later without retraining. This run took a
-little over two minutes on the laptop GPU; the 135M model also trains on
+<span><span class="co">#&gt; ✔ Launched run 20261014-215041-smollm2-135m-instruct (28 training rows, 1 held out).</span></span>
+<span><span class="co">#&gt; ✔ Run 20261014-215041-smollm2-135m-instruct succeeded. Eval loss 0.58, perplexity 1.78.</span></span></code></pre></div>
+<p>Each training prompt is the excerpts retrieved for that question
+(always including the one the pair was written from), then the question;
+the answer, ending with the number of that excerpt, is the response. The
+model learns the style and how to use excerpts, and the documents stay
+the source of truth, so they can change later without retraining. This
+run took under a minute on the laptop GPU; the 135M model also trains on
 a CPU, more slowly. With <code>wait = TRUE</code> you get a progress
 bar; without it the function returns at once and
 <code>dragon_status(run)</code>, <code>dragon_progress(run)</code>, and
@@ -224,9 +225,10 @@ bar; without it the function returns at once and
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/dragon_ask.html">dragon_ask</a></span><span class="op">(</span><span class="va">docs</span>, <span class="st">"Can I return a device I have already set up?"</span>, model <span class="op">=</span> <span class="va">run</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Yes, you can return a device you have already set up. The device is still in</span></span>
-<span><span class="co">#&gt; the app, and you can use the app to set up the device.</span></span>
-<span><span class="co">#&gt; [1]  returns-and-warranty.md › Returns: refunds and setup</span></span>
-<span><span class="co">#&gt; [2]  returns-and-warranty.md › Returns, refunds, and warranty</span></span>
+<span><span class="co">#&gt; the app, and you can use the app to set up the device. The device is still in</span></span>
+<span><span class="co">#&gt; the app, ...</span></span>
+<span><span class="co">#&gt; [1]  returns-and-warranty.md › Returns, refunds, and warranty</span></span>
+<span><span class="co">#&gt; [2]  returns-and-warranty.md › Returns: refunds and setup</span></span>
 <span><span class="co">#&gt; ...</span></span>
 <span><span class="fu"><a href="../reference/dragon_evaluate.html">dragon_evaluate</a></span><span class="op">(</span><span class="va">run</span><span class="op">)</span>                        <span class="co"># held-out loss and a sample reply</span></span>
 <span><span class="va">chat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_chat.html">dragon_chat</a></span><span class="op">(</span><span class="va">run</span>, documents <span class="op">=</span> <span class="va">docs</span><span class="op">)</span>  <span class="co"># a conversation, answering from the documents</span></span>
@@ -234,13 +236,14 @@ bar; without it the function returns at once and
 <span><span class="fu"><a href="../reference/dragon_merge.html">dragon_merge</a></span><span class="op">(</span><span class="va">run</span>, <span class="st">"models/policies-135m"</span><span class="op">)</span>   <span class="co"># a standalone model for plain transformers</span></span></code></pre></div>
 <p>Be honest with yourself about what you just built. A 135M model
 trained on twenty-nine pairs for eight optimizer steps gets the gist
-(“yes, you can return it”) and then drifts; its held-out loss of 0.42 is
-over a single held-out row. This run exists to see the parts move in a
-few minutes, not to produce a model you would keep. Three things change
-the result: a bigger base model (<code>Qwen/Qwen2.5-0.5B-Instruct</code>
-on a GPU, which the README demo uses), your own documents, and a
-reviewed set of a few hundred pairs. The measured numbers behind each
-step, and what to expect from each model size, are in <a href="https://dragonfarm.dev/articles/documents.html">From your
+(“yes, you can return it”), then repeats itself and never cites; its
+held-out loss of 0.58 is over a single held-out row. This run exists to
+see the parts move in a few minutes, not to produce a model you would
+keep. Three things change the result: a bigger base model
+(<code>Qwen/Qwen2.5-0.5B-Instruct</code> on a GPU, which the README demo
+uses), your own documents, and a reviewed set of a few hundred pairs.
+The measured numbers behind each step, and what to expect from each
+model size, are in <a href="https://dragonfarm.dev/articles/documents.html">From your
 documents to your model</a>. Meanwhile, step 3 already answered this
 question correctly from the documents with no training at all, which is
 the point of doing it first.</p>
