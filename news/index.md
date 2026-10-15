@@ -96,23 +96,23 @@ spreadsheet.
   gains `documents` and `k`; `$sources()` shows the excerpts behind the
   last reply.
 - Retrieval is hybrid by default: the embedding ranking is combined with
-  a keyword (`BM25`) ranking, counting only chunks that share a word
-  with the question, so exact terms and figures a small embedding model
-  ranks a few places too low still reach the answer. The share of
-  questions whose source chunk was among the four excerpts rose from
-  90.6 to 93.0 percent on R’s manuals, 88 to 100 on the package
-  documentation, 91 to 100 on questions about an annual report, and 83
-  to 100 on a spreadsheet. When four or more excerpts are asked for, the
-  embedding’s own best match is always among them, in the last slot if
-  the combined ranking left it out: <hit@4> on R’s manuals rose further
-  to 94.3 percent, and “How many Costco locations are there in
-  California?” is answered from the Word copy of the report, which other
-  chunks repeating “Costco” and “locations” had pushed out.
-  `dragon_retrieve(method = "dense")` keeps the embedding ranking alone,
-  and `scripts/retrieval_eval.py` measures both on any indexed sets.
-- On the annual report the default 7B in 4-bit answered 12 of 13 factual
-  questions correctly from the right page; the miss was a total printed
-  inside a map graphic, and it said so rather than guessing.
+  a keyword (`BM25`) ranking over each chunk’s section title and text,
+  counting only chunks that share a word with the question, and the
+  embedding’s own best match always stays among the excerpts. Exact
+  terms and figures that a small embedding model ranks a few places too
+  low still reach the answer. The share of questions whose source chunk
+  was among the four excerpts, embedding alone against hybrid: R’s
+  manuals 90.7 to 94.5 percent (616 questions), the package
+  documentation 88 to 100, a spreadsheet 83 to 100; on an annual report
+  the right chunk is ranked first for 75 to 83 percent of questions, up
+  from 58 to 67. `dragon_retrieve(method = "dense")` keeps the embedding
+  ranking alone, and `scripts/retrieval_eval.py` measures both on any
+  indexed sets.
+- On the annual report the default 7B in 4-bit answers 20 to 23 of 23
+  factual questions with known answers (Word copy 23, PDF 20 to 21),
+  including ten that need a specific year’s figure from a table. The PDF
+  misses a total printed inside a map graphic, and the model says so
+  rather than guessing. Six excerpts instead of four did not help.
 
 ### From documents to training data
 
@@ -163,7 +163,10 @@ spreadsheet.
   would exceed 256 MB (`DRAGONFARM_CHUNKED_LOSS_MB`); shorter batches
   keep the original path, which kept a 7B in 4-bit on short rows at 13
   seconds a step where always chunking took 54. `DRAGONFARM_FULL_LOSS`
-  turns it off entirely.
+  turns it off entirely. With it, a 7B in 4-bit trains on 1,536-token
+  document prompts on an 8 GB card (616 pairs, three epochs, 4.3 hours);
+  the tuned 7B matched the untrained one on accuracy and always cited
+  its excerpt.
 - 4-bit loading for generation, on Windows as well as Linux.
   `dragon_backend_local(load_in_4bit = "auto")` quantizes a model to NF4
   only when its full weights would not fit the GPU, so a 7B runs on an 8

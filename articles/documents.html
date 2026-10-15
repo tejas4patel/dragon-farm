@@ -236,11 +236,18 @@ answer in one sentence, and was right about as often as the untrained
 just: batch 1, 512 tokens, gradient checkpointing, about 22 minutes for
 three epochs on 190 short tickets, 7.9 GB peak. It is worth it when it
 fits: on held-out tickets the three-epoch 7B reproduced every policy the
-0.5B had got wrong or blended. One epoch was not enough. For document
-prompts of about a thousand tokens, that card is not enough; use a 0.5B
-to 1.5B base model locally or a cloud GPU for the 7B.</li>
-<li>PDFs with tables read poorly for now (text comes out, structure does
-not). Markdown, HTML, Word, and spreadsheets come through cleanly.</li>
+0.5B had got wrong or blended. One epoch was not enough. Document
+prompts of about a thousand tokens also fit now, slowly: three epochs on
+616 pairs from R’s manuals took 4.3 hours (batch 1 x 16, 1,536 tokens,
+gradient checkpointing). The tuned 7B was as accurate as the untrained
+one on ten test questions (nine of ten), answered more briefly, cited an
+excerpt every time, and was never confidently wrong; a tuned 0.5B on the
+same pairs was wrong on about half. For speed, a cloud GPU still does
+this in a fraction of the time.</li>
+<li>PDFs come through as text, not layout. Where a table puts its years
+in a header row, each figure is labelled with its year; other tables can
+still be misread. Markdown, HTML, Word, and spreadsheets come through
+cleanly.</li>
 <li>The first question in a session loads the model. For a 7B in 4-bit
 that is about a minute; later questions take a few seconds.</li>
 </ul>
