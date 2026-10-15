@@ -197,14 +197,15 @@ def make_sft_trainer_class():
     from transformers import Trainer
 
     from .data import IGNORE_INDEX
-    from .evaluate_utils import chunked_train_loss, token_loss_sum
+    from .evaluate_utils import chunked_loss_pays, chunked_train_loss, token_loss_sum
 
     class SftTrainer(Trainer):
         def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
             # The chunked loss keeps the [batch, seq, vocab] logits from ever
             # existing at once. Anything unusual takes the library's own path.
             if (return_outputs or self.label_smoother is not None or self.compute_loss_func is not None
-                    or "labels" not in inputs or os.environ.get("DRAGONFARM_FULL_LOSS")):
+                    or "labels" not in inputs or os.environ.get("DRAGONFARM_FULL_LOSS")
+                    or not chunked_loss_pays(self.accelerator.unwrap_model(model), inputs["input_ids"])):
                 return super().compute_loss(model, inputs, return_outputs, num_items_in_batch)
             n = num_items_in_batch if (self.model_accepts_loss_kwargs and num_items_in_batch is not None) else None
             loss = chunked_train_loss(self.accelerator.unwrap_model(model), inputs["input_ids"],

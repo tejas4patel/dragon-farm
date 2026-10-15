@@ -58,3 +58,15 @@ def test_models_that_cannot_be_split_return_none():
 
     ids, mask, labels = _batch()
     assert chunked_train_loss(Opaque(), ids, mask, labels) is None
+
+
+def test_the_chunked_loss_is_only_used_when_the_logits_would_be_large(monkeypatch=None):
+    from types import SimpleNamespace
+
+    from dragonfarm.evaluate_utils import chunked_loss_pays
+
+    model = SimpleNamespace(config=SimpleNamespace(vocab_size=151936))
+    assert not chunked_loss_pays(model, torch.zeros(1, 300, dtype=torch.long))      # ~174 MB: library loss
+    assert chunked_loss_pays(model, torch.zeros(1, 1536, dtype=torch.long))         # ~890 MB: chunked
+    assert chunked_loss_pays(model, torch.zeros(4, 512, dtype=torch.long))          # ~1.2 GB: chunked
+    assert chunked_loss_pays(model, torch.zeros(1, 300, dtype=torch.long), threshold_mb=100)

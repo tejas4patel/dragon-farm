@@ -60,6 +60,27 @@ def token_loss_sum(model, input_ids, attention_mask, labels, chunk=LOSS_CHUNK):
     return total
 
 
+def chunked_loss_pays(model, input_ids, threshold_mb=None):
+    """Use the chunked training loss only when the full float32 logits for this
+    batch would be large (default 256 MB, DRAGONFARM_CHUNKED_LOSS_MB).
+
+    Timed alone, the chunked loss costs about the same as the library's. Its
+    trade-off is how memory sits on a nearly full card: on a 7B in 4-bit with
+    short rows (about 180 MB of logits), always chunking pushed an 8 GB GPU
+    into shared system memory and steps took 54 s instead of 13. With this
+    threshold that run takes the library path (12.7 s a step), while document
+    rows of about 1,000 tokens on a 0.5B (about 600 MB) take the chunked path
+    (8 minutes for three epochs, 6.2 GB peak, where the library loss ran out
+    of memory)."""
+    import os
+
+    if threshold_mb is None:
+        threshold_mb = float(os.environ.get("DRAGONFARM_CHUNKED_LOSS_MB", 256))
+    base = model.get_base_model() if hasattr(model, "get_base_model") else model
+    vocab = getattr(getattr(base, "config", None), "vocab_size", None) or 0
+    return input_ids.numel() * vocab * 4 / 2**20 >= threshold_mb
+
+
 def chunked_train_loss(model, input_ids, attention_mask, labels, num_items_in_batch=None, chunk=LOSS_CHUNK):
     """Training loss computed through the output layer one chunk of positions
     at a time, with each chunk recomputed in the backward pass.
