@@ -144,6 +144,15 @@ spreadsheet.
 
 ### Hardware and models
 
+- Training computes its loss through the output layer in chunks, so the
+  scores for the whole vocabulary are never held at every position at
+  once. With a 151,000-token vocabulary that tensor was about a gigabyte
+  per row at 1,536 tokens. Training a 0.5B on 616 document pairs at
+  1,536 tokens ran out of memory on an 8 GB card; it now peaks at 5.4 GB
+  and takes 8 minutes, where turning on gradient checkpointing to make
+  it fit took 29. The loss and its gradients are identical to the
+  model’s own (tested); set the environment variable
+  `DRAGONFARM_FULL_LOSS` to use the original.
 - 4-bit loading for generation, on Windows as well as Linux.
   `dragon_backend_local(load_in_4bit = "auto")` quantizes a model to NF4
   only when its full weights would not fit the GPU, so a 7B runs on an 8
