@@ -2,9 +2,10 @@
 
 R package · on CRAN · MIT licensed
 
-Drop in your documents, ask them questions, then teach a small model
-from them. Or start from a table of prompts and replies. dragonfarm runs
-on your own GPU or a free cloud one, and the model you get is yours.
+Drop in your documents, ask them questions with cited sources, then
+teach a model from them: a 7B fits an 8 GB laptop GPU. Or start from a
+table of prompts and replies. dragonfarm runs on your own GPU or a free
+cloud one, and the model you get is yours.
 
 `install.packages("dragonfarm")`
 

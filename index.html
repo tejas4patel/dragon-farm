@@ -5,15 +5,15 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Fine-Tune Small Language Models with LoRA from R • dragonfarm</title>
+<title>Fine-Tune Language Models with LoRA on Your Documents and Data • dragonfarm</title>
 <script src="lightswitch.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
-<script src="extra.js"></script><meta property="og:title" content="Fine-Tune Small Language Models with LoRA from R">
-<meta name="description" content="Fine-tune small causal language models with LoRA (Low-Rank Adaptation) from R, and answer questions from your own documents. Documents (PDF, Word, HTML, Markdown, spreadsheets, web pages) are read into chunks, retrieved for each question, and answered from with cited sources; a model can write training questions from them for review. Tables of prompts and responses work too. Training runs in a background Python process built on Hugging Face transformers and peft, with 4-bit loading so a 7B model fits an 8 GB GPU, and a shiny app covers the whole workflow. Python dependencies are declared through reticulate and resolved automatically on first use.">
-<meta property="og:description" content="Fine-tune small causal language models with LoRA (Low-Rank Adaptation) from R, and answer questions from your own documents. Documents (PDF, Word, HTML, Markdown, spreadsheets, web pages) are read into chunks, retrieved for each question, and answered from with cited sources; a model can write training questions from them for review. Tables of prompts and responses work too. Training runs in a background Python process built on Hugging Face transformers and peft, with 4-bit loading so a 7B model fits an 8 GB GPU, and a shiny app covers the whole workflow. Python dependencies are declared through reticulate and resolved automatically on first use.">
+<script src="extra.js"></script><meta property="og:title" content="Fine-Tune Language Models with LoRA on Your Documents and Data">
+<meta name="description" content="Fine-tune causal language models with LoRA (Low-Rank Adaptation) from R, and answer questions from your own documents. Documents (PDF, Word, HTML, Markdown, spreadsheets, web pages) are read into chunks, retrieved for each question by combined keyword and embedding search, and answered with cited sources; a model can then write training questions from them for review. Tables of prompts and responses work too. Training runs in a background Python process built on Hugging Face transformers and peft, with 4-bit loading (QLoRA) so a 7-billion-parameter model trains on an 8 GB GPU, and a shiny app covers the whole workflow. Python dependencies are declared through reticulate and resolved automatically on first use.">
+<meta property="og:description" content="Fine-tune causal language models with LoRA (Low-Rank Adaptation) from R, and answer questions from your own documents. Documents (PDF, Word, HTML, Markdown, spreadsheets, web pages) are read into chunks, retrieved for each question by combined keyword and embedding search, and answered with cited sources; a model can then write training questions from them for review. Tables of prompts and responses work too. Training runs in a background Python process built on Hugging Face transformers and peft, with 4-bit loading (QLoRA) so a 7-billion-parameter model trains on an 8 GB GPU, and a shiny app covers the whole workflow. Python dependencies are declared through reticulate and resolved automatically on first use.">
 <meta property="og:image" content="https://dragonfarm.dev/social.png">
 <meta property="og:image:alt" content="dragonfarm: fine-tune a language model from R in minutes">
 <meta name="twitter:card" content="summary_large_image">
@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="index.html">dragonfarm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,7 +70,7 @@
 Fine-tune a language model<br>from R. <span class="df-grad">In minutes.</span>
 </h1></div>
 <p class="df-lede">
-Drop in your documents, ask them questions, then teach a small model from them. Or start from a table of prompts and replies. dragonfarm runs on your own GPU or a free cloud one, and the model you get is yours.
+Drop in your documents, ask them questions with cited sources, then teach a model from them: a 7B fits an 8 GB laptop GPU. Or start from a table of prompts and replies. dragonfarm runs on your own GPU or a free cloud one, and the model you get is yours.
 </p>
 <div class="df-cta">
 <div class="df-install">
