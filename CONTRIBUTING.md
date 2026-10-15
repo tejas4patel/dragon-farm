@@ -52,6 +52,10 @@ suite on a CPU runner, so a change that passes locally should pass there.
   exported topic has to appear in the reference index in `_pkgdown.yml`, and
   a unit test enforces this.
 - Add a line to `NEWS.md` for anything a user would notice.
+- Changed how a file is read or chunked (`inst/python/dragonfarm/documents.py`)?
+  Bump `READER_VERSION` there. Sets are reused by checksum, so without the bump
+  existing document sets keep the chunks the old code produced. Then rerun the
+  offline retrieval check on a few real documents before and after.
 - Add a test. Shiny modules are tested with `shiny::testServer`; Python
   helpers have tests under `inst/python/tests`.
 - Never commit credentials, API keys, or tokens, including in scripts under
