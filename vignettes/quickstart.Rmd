@@ -83,14 +83,14 @@ ans
 #>
 #> [1]* returns-and-warranty.md › Returns, refunds, and warranty
 #> [2]  orders-and-support.md › Duplicate or unexpected charges: refunds
-#> [3]  returns-and-warranty.md › Returns: refunds and setup
-#> [4]  orders-and-support.md › Account data
+#> [3]  returns-and-warranty.md › Damaged on arrival: replacement
+#> [4]  returns-and-warranty.md › Returns: refunds and setup
 #> * cited in the answer. Excerpt text is in $sources$text.
 ```
 
 The most relevant chunks go in front of the model as numbered excerpts, with
 an instruction to answer only from them and to cite them. The first question
-in a session loads the model: this one took 48 seconds with the 7B in 4-bit
+in a session loads the model: this one took 52 seconds with the 7B in 4-bit
 when its weights were already cached on disk, and about five minutes the
 first time after a reboot, when 15 GB had to be read from disk first. Later
 questions take a few seconds. For many uses this step is the whole job:
@@ -110,7 +110,7 @@ For every chunk a model writes three self-contained questions and answers
 them from that chunk alone; deterministic filters then mark pairs that are
 not grounded in the chunk, name things it does not, refer to "the passage",
 or repeat another question. Nothing is thrown away: each pair has `keep` and
-a `reason`. This took two and a half minutes for the eleven chunks with the
+a `reason`. This took a minute and a half for the eleven chunks with the
 7B. On a CPU, pass a small generator such as
 `generator = "Qwen/Qwen2.5-0.5B-Instruct"` and expect to keep far fewer; a
 stronger teacher such as `dragon_llm_anthropic()` keeps more.
@@ -151,16 +151,18 @@ run <- dragon_train(ds, "HuggingFaceTB/SmolLM2-135M-Instruct",
                     lora = dragon_lora(r = 8, alpha = 16),
                     args = dragon_train_args(epochs = 2, batch_size = 2, grad_accum = 4, max_seq_len = 1024),
                     wait = TRUE)
-#> ✔ Launched run 20261013-181855-smollm2-135m-instruct (28 training rows, 1 held out).
-#> ✔ Run 20261013-181855-smollm2-135m-instruct succeeded. Eval loss 0.42, perplexity 1.52.
+#> ✔ Launched run 20261014-215041-smollm2-135m-instruct (28 training rows, 1 held out).
+#> ✔ Run 20261014-215041-smollm2-135m-instruct succeeded. Eval loss 0.58, perplexity 1.78.
 ```
 
-Each training prompt is the excerpts retrieved for that question, then the
-question; the answer is the response. The model learns the style and how to
-use excerpts, and the documents stay the source of truth, so they can change
-later without retraining. This run took a little over two minutes on the
-laptop GPU; the 135M model also trains on a CPU, more slowly. With `wait =
-TRUE` you get a progress bar; without it the function returns at once and
+Each training prompt is the excerpts retrieved for that question (always
+including the one the pair was written from), then the question; the answer,
+ending with the number of that excerpt, is the response. The model learns
+the style and how to use excerpts, and the documents stay the source of
+truth, so they can change
+later without retraining. This run took under a minute on the laptop GPU;
+the 135M model also trains on a CPU, more slowly. With `wait = TRUE` you get
+a progress bar; without it the function returns at once and
 `dragon_status(run)`, `dragon_progress(run)`, and `dragon_wait(run)` follow
 along. Runs survive the session: `dragon_run("~/dragonfarm_runs/<id>")`
 reopens one.
@@ -170,9 +172,10 @@ reopens one.
 ```{r, purl = FALSE}
 dragon_ask(docs, "Can I return a device I have already set up?", model = run)
 #> Yes, you can return a device you have already set up. The device is still in
-#> the app, and you can use the app to set up the device.
-#> [1]  returns-and-warranty.md › Returns: refunds and setup
-#> [2]  returns-and-warranty.md › Returns, refunds, and warranty
+#> the app, and you can use the app to set up the device. The device is still in
+#> the app, ...
+#> [1]  returns-and-warranty.md › Returns, refunds, and warranty
+#> [2]  returns-and-warranty.md › Returns: refunds and setup
 #> ...
 dragon_evaluate(run)                        # held-out loss and a sample reply
 chat <- dragon_chat(run, documents = docs)  # a conversation, answering from the documents
@@ -182,7 +185,8 @@ dragon_merge(run, "models/policies-135m")   # a standalone model for plain trans
 
 Be honest with yourself about what you just built. A 135M model trained on
 twenty-nine pairs for eight optimizer steps gets the gist ("yes, you can return
-it") and then drifts; its held-out loss of 0.42 is over a single held-out row.
+it"), then repeats itself and never cites; its held-out loss of 0.58 is over a
+single held-out row.
 This run exists to see the parts move in a few minutes, not to produce a
 model you would keep. Three things change the result: a bigger base model
 (`Qwen/Qwen2.5-0.5B-Instruct` on a GPU, which the README demo uses), your
