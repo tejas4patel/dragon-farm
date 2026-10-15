@@ -64,7 +64,7 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 8
+READER_VERSION = 9
 # "(dollars in millions, except per share data)": the unit note a filing puts
 # once above a section or statement. Carried into later chunks that show money
 # without a unit word, so "$11,339" is not read as eleven thousand dollars.
@@ -281,6 +281,13 @@ def running_lines(pages):
     return {k for k, n in counts.items() if n >= floor}
 
 
+def mostly_letters(line):
+    """At least half of the non-space characters are letters: true of "2.3
+    Generating regular sequences", false of a row of numbers."""
+    chars = [c for c in line if not c.isspace()]
+    return bool(chars) and sum(c.isalpha() for c in chars) >= 0.5 * len(chars)
+
+
 def pages_to_text(pages):
     """Paragraphs and '## ' headings from the extracted text of each page.
 
@@ -346,6 +353,7 @@ def pages_to_text(pages):
                 and not CODE_LINE.search(line)
                 and ". " not in line                       # a sentence, not a title
                 and not CODE_LINE.search(following)        # "A call such as" before an example
+                and mostly_letters(line)                   # "59.75 93.0 900 5 1.9 yes" is a data row
                 and not re.match(r"^[a-z]", following)     # the sentence continues on the next line
             )
             if heading_like and not buf:

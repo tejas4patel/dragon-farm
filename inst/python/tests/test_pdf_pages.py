@@ -213,3 +213,12 @@ def test_link_lists_without_nav_tags_are_dropped():
     text = D.html_to_text(html)
     assert "Download" not in text and "Skip me" not in text
     assert "R is a language and environment" in text and "see S for history" in text
+
+
+def test_rows_of_numbers_are_not_headings():
+    assert D.mostly_letters("2.3 Generating regular sequences")
+    assert not D.mostly_letters("59.75 93.0 900 5 1.9 yes")
+    page = "\n".join(["Price Floor Area Rooms Age Cent.heat", "", "59.75 93.0 900 5 1.9 yes",
+                      "The data frame has one row per house and is read with read.table()."])
+    text = D.pages_to_text([page])
+    assert "## 59.75" not in text
