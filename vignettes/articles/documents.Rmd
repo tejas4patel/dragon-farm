@@ -15,7 +15,7 @@ Documents tab, and the Teach card at the bottom is the review step.
 
 PDF, HTML, Markdown, plain text, Word, spreadsheets, whole folders, and web
 pages all work. The text is split into chunks of about 170 words that never
-cross a heading, and each chunk remembers its file and section so answers can
+cross a heading, and each chunk remembers its file, section, and (for PDFs) page so answers can
 say where they came from.
 
 ```{r, eval = FALSE}
@@ -46,14 +46,15 @@ ans <- dragon_ask(docs, "How long is the return window?")
 ans
 #> You can return any device within 30 days of delivery, opened or unopened [1].
 #>
-#> [1]* returns.pdf › Returns
-#> [2]  returns.pdf › Refunds
+#> [1]* returns.pdf, p. 2 › Returns
+#> [2]  returns.pdf, p. 3 › Refunds
 #> [3]  https://example.com/help › Orders
 #> [4]  warranty.docx › Coverage
 #> * cited in the answer. Excerpt text is in $sources$text.
 ```
 
-The `k` most relevant chunks go in front of a model as numbered excerpts
+The `k` most relevant chunks, found by combining the meaning of the question
+with its exact words and figures, go in front of a model as numbered excerpts
 with an instruction to answer only from them and cite them. The model is
 whatever [dragon_check()](../reference/dragon_check.html) recommends for your
 GPU memory: a 1.5B model under 6 GB, a 3B at 6 to 8 GB, a 7B loaded in 4-bit
