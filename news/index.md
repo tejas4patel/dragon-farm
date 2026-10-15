@@ -158,8 +158,9 @@ a spreadsheet.
 - The Training step can load the model in 4-bit (QLoRA), so a 7B trains
   from the app on an 8 GB NVIDIA card. The box ticks itself, with
   gradient checkpointing, when the chosen model’s full-precision weights
-  would crowd the GPU (a 3B or 7B on 8 GB), and says so when there is no
-  NVIDIA GPU.
+  would crowd the GPU (a 3B or 7B on 8 GB), sets batch size 1 with
+  gradient accumulation raised to keep the effective batch, and says so
+  when there is no NVIDIA GPU.
 
 ### Hardware and models
 
@@ -199,6 +200,11 @@ a spreadsheet.
   eight short prompts through a 0.5B went from 17 to 37 seconds to 6.
 
 ### Fixes
+
+- A training run that runs out of GPU memory now says so, with the usual
+  fixes, including when the error arrives as
+  `CUBLAS_STATUS_EXECUTION_FAILED` (a 7B in 4-bit at batch size 4 on an
+  8 GB card) rather than “out of memory”.
 
 - A background pipeline that was cancelled or stopped left an `Rscript*`
   file in the temporary folder on Windows, because the code was passed
