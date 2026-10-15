@@ -222,3 +222,27 @@ def test_rows_of_numbers_are_not_headings():
                       "The data frame has one row per house and is read with read.table()."])
     text = D.pages_to_text([page])
     assert "## 59.75" not in text
+
+
+def test_year_columns_are_labelled_under_a_year_header():
+    lines = ["2024 2023 2022",
+             "Net cash provided by operating activities ... ... $ 11,339 $ 11,068 $ 7,392",
+             "Net cash used in investing activities . ... (4,409) (4,972) (3,915)",
+             "Gross margin percentage . ... 10.92 % 10.57 % 10.48 %",
+             "Dividend to noncontrolling interest — — (208)",
+             "Net sales grew 5 percent in 2024 compared with 2023, driven by traffic.",
+             "Membership fees .. ... 4,828 4,580"]
+    out = D.label_year_columns(lines)
+    assert out[1] == "Net cash provided by operating activities (2024: $11,339; 2023: $11,068; 2022: $7,392)"
+    assert out[2] == "Net cash used in investing activities (2024: (4,409); 2023: (4,972); 2022: (3,915))"
+    assert out[3] == "Gross margin percentage (2024: 10.92%; 2023: 10.57%; 2022: 10.48%)"
+    assert out[4].startswith("Dividend to noncontrolling interest (2024: ")
+    assert out[5] == lines[5] and out[6] == lines[6]          # prose and short rows untouched
+
+
+def test_year_labels_stop_after_the_table():
+    lines = ["2024 2023", "Revenue 10 9", "This paragraph is prose.", "More prose here.", "Still prose.",
+             "Another row 5 4"]
+    out = D.label_year_columns(lines)
+    assert out[1] == "Revenue (2024: 10; 2023: 9)"
+    assert out[5] == "Another row 5 4"

@@ -64,7 +64,7 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 9
+READER_VERSION = 10
 # "(dollars in millions, except per share data)": the unit note a filing puts
 # once above a section or statement. Carried into later chunks that show money
 # without a unit word, so "$11,339" is not read as eleven thousand dollars.
@@ -288,6 +288,47 @@ def mostly_letters(line):
     return bool(chars) and sum(c.isalpha() for c in chars) >= 0.5 * len(chars)
 
 
+YEAR_HEADER = re.compile(r"^(?:(?:19|20)\d\d\s+){1,5}(?:19|20)\d\d$")
+YEAR_VALUE = re.compile(r"^\$?\(?-?[\d,]*\d(?:\.\d+)?\)?%?$|^[\u2014\u2013-]$")
+
+
+def label_year_columns(lines):
+    """Financial tables put the years once, above the figures:
+
+        2024 2023 2022
+        Net cash used in investing activities ... (4,409) (4,972) (3,915)
+
+    Flattened into text, nothing says which figure belongs to which year, and
+    answers came back from the wrong column. Rows under a year header that end
+    in exactly one figure per year are rewritten with the years attached:
+    "Net cash used in investing activities (2024: (4,409); 2023: (4,972);
+    2022: (3,915))". Other lines are left alone."""
+    out, years, misses = [], None, 0
+    for line in lines:
+        bare = line.strip()
+        if YEAR_HEADER.match(bare):
+            years, misses = bare.split(), 0
+            out.append(line)
+            continue
+        if years and bare:
+            norm = re.sub(r"\$\s+", "$", re.sub(r"\s+%", "%", bare))
+            toks = norm.split()
+            vals = []
+            while toks and len(vals) < len(years) and YEAR_VALUE.match(toks[-1]):
+                vals.insert(0, toks.pop())
+            label = DOT_LEADER.sub(" ", " ".join(toks)).strip(" .")
+            if len(vals) == len(years) and re.search(r"[A-Za-z]{3,}", label):
+                pairs = "; ".join(f"{y}: {v}" for y, v in zip(years, vals))
+                out.append(f"{label} ({pairs})")
+                misses = 0
+                continue
+            misses += 1
+            if misses >= 3:
+                years = None
+        out.append(line)
+    return out
+
+
 def pages_to_text(pages):
     """Paragraphs and '## ' headings from the extracted text of each page.
 
@@ -317,7 +358,7 @@ def pages_to_text(pages):
         flush()
         if len(pages) > 1:
             paras.append("\x01page %d" % page_no)
-        lines = [l.strip() for l in text.splitlines()]
+        lines = label_year_columns([l.strip() for l in text.splitlines()])
         nonblank = [i for i, l in enumerate(lines) if l]
         edges = set(nonblank[:2] + nonblank[-2:])
         page_start = True
