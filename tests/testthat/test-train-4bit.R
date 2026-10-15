@@ -34,3 +34,9 @@ test_that("the train module warns when 4-bit is ticked without an NVIDIA GPU", {
     expect_null(output$four_bit_hint)
   })
 })
+
+test_that("4-bit runs use batch size 1 and keep the effective batch", {
+  expect_equal(dragonfarm:::batch_for_4bit(4, 4), list(batch_size = 1L, grad_accum = 16L))
+  expect_equal(dragonfarm:::batch_for_4bit(1, 16), list(batch_size = 1L, grad_accum = 16L))
+  expect_equal(dragonfarm:::batch_for_4bit(NA, 8), list(batch_size = 1L, grad_accum = 8L))
+})

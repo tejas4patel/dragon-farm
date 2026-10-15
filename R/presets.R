@@ -69,3 +69,13 @@ suggest_train_4bit <- function(model_id, hw = NULL) {
   if (!identical(hw$device, "cuda")) return(NA)
   size * 2.1 > 0.6 * as.numeric(hw$vram_gb %||% 0)
 }
+
+# Batch settings for a 4-bit run: batch size 1, with gradient accumulation
+# raised so the effective batch (batch size x accumulation) stays the same.
+batch_for_4bit <- function(batch_size, grad_accum) {
+  b <- suppressWarnings(as.integer(batch_size))
+  a <- suppressWarnings(as.integer(grad_accum))
+  if (is.na(b) || b < 1) b <- 1L
+  if (is.na(a) || a < 1) a <- 1L
+  list(batch_size = 1L, grad_accum = b * a)
+}

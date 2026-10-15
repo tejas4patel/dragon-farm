@@ -157,7 +157,14 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       s <- suggest_train_4bit(state$model$id, state$hardware)
       if (is.na(s)) return()
       shiny::updateCheckboxInput(session, "four_bit", value = s)
-      if (isTRUE(s)) shiny::updateCheckboxInput(session, "grad_ckpt", value = TRUE)
+      if (isTRUE(s)) {
+        shiny::updateCheckboxInput(session, "grad_ckpt", value = TRUE)
+        # A 7B in 4-bit at batch size 4 does not fit 8 GB (it failed on the
+        # first step); batch size 1 does. Keep the effective batch the same.
+        fit <- batch_for_4bit(input$batch_size %||% 4, input$grad_accum %||% 4)
+        shiny::updateNumericInput(session, "batch_size", value = fit$batch_size)
+        shiny::updateNumericInput(session, "grad_accum", value = fit$grad_accum)
+      }
     }, ignoreNULL = FALSE)
 
     output$four_bit_hint <- shiny::renderUI({
@@ -166,7 +173,7 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       if (!is.null(hw) && !identical(hw$device, "cuda")) {
         return(shiny::p(class = "small text-danger", "4-bit needs an NVIDIA GPU; this machine has none. Untick it, or train on a cloud GPU."))
       }
-      shiny::p(class = "hint", "The base model loads in 4-bit and the LoRA adapter trains in full precision. On an 8 GB card a 7B trains at about one batch of 16 rows every 13 seconds on short prompts, minutes per batch on long document prompts.")
+      shiny::p(class = "hint", "The base model loads in 4-bit and the LoRA adapter trains in full precision. Batch size 1 with more gradient accumulation fits a 7B on an 8 GB card; on short prompts it trains a batch of 16 rows in about 13 seconds, on long document prompts in a few minutes.")
     })
 
     problems <- shiny::reactive({
