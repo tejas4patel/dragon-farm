@@ -188,3 +188,29 @@ def test_a_tiny_source_still_yields_one_chunk():
 def test_private_use_glyphs_are_stripped():
     chunks = D.chunk_text("# T\n\n Icon " + " ".join(["word"] * 40), "a.md", min_words=10)
     assert "" not in chunks[0]["text"]
+
+
+def test_key_value_sheets_are_not_read_as_header_plus_rows():
+    rows = [("Source", "R datasets package, state.x77 (US Department of Commerce, Statistical Abstract, 1977)"),
+            ("Population", "July 1, 1975 estimate, in thousands")]
+    assert D.key_value_sheet(rows)
+    assert not D.looks_like_header(rows[0], rows[1:])
+    text = D.rows_to_text("Notes", None, rows)
+    assert "Source: R datasets package" in text and "Population: July 1, 1975" in text
+
+
+def test_ordinary_tables_keep_their_header():
+    rows = [("State", "Region", "Population"), ("Alaska", "West", 365), ("Texas", "South", 12237)]
+    assert D.looks_like_header(rows[0], rows[1:]) and not D.key_value_sheet(rows)
+    assert not D.looks_like_header((2024, 2023, 2022), rows[1:])     # numbers are data, not names
+
+
+def test_sheets_never_share_a_chunk():
+    big = D.rows_to_text("Data", ["State", "Population"], [("State %d" % i, i * 1000) for i in range(30)])
+    notes = D.rows_to_text("Notes", None, [("Source", "Census estimates")])
+    text = big + "\n\n" + D.HARD_BREAK + "\n\n" + notes
+    chunks = D.chunk_text(text, "book.xlsx", max_words=170, min_words=35)
+    last = chunks[-1]
+    assert last["section"] == "Notes" and "Source: Census estimates" in last["text"]
+    assert all("Census" not in c["text"] for c in chunks[:-1])
+    assert all(D.HARD_BREAK not in c["text"] for c in chunks)

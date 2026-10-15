@@ -1,5 +1,14 @@
 # dragonfarm (development version)
 
+* Spreadsheets: a two-column label-and-value sheet (a "Notes" or "About"
+  tab) is no longer read as a header row plus data, a first row of numbers
+  is not taken for column names, and each sheet starts its own chunk, so a
+  short notes sheet is not folded into the last rows of the data sheet.
+* Hybrid retrieval no longer gives a keyword boost to chunks that share no
+  word with the question. Ranking the zero scores handed the first chunks
+  of a file an unearned lift; on a spreadsheet it pushed the source notes out
+  of the top four. Equal or better on all five test sets.
+
 * A PDF with no text layer (a scan, a photo, a fax) is now reported by name
   with advice to run OCR first, instead of silently adding nothing to the
   set. Other files in the same set are read as usual.

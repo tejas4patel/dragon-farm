@@ -231,7 +231,10 @@ class LoadedIndex:
         for qi, (row, sim_row) in enumerate(zip(scores, sims)):
             if hybrid:
                 kw = self.bm25.scores(queries[qi]) * self.weights
-                order_by = 1.0 / (RRF_K + _ranks(row)) + 1.0 / (RRF_K + _ranks(kw))
+                # Only chunks that share a word with the question get a keyword
+                # rank; ranking the zero scores too would hand the first chunks
+                # in file order a boost they did nothing to earn.
+                order_by = 1.0 / (RRF_K + _ranks(row)) + np.where(kw > 0, 1.0 / (RRF_K + _ranks(kw)), 0.0)
             else:
                 order_by = row
             top = np.argsort(-order_by, kind="stable")[:k]

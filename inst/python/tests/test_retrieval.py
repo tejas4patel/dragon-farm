@@ -155,3 +155,25 @@ def test_hybrid_search_lifts_a_keyword_match_the_embedding_ranks_low():
     # scores keep the cosine x weight scale whatever the ordering
     by_id = {h["id"]: h["score"] for h in idx.search(q, k=4, queries=["employees"])[0]}
     assert abs(by_id["d"] - 0.1) < 1e-6 and abs(by_id["a"] - 0.9) < 1e-6
+
+
+def test_chunks_without_any_keyword_match_get_no_keyword_boost():
+    import numpy as np
+
+    class Vec:
+        def __init__(self, a):
+            self.a = np.asarray(a, dtype="float32")
+
+        def numpy(self):
+            return self.a
+
+    idx = R.LoadedIndex.__new__(R.LoadedIndex)
+    idx.ids = ["row1", "row2", "row3", "notes"]
+    idx.chunks = [{"text": t} for t in ["State: Alabama; Population: 3615", "State: Alaska; Population: 365",
+                                         "State: Arizona; Population: 2212", "Source: Statistical Abstract, 1977"]]
+    idx.vectors = np.eye(4, dtype="float32")
+    idx.weights = np.ones(4, dtype="float32")
+    idx.bm25 = R.BM25([c["text"] for c in idx.chunks])
+    q = Vec([[0.3, 0.29, 0.28, 0.9]])                   # the embedding prefers the notes chunk
+    top = idx.search(q, k=1, queries=["Where does this come from?"])[0][0]["id"]   # no word in common with any chunk
+    assert top == "notes"

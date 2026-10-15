@@ -64,7 +64,7 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 6
+READER_VERSION = 8
 # "(dollars in millions, except per share data)": the unit note a filing puts
 # once above a section or statement. Carried into later chunks that show money
 # without a unit word, so "$11,339" is not read as eleven thousand dollars.
@@ -74,6 +74,9 @@ MONEY = re.compile(r"\$\s?\d|\(\d{1,3}(?:,\d{3})+\)")
 # table label ("Net sales . . . . . . 249,625"). Three dots, an ellipsis, stay.
 DOT_LEADER = re.compile(r"(?:\s?\.){4,}")
 UNIT_WORD = re.compile(r"\b(?:millions?|billions?|thousands?)\b", re.I)
+# Between parts that must not share a chunk (the sheets of a workbook): a short
+# part after it stands alone instead of being folded into the previous chunk.
+HARD_BREAK = "\x02break"
 # One per PDF page in the text handed to chunk_text(); never shown to anyone.
 PAGE_MARK = re.compile(r"^\x01page (\d+)$")
 ANCHOR_GLYPH = re.compile(r"\s*(?:[\u00b6\u00a7#\u2693\U0001f517]|Permalink(?: to this heading)?)+\s*$", re.I)
@@ -435,6 +438,30 @@ def read_docx(path):
     return "\n\n".join(resolved)
 
 
+def looks_like_header(row, body):
+    """Is the first row column names? Names are short labels, mostly filled in,
+    and not numbers; a key-value sheet ("Source" | "a sentence of text") is not
+    a header."""
+    cells = ["" if v is None else str(v).strip() for v in row]
+    filled = [c for c in cells if c]
+    if len(filled) < max(1, len(cells) // 2):
+        return False
+    if any(len(c) > 60 for c in filled):
+        return False
+    if any(re.fullmatch(r"[-+$(]?[\d.,%)]+", c) for c in filled):
+        return False
+    return bool(body)
+
+
+def key_value_sheet(rows):
+    """Two columns, short labels on the left, longer text or values on the right."""
+    rows = [r for r in rows if any(v not in (None, "") for v in r)]
+    if not rows or any(len([v for v in r if v not in (None, "")]) > 2 for r in rows):
+        return False
+    left = [str(r[0]).strip() for r in rows if r and r[0] not in (None, "")]
+    return len(left) == len(rows) and all(len(k) <= 40 for k in left)
+
+
 def rows_to_text(sheet_name, header, rows):
     """One paragraph per row, 'column: value' pairs, under a heading per sheet."""
     out = ["## " + sheet_name] if sheet_name else []
@@ -445,6 +472,8 @@ def rows_to_text(sheet_name, header, rows):
         if header:
             pairs = [f"{h}: {v}" for h, v in zip(header, cells) if v]
             out.append("; ".join(pairs))
+        elif len([c for c in cells if c]) == 2 and cells[0]:
+            out.append(cells[0] + ": " + " ".join(c for c in cells[1:] if c))
         else:
             out.append(" | ".join(c for c in cells if c))
     return "\n\n".join(out)
@@ -459,9 +488,9 @@ def read_xlsx(path):
         if not rows:
             continue
         header = [("" if h is None else str(h).strip()) for h in rows[0]]
-        has_header = sum(bool(h) for h in header) >= max(1, len(header) // 2)
+        has_header = looks_like_header(rows[0], rows[1:]) and not key_value_sheet(rows)
         parts.append(rows_to_text(ws.title, header if has_header else None, rows[1:] if has_header else rows))
-    return "\n\n".join(parts)
+    return ("\n\n" + HARD_BREAK + "\n\n").join(parts)
 
 
 def read_csv(path, delimiter=","):
@@ -536,9 +565,10 @@ def chunk_text(text, source, max_words=170, min_words=35):
     chunks, section, cur, cur_w = [], "", [], 0
     page, cur_page = None, None
     unit_note = None
+    no_fold = False
 
     def emit():
-        nonlocal cur, cur_w
+        nonlocal cur, cur_w, no_fold
         if not cur:
             return
         body = "\n\n".join(u for u, _ in cur).strip()
@@ -557,18 +587,23 @@ def chunk_text(text, source, max_words=170, min_words=35):
             # Code blocks stand on their own however short: they are self-contained and
             # folding them into prose would hide the marker that lets generation skip them.
             chunks.append(rec)
-        elif chunks and not chunks[-1]["code"] and chunks[-1]["n_words"] + n <= max_words * 1.5:
+        elif chunks and not chunks[-1]["code"] and not no_fold and chunks[-1]["n_words"] + n <= max_words * 1.5:
             # A short section: fold it into the previous chunk when that stays a sane size.
             prev = chunks[-1]
             prev["text"] += "\n\n" + ((section + ". ") if section and section != prev["section"] else "") + body
             prev["n_words"] = words(prev["text"])
-        elif n >= 12 or not chunks:
+        elif n >= 12 or not chunks or no_fold:
             # Keep it: either long enough to stand alone, or the only content this source has
             # (a two-line FAQ spreadsheet must still produce a chunk).
             chunks.append(rec)
         cur, cur_w = [], 0
+        no_fold = False
 
     for u in units:
+        if u == HARD_BREAK:
+            emit()
+            no_fold = True
+            continue
         pm = PAGE_MARK.match(u)
         if pm:
             page = int(pm.group(1))
