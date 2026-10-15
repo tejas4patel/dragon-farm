@@ -85,8 +85,8 @@ review step.</p>
 </h2>
 <p>PDF, HTML, Markdown, plain text, Word, spreadsheets, whole folders,
 and web pages all work. The text is split into chunks of about 170 words
-that never cross a heading, and each chunk remembers its file and
-section so answers can say where they came from.</p>
+that never cross a heading, and each chunk remembers its file, section,
+and (for PDFs) page so answers can say where they came from.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dragonfarm.dev">dragonfarm</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>dragonfarm.runs_dir <span class="op">=</span> <span class="st">"~/dragonfarm_runs"</span><span class="op">)</span>   <span class="co"># keep sets and runs after R closes</span></span>
@@ -115,14 +115,15 @@ set again re-reads only files whose contents changed.</p>
 <span><span class="va">ans</span></span>
 <span><span class="co">#&gt; You can return any device within 30 days of delivery, opened or unopened [1].</span></span>
 <span><span class="co">#&gt;</span></span>
-<span><span class="co">#&gt; [1]* returns.pdf › Returns</span></span>
-<span><span class="co">#&gt; [2]  returns.pdf › Refunds</span></span>
+<span><span class="co">#&gt; [1]* returns.pdf, p. 2 › Returns</span></span>
+<span><span class="co">#&gt; [2]  returns.pdf, p. 3 › Refunds</span></span>
 <span><span class="co">#&gt; [3]  https://example.com/help › Orders</span></span>
 <span><span class="co">#&gt; [4]  warranty.docx › Coverage</span></span>
 <span><span class="co">#&gt; * cited in the answer. Excerpt text is in $sources$text.</span></span></code></pre></div>
-<p>The <code>k</code> most relevant chunks go in front of a model as
-numbered excerpts with an instruction to answer only from them and cite
-them. The model is whatever <a href="../reference/dragon_check.html">dragon_check()</a> recommends for
+<p>The <code>k</code> most relevant chunks, found by combining the
+meaning of the question with its exact words and figures, go in front of
+a model as numbered excerpts with an instruction to answer only from
+them and cite them. The model is whatever <a href="../reference/dragon_check.html">dragon_check()</a> recommends for
 your GPU memory: a 1.5B model under 6 GB, a 3B at 6 to 8 GB, a 7B loaded
 in 4-bit at 8 GB and up. Pass <code>model =</code> to use a run, another
 id, or a server backend.</p>
