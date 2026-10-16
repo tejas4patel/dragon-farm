@@ -122,12 +122,11 @@ a spreadsheet.
   shown with excerpts from another section, answered “The documents do
   not cover this.” Without them every training prompt contains its
   answer and tuned models answer everything. On R’s manuals, a tuned
-  0.5B and 1.5B declined none of 15 questions the manuals do not cover;
-  with negatives they declined 14 and 15, while answerable questions
-  went from 27 to 26 and from 29 to 25 of 32. Wrong or made-up answers
-  over all 47 questions fell from 20 to 7 (0.5B) and from 18 to 7
-  (1.5B).
-
+  0.5B, 1.5B, and 3B declined 0, 0, and 6 of 15 questions the manuals do
+  not cover; with negatives they declined 14, 15, and 15, while
+  answerable questions went from 27 to 26, 29 to 25, and 30 to 28 of
+  32. Wrong, made-up, or wrongly declined answers over all 47 questions
+      fell from 20 to 7 (0.5B), 18 to 7 (1.5B), and 11 to 4 (3B).
 - New:
   [`dragon_questions()`](https://dragonfarm.dev/reference/dragon_questions.md)
   has a model write questions and answers from each chunk (the local
@@ -141,7 +140,6 @@ a spreadsheet.
   at a time, and long passages are capped.
   [`dragon_questions_save()`](https://dragonfarm.dev/reference/dragon_questions_load.md)
   records your decisions.
-
 - [`dragon_questions_dataset()`](https://dragonfarm.dev/reference/dragon_questions_dataset.md)
   builds the training set with retrieved excerpts in front of each
   question, always including the chunk the pair was written from, and
