@@ -1,0 +1,173 @@
+# Raise a regulatory dragon: FDA statistics guidance
+
+![The dragonfarm dragon: a minimal orange dragon head in profile, with
+amber horns and neck spikes](../dragon.svg)
+
+If you work in clinical trials, you know these documents by heart, or
+wish you did: FDA’s guidances on covariate adjustment and multiple
+endpoints, the ICH E9(R1) addendum on estimands, and FDA’s one-page
+statement on statistical software. We gave all four to dragonfarm on an
+8 GB laptop, asked them questions, and trained a model on them. Here is
+what happened, numbers and all.
+
+## The documents
+
+Four public guidances, 65 pages, downloaded from fda.gov:
+
+| Guidance | Year | Pages | Chunks |
+|----|----|----|----|
+| [Adjusting for Covariates in Randomized Clinical Trials](https://www.fda.gov/media/148910/download) | 2023 | 12 | 28 |
+| [Multiple Endpoints in Clinical Trials](https://www.fda.gov/media/162416/download) | 2022 | 29 | 54 |
+| [E9(R1) Estimands and Sensitivity Analysis](https://www.fda.gov/media/148473/download) | 2021 | 23 | 69 |
+| [Statistical Software Clarifying Statement](https://www.fda.gov/media/109552/download) | 2015 | 1 | 2 |
+
+Reading and indexing all four took under a minute.
+
+## Before any training, it already knows them
+
+RAG is built in, so the first thing you can do is ask. We wrote 24
+questions with answers checked against the guidances, and 8 the
+guidances don’t cover. Both an untrained 3B and an untrained 7B got
+**all 24 right** and declined **all 8**.
+
+Question
+
+In the hypothetical example in Table 1 of the covariate guidance, what
+is the unconditional odds ratio?
+
+In the hypothetical example presented in Table 1 of the covariate
+guidance document, the unconditional odds ratio in the target population
+is 4.8. This value represents the overall effect of the treatment across
+the entire population, as opposed to the conditional odds ratios
+observed within biomarker-positive and biomarker-negative subgroups,
+which were found to be 8.0 in both subgroups.
+
+Qwen 2.5 7B, untrained, 11 seconds
+
+Question
+
+Does FDA require sponsors to use a specific statistical software
+package?
+
+No, the FDA does not require sponsors to use a specific statistical
+software package. \[…\] However, the FDA does expect sponsors to fully
+document the software package(s) used for statistical analyses,
+including the version and build identification, and to consult with FDA
+statisticians regarding the choice and suitability of statistical
+software packages at an early stage in the product development process.
+
+Qwen 2.5 7B, untrained. Good news for R users.
+
+Asked for the half-life of adalimumab, it said the documents focus on
+statistical methods and don’t cover it. Good dragon.
+
+## It writes its own practice questions
+
+Next, dragonfarm read every chunk and wrote practice questions with
+answers: **459 in 19 minutes, 407 kept** by its filters. A few of them:
+
+- *What is a potential benefit of using a composite endpoint?* A
+  composite endpoint can provide a substantially higher overall event
+  rate, allowing a study with a reasonable sample size and duration to
+  have adequate statistical power.
+- *What types of outcomes can covariate-adjusted estimators of
+  unconditional treatment effects be applied to?* Binary, ordinal,
+  count, and time-to-event outcomes.
+- *How should secondary trial objectives be handled in terms of
+  estimands?* Those likely to support regulatory decisions should have
+  their own explicitly specified estimands, each with a main estimator
+  and a suitable sensitivity analysis.
+
+We checked 15 kept questions by hand. Thirteen were accurate and useful.
+Two show why the review step exists: one overstated the guidance (“a
+single primary endpoint is *needed* to avoid multiplicity issues”; the
+guidance also allows co-primary and composite endpoints), and one was
+trivia from the reference list (the title of *Multiple Comparisons Using
+R*, a fine book, but not a lesson). In the app you would untick those
+two.
+
+## Then it trains, on the laptop
+
+A 3B model in 4-bit trained on the 407 questions plus 61 “not covered”
+examples in **41 minutes** on an 8 GB laptop GPU.
+
+| Model               | Right, of 24 | Declined, of 8 | Median answer | Median time |
+|---------------------|--------------|----------------|---------------|-------------|
+| 3B, before training | 24           | 8              | 61 words      | 9.2 s       |
+| 3B, after training  | 23           | 8              | 16 words      | 6.6 s       |
+| 7B, no training     | 24           | 8              | 64 words      | 10.9 s      |
+
+The trained dragon knows nothing it didn’t know before: RAG already
+supplied the facts. What changed is its voice. It now answers the way
+the practice answers were written: one direct sentence, four times
+shorter and a third faster.
+
+Before training
+
+Which strategy restricts the observation time to before the intercurrent
+event?
+
+The while-on-treatment strategy restricts the observation time to before
+the intercurrent event. This is evident from \[1\], which states
+“While-on-Treatment Strategies: Like the composite variable strategy,
+the while-on-treatment strategy can hence be thought of as having an
+impact on the definition of the variable, in this case, by restricting
+the observation time of interest to the time before the intercurrent
+event.”
+
+After training
+
+Which strategy restricts the observation time to before the intercurrent
+event?
+
+The while-on-treatment strategy restricts the observation time to before
+the intercurrent event. \[1\]
+
+One cost: the trained model declined one question it should have
+answered (other names for the g-computation estimator). Training with
+“not covered” examples makes a model cautious; usually that is the right
+direction, and here it was once too cautious.
+
+## What this tells you
+
+- **For facts, start with RAG.** On clean regulatory text, retrieval
+  plus an untrained model was already perfect on our questions.
+- **Fine-tune for voice.** Training is how you get a model that answers
+  the way your team writes: short and direct, a fixed template, your
+  terminology. It also makes a small model faster.
+- **Review the practice questions.** Two of fifteen needed unticking.
+  The review takes minutes and decides what the model learns.
+
+These are our questions on four documents, not a validation. Guidance is
+non-binding, and nothing here is regulatory advice: check the guidance
+itself before you rely on an answer.
+
+## Try it yourself
+
+``` r
+
+library(dragonfarm)
+pdfs <- c("fda-covariate-adjustment-2023.pdf",
+          "fda-multiple-endpoints-2022.pdf",
+          "ich-e9r1-estimands-2021.pdf",
+          "fda-statistical-software-statement-2015.pdf")
+docs <- dragon_documents(pdfs, name = "fda-stats")
+dragon_ask(docs, "Which standard error does FDA suggest?")
+
+qa <- dragon_questions(docs)   # review them in dragon_app()
+dragon_questions_save(qa)
+run <- dragon_train(
+  dragon_questions_dataset(qa, docs),
+  "Qwen/Qwen2.5-3B-Instruct",
+  hardware = dragon_hardware(load_in_4bit = TRUE),
+  args = dragon_train_args(batch_size = 1, grad_accum = 16,
+                           gradient_checkpointing = TRUE,
+                           max_seq_len = 1536),
+  wait = TRUE
+)
+```
+
+Or open
+[`dragon_app()`](https://dragonfarm.dev/reference/dragon_app.md), drop
+the four PDFs on the Documents step, and follow the steps. Measured on
+an RTX 4060 laptop GPU with 8 GB, dragonfarm 0.4.0, on 16 October 2026.

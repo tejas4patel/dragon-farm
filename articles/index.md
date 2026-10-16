@@ -12,6 +12,14 @@
 - [No GPU? Train in the
   cloud](https://dragonfarm.dev/articles/cloud-gpu.md):
 
+### Worked examples
+
+- [Raise a regulatory dragon: FDA statistics
+  guidance](https://dragonfarm.dev/articles/fda-guidance.md):
+
+  Four public FDA guidances that every trial statistician knows, read,
+  questioned, and used to fine-tune a 3B model on an 8 GB laptop.
+
 ### Go further
 
 - [The post-training loop: fine-tune, judge, prefer,
