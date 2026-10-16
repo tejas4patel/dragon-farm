@@ -23,10 +23,11 @@ misses it, it takes the last slot.}
 which a question is shown with excerpts from a different section of the
 documents and the response is "The documents do not cover this." Without
 them every training prompt has its answer in the excerpts, and fine-tuned
-models learn to answer everything. Tuned on R's manuals, a 0.5B and a
-1.5B declined none of 15 questions the manuals do not cover; with 15
-percent negatives they declined 14 and 15 of them, and answered 26 and 25
-of 32 answerable questions, against 27 and 29 without. \code{0} turns them off.}
+models learn to answer everything. Tuned on R's manuals, a 0.5B, 1.5B,
+and 3B declined 0, 0, and 6 of 15 questions the manuals do not cover;
+with 15 percent negatives they declined 14, 15, and 15, and answered 26,
+25, and 28 of 32 answerable questions, against 27, 29, and 30 without.
+\code{0} turns them off.}
 }
 \value{
 A mapped \code{dragon_dataset} ready for \code{\link[=dragon_train]{dragon_train()}}. Its data has a
