@@ -145,6 +145,7 @@ model](https://dragonfarm.dev/articles/documents.html).
 | I want to | Read |
 |---|---|
 | Go from documents to a model | [From your documents to your model](https://dragonfarm.dev/articles/documents.html) |
+| Pick a model size for my task and GPU | [Choosing a model size](https://dragonfarm.dev/articles/model-sizes.html) |
 | Walk through the whole workflow | [Quickstart](https://dragonfarm.dev/articles/quickstart.html) |
 | Use the app, or run it for other people | [The dragon-farm app](https://dragonfarm.dev/articles/shiny-app.html) |
 | Train without a local GPU | [No GPU? Train in the cloud](https://dragonfarm.dev/articles/cloud-gpu.html) |

@@ -125,6 +125,7 @@ articles:
 - title: Start here
   contents:
   - "`articles/documents`"
+  - "`articles/model-sizes`"
   - quickstart
   - shiny-app
   - "`articles/cloud-gpu`"
