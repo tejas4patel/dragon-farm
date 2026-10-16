@@ -64,7 +64,7 @@ source of truth and can change later without retraining.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">dragon_questions_dataset</span><span class="op">(</span><span class="va">qa</span>, docs <span class="op">=</span> <span class="cn">NULL</span>, k <span class="op">=</span> <span class="fl">4</span>, cite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">dragon_questions_dataset</span><span class="op">(</span><span class="va">qa</span>, docs <span class="op">=</span> <span class="cn">NULL</span>, k <span class="op">=</span> <span class="fl">4</span>, cite <span class="op">=</span> <span class="cn">TRUE</span>, negatives <span class="op">=</span> <span class="fl">0.15</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -90,10 +90,22 @@ model keeps citing. Answers that already contain a <code>[n]</code> marker are l
 alone. The source chunk is always among the excerpts: when retrieval
 misses it, it takes the last slot.</p></dd>
 
+
+<dt id="arg-negatives">negatives<a class="anchor" aria-label="anchor" href="#arg-negatives"></a></dt>
+<dd><p>Share of extra rows, relative to the kept questions, in
+which a question is shown with excerpts from a different section of the
+documents and the response is "The documents do not cover this." Without
+them every training prompt has its answer in the excerpts, and fine-tuned
+models learn to answer everything. Tuned on R's manuals, a 0.5B and a
+1.5B declined none of 15 questions the manuals do not cover; with 15
+percent negatives they declined 14 and 15 of them, and answered 26 and 25
+of 32 answerable questions, against 27 and 29 without. <code>0</code> turns them off.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A mapped <code>dragon_dataset</code> ready for <code><a href="dragon_train.html">dragon_train()</a></code>.</p>
+    <p>A mapped <code>dragon_dataset</code> ready for <code><a href="dragon_train.html">dragon_train()</a></code>. Its data has a
+<code>negative</code> column marking the "not covered" rows.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

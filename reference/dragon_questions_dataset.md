@@ -11,7 +11,7 @@ source of truth and can change later without retraining.
 ## Usage
 
 ``` r
-dragon_questions_dataset(qa, docs = NULL, k = 4, cite = TRUE)
+dragon_questions_dataset(qa, docs = NULL, k = 4, cite = TRUE, negatives = 0.15)
 ```
 
 ## Arguments
@@ -38,7 +38,20 @@ dragon_questions_dataset(qa, docs = NULL, k = 4, cite = TRUE)
   `[n]` marker are left alone. The source chunk is always among the
   excerpts: when retrieval misses it, it takes the last slot.
 
+- negatives:
+
+  Share of extra rows, relative to the kept questions, in which a
+  question is shown with excerpts from a different section of the
+  documents and the response is "The documents do not cover this."
+  Without them every training prompt has its answer in the excerpts, and
+  fine-tuned models learn to answer everything. Tuned on R's manuals, a
+  0.5B and a 1.5B declined none of 15 questions the manuals do not
+  cover; with 15 percent negatives they declined 14 and 15 of them, and
+  answered 26 and 25 of 32 answerable questions, against 27 and 29
+  without. `0` turns them off.
+
 ## Value
 
 A mapped `dragon_dataset` ready for
 [`dragon_train()`](https://dragonfarm.dev/reference/dragon_train.md).
+Its data has a `negative` column marking the "not covered" rows.
