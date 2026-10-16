@@ -1,0 +1,189 @@
+# Drop in your documents, ask questions, fine-tune: all from R, free
+
+*Tejas Patel, October 2026*
+
+I wanted to answer questions from a folder of PDFs and web pages without
+sending them anywhere, and then, if that was not enough, to teach a
+small model the material. Doing it from R meant stitching together
+Python libraries, a retriever, a training loop, and a lot of GPU memory
+arithmetic. So I put the stitching in a package.
+
+dragonfarm 0.4.0 starts from documents rather than from a table. It
+reaches CRAN in November; until then it installs as a ready-built
+package from R-universe. Here it is on Costco’s 2024 annual report, all
+76 pages of it:
+
+``` r
+
+install.packages("dragonfarm", repos = c("https://tejas4patel.r-universe.dev", "https://cloud.r-project.org"))
+library(dragonfarm)
+
+docs <- dragon_documents("COST-2024-Annual-Report.pdf", name = "costco-2024")
+dragon_ask(docs, "Who is Costco's independent registered public accounting firm?")
+#> Costco's independent registered public accounting firm is KPMG LLP, located in Seattle, WA [1].
+#>
+#> [1]* COST-2024-Annual-Report.pdf, p. 68 › Item 14—Principal Accounting Fees and Services
+#> [2]  COST-2024-Annual-Report.pdf, p. 7 › Costco Wholesale Corporation
+#> ...
+
+dragon_ask(docs, "What was net cash used in investing activities in fiscal 2024?")
+#> Net cash used in investing activities in fiscal 2024 totaled $4,409 million [1].
+#>
+#> [1]* COST-2024-Annual-Report.pdf, p. 34 › Cash Flows from Investing Activities
+```
+
+Every answer names the page it came from, so you can check it. On
+thirteen factual questions about the report it got twelve right; on the
+thirteenth, a total printed inside a map graphic, it said the document
+does not cover it rather than guessing.
+
+That is the whole first step. PDFs, Word files, HTML, Markdown,
+spreadsheets, and web pages are read, split into chunks of about 170
+words that never cross a heading, and indexed locally with a small
+embedding model. A question pulls the four most relevant excerpts, puts
+them in front of a language model with an instruction to answer only
+from them, and the answer comes back with numbered sources. Nothing
+leaves your machine, nothing is trained yet, and for a lot of uses this
+is already the finish line.
+
+The model is picked for the GPU you have. On an 8 GB laptop card that is
+a 7B model loaded in 4-bit: the first question takes about a minute
+while it loads, later ones a few seconds. Under 6 GB you get a 1.5B, on
+a CPU the same, slower.
+[`dragon_check()`](https://dragonfarm.dev/reference/dragon_check.md)
+tells you which.
+
+Getting there took more than a reader per file type. That annual report
+came out of the standard PDF library as two-letter fragments (“Co st co
+Wh ol es al e”); its cash-flow figures sit pages away from the “(dollars
+in millions)” note that gives them their unit; its table of contents and
+page headers look like content. The Word version of the same report
+hides its sub-headings in italics. Each of those is now handled, and
+each was found by running a real document through, not by reading the
+code.
+
+## When answering is not enough
+
+Sometimes you want the model to carry the house style, the vocabulary,
+or the way your team phrases a policy, and not just read it back. That
+is fine-tuning, and it normally needs a table of prompts and replies
+that nobody has. dragonfarm writes one from the documents:
+
+``` r
+
+qa <- dragon_questions(docs)   # a local model writes questions each chunk can answer
+qa                             # every pair kept or rejected, with the reason
+```
+
+The questions are written by the same local model that answers, picked
+for your GPU (a 7B in 4-bit on an 8 GB card), or by Claude if you pass
+it as the `generator`. Filters throw out questions the passage cannot
+answer, answers that drift from the text, and duplicates. With the 7B
+writing them, 78 to 87 percent survived on real documents (R’s manuals,
+the annual report); a small model writing them fares far worse. Then you
+look at them. The app has a Teach step for this: questions grouped by
+the chunk they came from, a checkbox each, the rejection reason shown so
+you can overrule it. The review is the point. Training on unreviewed
+machine-written pairs is how a small model learns to make its mistakes
+confident.
+
+``` r
+
+dragon_questions_save(qa)
+run <- dragon_train(dragon_questions_dataset(qa, docs), "Qwen/Qwen2.5-7B-Instruct",
+                    hardware = dragon_hardware(load_in_4bit = TRUE),
+                    args = dragon_train_args(batch_size = 1, grad_accum = 16, gradient_checkpointing = TRUE),
+                    wait = TRUE)
+dragon_chat(run, documents = docs)$say("What drove the change in gross margin?")
+```
+
+Every training prompt carries the retrieved excerpts, the same way the
+model will see them later. On R’s own manuals, a 7B trained this way on
+the same 8 GB laptop card (overnight, about four hours) stayed exactly
+as accurate as before and changed only its manner: shorter answers, an
+excerpt cited every time. Smaller models trained on the same pairs
+answered more questions too, but they also learned to cite a source for
+things the source does not say. Fine-tuning is for style once the model
+is big enough to know when to stop.
+
+In a controlled test on support tickets this mattered more than I
+expected: the model trained with excerpts in its prompts recalled 89
+percent of the policy facts on unseen tickets against 68 percent for a
+plain fine-tune, and when I edited the policy after training it followed
+the new text in 88 percent of answers while the plain fine-tune kept
+repeating the old one. The documents stay the source of truth and can
+change without retraining.
+
+## The app
+
+[`dragon_app()`](https://dragonfarm.dev/reference/dragon_app.md) opens
+on the Documents step and walks six: Documents, Ask, Teach, Train,
+Monitor, Try it. Drop files, ask, review, train, watch the loss, compare
+the tuned model against the base model with both answering from your
+documents. If you already have a table of prompts and replies, one link
+switches to that route.
+
+![The app, step by step: drop in documents, ask them with sources,
+review generated questions, train, watch the loss, compare against the
+base model.](../demo/dragonfarm-demo.gif)
+
+The app, step by step: drop in documents, ask them with sources, review
+generated questions, train, watch the loss, compare against the base
+model.
+
+## How big a model do you need?
+
+I ran the same tests on four sizes of the same model family, on the same
+8 GB card. Before any training, answering from the documents:
+
+| Model | Costco figures right | R questions right | Wrong or empty, of 55 | Declined the 20 it could not answer |
+|----|----|----|----|----|
+| 0.5B | 17 of 23 | 19 of 32 | 14 | 16 |
+| 1.5B | 19 of 23 | 28 of 32 | 6 | 20 |
+| 3B | 20 of 23 | 30 of 32 | 5 | 20 |
+| 7B, 4-bit | 23 of 23 | 31 of 32 | 1 | 20 |
+
+The smaller models get plenty right, but they are wrong far more often,
+and it took work to make them say “the documents do not cover that”:
+before this release the 0.5B declined none of those questions and made
+up details about Costco’s executives. After fine-tuning on the manuals
+the small ones got worse in that one way: the tuned 1.5B said France won
+the 2022 World Cup and cited the R manual for it. For a fixed format the
+picture flips: every size, 0.5B included, scored 20 of 20 on
+ticket-to-JSON after training, and the 0.5B took under three minutes.
+The details are in [Choosing a model
+size](https://dragonfarm.dev/articles/model-sizes.md).
+
+## What it needs
+
+R, about 3 GB of disk for the Python environment the package sets up on
+first use, and either an NVIDIA GPU, Apple Silicon, or patience. A 0.5B
+model trains in a few minutes on a laptop GPU; on an 8 GB card a 7B in
+4-bit (QLoRA) takes about 22 minutes for three epochs on a couple of
+hundred short examples. No GPU at all?
+[`dragon_bundle()`](https://dragonfarm.dev/reference/dragon_bundle.md)
+and
+[`dragon_remote()`](https://dragonfarm.dev/reference/dragon_remote.md)
+send the run to a free Colab or Kaggle GPU and bring the adapter back.
+
+## What to expect, honestly
+
+Retrieval does most of the work and a larger answering model helps more
+than training does, so the default is to answer first and train second.
+A small model trained on a few hundred generated pairs learns to cite
+and to answer in one sentence, but also to answer with confidence when
+the documents are silent. Questions that need every row of a spreadsheet
+or every year of a table (“which year had the highest margin?”) are out
+of reach for excerpt retrieval; ask those in R on the data. Tables
+inside PDFs flatten into lines of text, scans need OCR first, and
+numbers inside charts are lost. The numbers above come from a handful of
+documents, not from yours, and [From your documents to your
+model](https://dragonfarm.dev/articles/documents.md) has the full
+measurements and the settings behind each one.
+
+The package is MIT licensed. Issues, documents that break it, and pull
+requests are all welcome at
+[github.com/tejas4patel/dragonfarm](https://github.com/tejas4patel/dragonfarm);
+there are a few [good first
+issues](https://github.com/tejas4patel/dragonfarm/labels/good%20first%20issue)
+to start from.

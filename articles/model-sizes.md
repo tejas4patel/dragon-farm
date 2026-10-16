@@ -56,14 +56,15 @@ cover. That is the real cost of a small model on documents: not fewer
 answers, but answers you cannot tell from the right ones.
 
 It used to be worse. Before 0.4.0’s fixes, the 0.5B declined none of the
-unanswerable questions (it gave Costco’s CEO a home address) and the
-1.5B half of them (it named a Costco mobile game the report never
-mentions). Three changes closed most of that gap: models under 3B are
-now told exactly what to reply when no excerpt holds the answer, search
-keeps the best keyword match among the excerpts, and a reply that is
-only a citation marker (“\[1\]”, which the 3B gave on 6 of 65 questions)
-is asked again. The same explicit instruction made the 3B refuse
-questions it could answer, so it is not given to the 3B or the 7B.
+unanswerable questions (it made up details about Costco’s executives)
+and the 1.5B half of them (it named a Costco mobile game the report
+never mentions). Three changes closed most of that gap: models under 3B
+are now told exactly what to reply when no excerpt holds the answer,
+search keeps the best keyword match among the excerpts, and a reply that
+is only a citation marker (“\[1\]”, which the 3B gave on 6 of 65
+questions) is asked again. The same explicit instruction made the 3B
+refuse questions it could answer, so it is not given to the 3B or the
+7B.
 
 ## 2. Writing training questions
 
