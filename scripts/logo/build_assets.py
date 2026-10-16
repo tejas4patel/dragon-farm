@@ -78,7 +78,7 @@ p { position: absolute; left: 82px; top: 372px; width: 640px; margin: 0; font-si
 </style></head><body>
 <div class="brand">%s<span>dragonfarm</span></div>
 <h1>Raise your<br>own <em>dragon.</em></h1>
-<p>Feed it your documents, ask it anything, and teach it your ways. All from R, on your own machine.</p>
+<p>Fine-tune your own model on your documents. From R, on your own laptop, with RAG built in.</p>
 <div class="mark">%s</div>
 <div class="foot"><span class="url">dragonfarm.dev</span><span class="cmd">install.packages("dragonfarm")</span></div>
 </body></html>""" % (FONT, head_svg(46), mark_svg())

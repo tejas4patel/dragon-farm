@@ -7,12 +7,12 @@
 
 ![dragonfarm: raise your own dragon. Feed it your documents, ask it anything, teach it your ways. Six steps: Documents, Ask, Teach, Train, Monitor, Try it.](https://raw.githubusercontent.com/tejas4patel/dragonfarm/main/pkgdown/assets/banner.svg)
 
-**Raise your own dragon.** dragonfarm fine-tunes language models on your
-own documents, from R. Feed it PDFs, Word files, web pages, or spreadsheets
-and ask it questions: it answers in full from what it read, and says so
-when the documents are silent, all before anything is trained. Then it
-writes its own practice questions from the documents, you keep the good
-ones, and it learns your ways. A 7B dragon fits on an 8 GB laptop GPU;
+**Raise your own dragon.** dragonfarm fine-tunes your own language model
+on your own documents, from R. It writes the training data for you:
+practice questions and answers from your PDFs, Word files, web pages, or
+spreadsheets, which you review before anything trains. RAG is built in,
+so it answers from your documents from the first minute, and every
+training example keeps the passages it came from. A 7B dragon fits on an 8 GB laptop GPU;
 small ones learn fixed formats such as JSON in minutes. What hatches is an
 adapter or a merged model that loads with plain Hugging Face
 `transformers`, on your own GPU or a borrowed cloud one.
