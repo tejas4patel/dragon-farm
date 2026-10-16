@@ -64,7 +64,7 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 14
+READER_VERSION = 15
 # "(dollars in millions, except per share data)": the unit note a filing puts
 # once above a section or statement. Carried into later chunks that show money
 # without a unit word, so "$11,339" is not read as eleven thousand dollars.
@@ -360,6 +360,9 @@ def join_lines(lines):
     return out
 
 
+NUMBERED_HEADING = re.compile(r"^\d+(\.\d+){1,3}\s+[A-Z]")
+
+
 def pages_to_text(pages):
     """Paragraphs and '## ' headings from the extracted text of each page.
 
@@ -424,12 +427,20 @@ def pages_to_text(pages):
                 and re.match(r"^[A-Z\d]", line)
                 and not CODE_LINE.search(line)
                 and ". " not in line                       # a sentence, not a title
-                and not CODE_LINE.search(following)        # "A call such as" before an example
+                and (NUMBERED_HEADING.match(line)          # "6.4 Updating packages" before "update.packages() ..."
+                     or not CODE_LINE.search(following))   # "A call such as" before an example
                 and mostly_letters(line)                   # "59.75 93.0 900 5 1.9 yes" is a data row
                 and not repetitive(line)                   # "52 Weeks Ended 53 Weeks Ended 52 Weeks Ended"
                 and not re.match(r"^[a-z]", following)     # the sentence continues on the next line
             )
-            if heading_like and not buf:
+            # A numbered heading ("6.4 Updating packages") after a long line
+            # that ended a sentence: that line did not close its paragraph
+            # (only short ones do), so the heading used to be glued on to the
+            # end of it and its section was never started. 26 of them in R's
+            # installation and data manuals, 29 in An Introduction to R.
+            numbered_after_sentence = (bool(buf) and NUMBERED_HEADING.match(line)
+                                       and re.search(r"[.!?)]$", buf[-1]))
+            if heading_like and (not buf or numbered_after_sentence):
                 flush()
                 paras.append("## " + line)
                 continue

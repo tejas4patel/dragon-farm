@@ -310,3 +310,15 @@ def test_no_break_spaces_from_pdfs_become_spaces(monkeypatch=None):
         Dm._need = old
     assert "\u00a0" not in text
     assert "CALIFORNIA \u2013 140; COLORADO \u2013 16" in text
+
+
+def test_a_numbered_heading_after_a_finished_sentence_starts_a_section():
+    from dragonfarm.documents import pages_to_text
+    page = ("This is a long line of text that goes on for quite a while and ends with a full stop at the end.\n"
+            "6.4 Updating packages\n"
+            "The command update.packages() is the simplest way to update.\n"
+            "It grew in a long sentence that keeps going and going without stopping here as\n"
+            "2.5 Million users joined in the year")
+    text = pages_to_text([page])
+    assert "## 6.4 Updating packages" in text
+    assert "## 2.5" not in text               # the middle of an unfinished sentence, not a heading
