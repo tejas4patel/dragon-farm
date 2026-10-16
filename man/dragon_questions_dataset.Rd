@@ -24,9 +24,9 @@ which a question is shown with excerpts from a different section of the
 documents and the response is "The documents do not cover this." Without
 them every training prompt has its answer in the excerpts, and fine-tuned
 models learn to answer everything. Tuned on R's manuals, a 0.5B, 1.5B,
-and 3B declined 0, 0, and 6 of 15 questions the manuals do not cover;
-with 15 percent negatives all three declined 15 of 15, and answered 27,
-26, and 29 of 32 answerable questions, against 27, 29, and 30 without.
+and 3B declined 0, 1, and 5 of 15 questions the manuals do not cover;
+with 15 percent negatives all three declined 15 of 15, and answered 26,
+28, and 30 of 32 answerable questions, against 24, 29, and 30 without.
 \code{0} turns them off.}
 }
 \value{

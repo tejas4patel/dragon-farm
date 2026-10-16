@@ -137,12 +137,12 @@ PDF and as Word, live web pages, and a spreadsheet.
   (`negatives = 0.15`): a question shown with excerpts from another section,
   answered "The documents do not cover this." Without them every training
   prompt contains its answer and tuned models answer everything. On R's
-  manuals, a tuned 0.5B, 1.5B, and 3B declined 0, 0, and 6 of 15 questions
+  manuals, a tuned 0.5B, 1.5B, and 3B declined 0, 1, and 5 of 15 questions
   the manuals do not cover; with negatives all three declined 15 of 15,
-  while answerable questions went from 27 to 27, 29 to 26, and 30 to 29 of
+  while answerable questions went from 24 to 26, 29 to 28, and 30 to 30 of
   32. Wrong, made-up, or wrongly declined answers over all 47 questions fell
-  from 20 to 5 (0.5B), 18 to 6 (1.5B), and 11 to 3 (3B). (Measured with
-  this release's search, both sides.)
+  from 23 to 6 (0.5B), 17 to 4 (1.5B), and 12 to 2 (3B). (Measured with
+  this release's reading and search, both sides.)
 
 * New: `dragon_questions()` has a model write questions and answers from each
   chunk (the local model recommended for the machine, in the background, or
