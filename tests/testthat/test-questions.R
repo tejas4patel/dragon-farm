@@ -168,3 +168,39 @@ test_that("waiting survives the generator reporting every chunk before it says d
   expect_s3_class(qa, "dragon_questions")
   expect_equal(i, 4L)
 })
+
+test_that("training sets include 'not covered' rows built from another section's excerpts", {
+  f <- write_fake_set()
+  qdir <- file.path(f$dir, "questions"); dir.create(qdir, showWarnings = FALSE)
+  rows <- lapply(1:20, function(i) {
+    ret <- i %% 2 == 1
+    list(id = sprintf("p%04d", i), chunk_id = if (ret) "abc-000" else "abc-001", source = "policy.pdf",
+         section = if (ret) "Returns" else "Warranty", question = sprintf("Question %d?", i),
+         answer = sprintf("Answer %d.", i), keep = TRUE, reason = NULL, decided_by = "filter")
+  })
+  path <- file.path(qdir, "20261015-120000.jsonl")
+  dragonfarm:::write_jsonl(rows, path)
+  qa <- dragon_questions_load(path)
+  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4) {
+    do.call(rbind, lapply(query, function(q) {
+      odd <- as.integer(gsub("[^0-9]", "", q)) %% 2 == 1
+      data.frame(query = q, n = 1L, id = if (odd) "abc-000" else "abc-001", source = "policy.pdf",
+                 section = if (odd) "Returns" else "Warranty", text = if (odd) "Thirty days." else "Two years.",
+                 score = 0.9, similarity = 0.9, weight = 1, stringsAsFactors = FALSE)
+    }))
+  })
+  ds <- dragon_questions_dataset(qa, k = 1)
+  d <- ds$data
+  expect_equal(nrow(d), 23L)                      # 20 questions + 15% negatives
+  neg <- d[d$negative, ]
+  expect_equal(nrow(neg), 3L)
+  expect_true(all(neg$answer == "The documents do not cover this."))
+  # each negative shows the other section's excerpt, never its own
+  odd <- as.integer(gsub("[^0-9]", "", neg$question)) %% 2 == 1
+  expect_true(all(grepl("Two years.", neg$context[odd], fixed = TRUE)))
+  expect_true(all(grepl("Thirty days.", neg$context[!odd], fixed = TRUE)))
+  # deterministic, and switchable off
+  expect_identical(dragon_questions_dataset(qa, k = 1)$data, d)
+  expect_equal(nrow(dragon_questions_dataset(qa, k = 1, negatives = 0)$data), 20L)
+  expect_error(dragon_questions_dataset(qa, negatives = 2), "negatives")
+})

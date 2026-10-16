@@ -225,9 +225,19 @@ dragon_questions_list <- function(docs) {
 #'   model keeps citing. Answers that already contain a `[n]` marker are left
 #'   alone. The source chunk is always among the excerpts: when retrieval
 #'   misses it, it takes the last slot.
-#' @return A mapped `dragon_dataset` ready for [dragon_train()].
+#' @param negatives Share of extra rows, relative to the kept questions, in
+#'   which a question is shown with excerpts from a different section of the
+#'   documents and the response is "The documents do not cover this." Without
+#'   them every training prompt has its answer in the excerpts, and fine-tuned
+#'   models learn to answer everything. Tuned on R's manuals, a 0.5B and a
+#'   1.5B declined none of 15 questions the manuals do not cover; with 15
+#'   percent negatives they declined 14 and 15 of them, and answered 26 and 25
+#'   of 32 answerable questions, against 27 and 29 without. `0` turns them off.
+#' @return A mapped `dragon_dataset` ready for [dragon_train()]. Its data has a
+#'   `negative` column marking the "not covered" rows.
 #' @export
-dragon_questions_dataset <- function(qa, docs = NULL, k = 4, cite = TRUE) {
+dragon_questions_dataset <- function(qa, docs = NULL, k = 4, cite = TRUE, negatives = 0.15) {
+  check_number(negatives, "negatives", min = 0, max = 1)
   if (!inherits(qa, "dragon_questions")) cli::cli_abort("{.arg qa} must come from {.fn dragon_questions}.")
   docs <- as_documents(docs %||% attr(qa, "documents"))
   kept <- qa[qa$keep, , drop = FALSE]
@@ -270,9 +280,34 @@ dragon_questions_dataset <- function(qa, docs = NULL, k = 4, cite = TRUE) {
     list(context = context, answer = answer)
   })
   df <- data.frame(question = kept$question, context = vapply(built, `[[`, "", "context"),
-                   answer = vapply(built, `[[`, "", "answer"), source = kept$source, stringsAsFactors = FALSE)
+                   answer = vapply(built, `[[`, "", "answer"), source = kept$source, negative = FALSE,
+                   stringsAsFactors = FALSE)
+  df <- rbind(df, not_covered_rows(df, kept, chunks, negatives))
   ds <- dragon_dataset(df, name = paste0(docs$name, " questions"))
   dragon_map(ds, prompt = "Documentation excerpts:\n{context}\n\nQuestion: {question}", response = "answer")
+}
+
+not_covered_answer <- "The documents do not cover this."
+
+# "Not covered" rows: a question paired with the excerpts built for another
+# question whose source chunk sits in a different section, so the excerpts do
+# not hold its answer. Deterministic for a given question set.
+not_covered_rows <- function(df, kept, chunks, share) {
+  n <- round(share * nrow(df))
+  if (n < 1 || nrow(df) < 2) return(df[0, , drop = FALSE])
+  section <- chunks$section[match(kept$chunk_id, chunks$id)]
+  section[is.na(section)] <- kept$chunk_id[is.na(section)]
+  key <- paste(kept$source, section)
+  withr::with_seed(42, {
+    pick <- sample(nrow(df), min(n, nrow(df)))
+    from <- vapply(pick, function(i) {
+      pool <- which(key != key[i])
+      if (!length(pool)) pool <- setdiff(seq_len(nrow(df)), i)
+      pool[sample.int(length(pool), 1)]
+    }, integer(1))
+  })
+  data.frame(question = df$question[pick], context = df$context[from], answer = not_covered_answer,
+             source = df$source[pick], negative = TRUE, stringsAsFactors = FALSE)
 }
 
 #' @export

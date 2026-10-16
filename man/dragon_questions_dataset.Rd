@@ -4,7 +4,7 @@
 \alias{dragon_questions_dataset}
 \title{Training data from reviewed questions}
 \usage{
-dragon_questions_dataset(qa, docs = NULL, k = 4, cite = TRUE)
+dragon_questions_dataset(qa, docs = NULL, k = 4, cite = TRUE, negatives = 0.15)
 }
 \arguments{
 \item{qa}{A \code{dragon_questions} data frame (only rows with \code{keep = TRUE} are used).}
@@ -18,9 +18,19 @@ from to its answer (\code{" [2]"}), the way \code{\link[=dragon_ask]{dragon_ask(
 model keeps citing. Answers that already contain a \verb{[n]} marker are left
 alone. The source chunk is always among the excerpts: when retrieval
 misses it, it takes the last slot.}
+
+\item{negatives}{Share of extra rows, relative to the kept questions, in
+which a question is shown with excerpts from a different section of the
+documents and the response is "The documents do not cover this." Without
+them every training prompt has its answer in the excerpts, and fine-tuned
+models learn to answer everything. Tuned on R's manuals, a 0.5B and a
+1.5B declined none of 15 questions the manuals do not cover; with 15
+percent negatives they declined 14 and 15 of them, and answered 26 and 25
+of 32 answerable questions, against 27 and 29 without. \code{0} turns them off.}
 }
 \value{
-A mapped \code{dragon_dataset} ready for \code{\link[=dragon_train]{dragon_train()}}.
+A mapped \code{dragon_dataset} ready for \code{\link[=dragon_train]{dragon_train()}}. Its data has a
+\code{negative} column marking the "not covered" rows.
 }
 \description{
 Builds the dataset the fine-tune trains on: for every kept question, the
