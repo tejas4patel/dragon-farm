@@ -5,15 +5,15 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Ask your documents. Then teach a model. • dragonfarm</title>
+<title>Fine-tune your own model from R, starting from your documents • dragonfarm</title>
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<script src="../extra.js"></script><meta property="og:title" content="Ask your documents. Then teach a model.">
-<meta name="description" content="dragonfarm 0.4.0 answers questions from your PDFs, Word files, and web pages on your own GPU, then turns them into training data and fine-tunes a model. Raise your own dragon.">
-<meta property="og:description" content="dragonfarm 0.4.0 answers questions from your PDFs, Word files, and web pages on your own GPU, then turns them into training data and fine-tunes a model. Raise your own dragon.">
+<script src="../extra.js"></script><meta property="og:title" content="Fine-tune your own model from R, starting from your documents">
+<meta name="description" content="dragonfarm 0.4.0 turns your documents into training data, fine-tunes a language model on your own laptop, and keeps every answer grounded in your documents with built-in RAG. Raise your own dragon.">
+<meta property="og:description" content="dragonfarm 0.4.0 turns your documents into training data, fine-tunes a language model on your own laptop, and keeps every answer grounded in your documents with built-in RAG. Raise your own dragon.">
 <meta property="og:image" content="https://dragonfarm.dev/social.png">
 <meta property="og:image:alt" content="dragonfarm: fine-tune a language model from R in minutes">
 <meta name="twitter:card" content="summary_large_image">
@@ -66,7 +66,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>Ask your documents. Then teach a model.</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Fine-tune your own model from R, starting from your documents</h1>
                         <h4 data-toc-skip class="author">Tejas
 Patel</h4>
             
@@ -78,19 +78,52 @@ Patel</h4>
 
     
     
-<p><img class="df-post-mascot" src="../dragon.svg" alt="The dragonfarm dragon: a friendly orange dragon with small wings and one tiny fang"></p>
+<p><img class="df-post-mascot" src="../dragon.svg" alt="The dragonfarm dragon: a minimal orange dragon head in profile, with amber horns and neck spikes"></p>
 <p class="lead">
-dragonfarm 0.4.0 is here, and it hatches from your documents. Feed it
-PDFs, Word files, and web pages, ask it anything, and it answers in full
-from what it read. When you want more, it turns the same documents into
-homework, studies, and fine-tunes a model that knows your material. All
-from R, on your own machine, free. Raise your own dragon.
+dragonfarm 0.4.0 lets you fine-tune your own language model on your own
+documents, from R. It writes the training data for you, trains on the
+laptop you already have, and keeps every answer grounded in your
+documents. No Python, no cloud, no bill. Raise your own dragon.
 </p>
 <div class="section level2">
-<h2 id="ask-it-anything">Ask it anything<a class="anchor" aria-label="anchor" href="#ask-it-anything"></a>
+<h2 id="the-hard-part-is-the-training-data">The hard part is the training data<a class="anchor" aria-label="anchor" href="#the-hard-part-is-the-training-data"></a>
 </h2>
-<p>I fed it Costco’s 2024 annual report, all 76 pages, and asked two
-questions:</p>
+<p>Fine-tuning needs examples: hundreds of questions with good answers.
+Most people don’t have those. They have documents.</p>
+<p>So dragonfarm reads your documents and writes the practice questions
+and answers itself. You look through them, keep the good ones, and toss
+the rest. That review is the point: it is what stops a model from
+learning confident mistakes.</p>
+<div class="float">
+<img src="../demo/03-teach.png" alt="The Teach step: practice questions grouped by the passage they came from, each with a checkbox, and the reason for any that were flagged."><div class="figcaption">The Teach step: practice questions grouped by
+the passage they came from, each with a checkbox, and the reason for any
+that were flagged.</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="trains-on-the-laptop-you-have">Trains on the laptop you have<a class="anchor" aria-label="anchor" href="#trains-on-the-laptop-you-have"></a>
+</h2>
+<ul>
+<li>
+<strong>A 7B model fits an 8 GB laptop GPU</strong>, trained in
+4-bit.</li>
+<li>
+<strong>Small models learn fast.</strong> Turning support tickets
+into JSON, even the smallest model scored 20 of 20 after under three
+minutes of training.</li>
+<li>
+<strong>No GPU?</strong> It sends the training to a free Colab or
+Kaggle GPU and brings the model home.</li>
+</ul>
+<p>What you get back is yours: a model that runs on your machine and
+loads anywhere with standard tools. No subscription, no leash.</p>
+</div>
+<div class="section level2">
+<h2 id="rag-built-in-from-the-start">RAG built in, from the start<a class="anchor" aria-label="anchor" href="#rag-built-in-from-the-start"></a>
+</h2>
+<p>Before you train anything, dragonfarm already answers from your
+documents: it finds the most relevant passages and the model answers
+from them. I fed it Costco’s 2024 annual report, all 76 pages:</p>
 <div class="df-ba df-qa">
 <div class="df-reply after">
 <span class="df-who">Question</span>
@@ -113,70 +146,52 @@ million.
 </p>
 </div>
 </div>
-<p>Of thirteen factual questions about the report, it got twelve right.
-The thirteenth was a figure printed inside a map, and the dragon said
-the report does not cover it rather than making something up. Good
-dragon.</p>
+<p>It got 12 of 13 questions right, and on the last one said the report
+does not cover it rather than making something up.</p>
+<p>Training keeps that grounding: every practice question carries the
+passages it came from, so the model learns to answer from your
+documents, not to memorise them. That pays off when documents change. On
+support tickets, a model trained this way recalled 89 percent of the
+policy facts on tickets it had never seen, against 68 percent for
+ordinary fine-tuning, and when a policy was edited after training it
+followed the new version in 88 percent of answers. Old dragon, new
+tricks.</p>
 </div>
 <div class="section level2">
 <h2 id="six-steps-one-app">Six steps, one app<a class="anchor" aria-label="anchor" href="#six-steps-one-app"></a>
 </h2>
 <div class="float">
-<img src="../demo/dragonfarm-demo.gif" alt="The app, step by step: drop in documents, ask them with sources, review generated questions, train, watch the loss, compare against the base model."><div class="figcaption">The app, step by step: drop in documents, ask
-them with sources, review generated questions, train, watch the loss,
-compare against the base model.</div>
+<img src="../demo/dragonfarm-demo.gif" alt="The app, step by step: drop in documents, ask them questions, review the practice questions, train, watch it learn, compare against the original model."><div class="figcaption">The app, step by step: drop in documents, ask
+them questions, review the practice questions, train, watch it learn,
+compare against the original model.</div>
 </div>
 <ol style="list-style-type: decimal">
 <li>
 <strong>Documents.</strong> Feed it PDFs, Word files, web pages,
 spreadsheets, or a whole folder.</li>
 <li>
-<strong>Ask.</strong> Get full answers drawn from your
-documents.</li>
+<strong>Ask.</strong> Full answers drawn from your documents, before
+any training.</li>
 <li>
-<strong>Teach.</strong> It writes its own practice questions and
-answers from your documents. You keep the good ones.</li>
+<strong>Teach.</strong> It writes practice questions; you keep the
+good ones.</li>
 <li>
 <strong>Train.</strong> It studies the pairs you kept.</li>
 <li>
 <strong>Monitor.</strong> Watch it learn.</li>
 <li>
 <strong>Try it.</strong> Put the trained dragon next to the wild
-one, both answering from your documents.</li>
+one.</li>
 </ol>
-<p><span class="df-note">Your documents never leave your machine. No
-GPU? dragonfarm sends the training to a free Colab or Kaggle GPU and
-brings the dragon home.</span></p>
-</div>
-<div class="section level2">
-<h2 id="what-you-get">What you get<a class="anchor" aria-label="anchor" href="#what-you-get"></a>
-</h2>
-<ul>
-<li>
-<strong>Full answers, in plain words.</strong> It reads the relevant
-parts of your documents and answers the question, not just points you at
-a page.</li>
-<li>
-<strong>An honest “not covered”.</strong> Ask about something the
-documents do not contain and it says so.</li>
-<li>
-<strong>Training data you did not have to write.</strong> Most
-people who want to fine-tune have documents, not a table of questions
-and answers. The dragon writes the table; you mark it.</li>
-<li>
-<strong>A model that is yours.</strong> It runs on your machine and
-loads anywhere with standard tools. No subscription, no leash.</li>
-<li>
-<strong>The right size for your nest.</strong> An 8 GB laptop GPU
-raises a 7B dragon; smaller cards and CPUs get a smaller one, picked for
-you.</li>
-</ul>
+<p><span class="df-note">Your documents never leave your machine.
+Everything the app does is also an R function, for when you want a
+script.</span></p>
 </div>
 <div class="section level2">
 <h2 id="how-big-a-dragon-do-you-need">How big a dragon do you need?<a class="anchor" aria-label="anchor" href="#how-big-a-dragon-do-you-need"></a>
 </h2>
 <p>The same questions, the same documents, four sizes, one 8 GB laptop
-GPU, before any training:</p>
+GPU, answering with RAG before any training:</p>
 <table class="table">
 <colgroup>
 <col width="25%">
@@ -217,23 +232,9 @@ GPU, before any training:</p>
 </tr>
 </tbody>
 </table>
-<p>And after training:</p>
-<ul>
-<li>
-<strong>The Elder, trained on R’s manuals</strong>, stayed exactly
-as accurate and picked up manners: shorter, tidier answers.</li>
-<li>
-<strong>On support tickets</strong>, a dragon trained this way
-recalled 89 percent of the policy facts on tickets it had never seen,
-against 68 percent for ordinary fine-tuning. When the policy changed
-after training, it followed the new version in 88 percent of answers.
-Old dragon, new tricks.</li>
-<li>
-<strong>For a fixed format</strong> such as turning tickets into
-JSON, even the Hatchling scored 20 of 20 after a few minutes of
-training.</li>
-</ul>
-<p>The details are in <a href="model-sizes.html">Choosing a model
+<p>For open questions, bigger is better. For a fixed job like extraction
+or a house style, the small ones match the big ones and train in
+minutes. The details are in <a href="model-sizes.html">Choosing a model
 size</a>.</p>
 </div>
 <div class="section level2">

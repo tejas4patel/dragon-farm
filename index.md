@@ -1,14 +1,14 @@
 # Raise your own dragon.
 
-![The dragonfarm dragon: a friendly orange dragon with small wings and
-one tiny fang](dragon.svg)
+![The dragonfarm dragon: a minimal orange dragon head in profile, with
+amber horns and neck spikes](dragon.svg)
 
 R package · on CRAN · MIT licensed · mostly fireproof
 
-Feed it your documents. Ask it anything and get full answers drawn from
-what it read. Then teach it your ways. dragonfarm fine-tunes language
-models from R, on your own GPU or a free cloud one. A 7B dragon fits on
-an 8 GB laptop, and the dragon you raise is yours.
+Fine-tune your own language model on your own documents, from R.
+dragonfarm writes the training data for you, trains on the laptop you
+already have, and keeps every answer grounded in your documents with
+built-in RAG. No Python, no cloud. The dragon you raise is yours.
 
 `install.packages("dragonfarm")`
 
@@ -30,6 +30,35 @@ training rows built from the reviewed
 questions](demo/04-train.png)![Step 5, Monitor: the loss curve of a
 finished run](demo/05-monitor.png)![Step 6, Try it: the fine-tuned and
 base model replies side by side, each with sources](demo/06-tryit.png)
+
+Why raise one here
+
+## Fine-tuning, without the homework.
+
+Most fine-tuning tools assume you already have training data and a
+Python setup. dragonfarm starts from the documents you have.
+
+Training data
+
+### Your documents become the lessons
+
+It reads your documents and writes practice questions and answers. You
+keep the good ones and toss the rest. No spreadsheet of examples needed.
+
+Your laptop
+
+### Trains on the machine you have
+
+A 7B model fits an 8 GB laptop GPU, and small models learn a fixed
+format in minutes. No GPU? Borrow a free one in the cloud.
+
+RAG built in
+
+### Grounded by default
+
+It answers from your documents before you train anything, and training
+keeps those passages in every example. Change a document and the model
+follows it, without retraining.
 
 Same dragon, same ticket
 

@@ -30,9 +30,9 @@
 
 ### Announcements
 
-- [Ask your documents. Then teach a
-  model.](https://dragonfarm.dev/articles/introducing-0-4-0.md):
+- [Fine-tune your own model from R, starting from your
+  documents](https://dragonfarm.dev/articles/introducing-0-4-0.md):
 
-  dragonfarm 0.4.0 answers questions from your PDFs, Word files, and web
-  pages on your own GPU, then turns them into training data and
-  fine-tunes a model. Raise your own dragon.
+  dragonfarm 0.4.0 turns your documents into training data, fine-tunes a
+  language model on your own laptop, and keeps every answer grounded in
+  your documents with built-in RAG. Raise your own dragon.
