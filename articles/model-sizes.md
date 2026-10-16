@@ -53,6 +53,10 @@ ones.
 
 The 3B had its own failure: on 6 of 65 questions it replied with nothing
 but a citation marker, “\[1\]”.
+[`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md) now
+asks once more when that happens. With that retry the 3B left no reply
+empty and answered 28 of the 32 R questions instead of 24, with the
+Costco and declined columns unchanged.
 
 ## 2. Writing training questions
 
