@@ -95,8 +95,7 @@ questions, and for fine-tuning the same training rows.</p>
 <tr class="odd">
 <td>Answer questions from documents</td>
 <td>7B in 4-bit if you have an 8 GB NVIDIA card; otherwise 3B</td>
-<td>Smaller models answer many questions but make up answers to the
-rest</td>
+<td>The 7B was wrong once in 55 questions, the 0.5B 14 times</td>
 </tr>
 <tr class="even">
 <td>Write training questions from documents</td>
@@ -127,9 +126,10 @@ CPU. <code><a href="../reference/dragon_check.html">dragon_check()</a></code> sa
 <p>Each model answered from the four most relevant excerpts. Two test
 sets had known answers: 23 questions about Costco’s 2024 annual report
 (a 76-page PDF, mostly figures from tables) and 32 questions about R’s
-own manuals. Ten more questions were about things the documents do not
-contain, such as a hot-dog sales figure or the default port of RStudio
-Server; the right reply to those is to say so.</p>
+own manuals. Twenty more questions were about things the documents do
+not contain, such as a hot-dog sales figure, the default port of RStudio
+Server, or dplyr; the right reply to those is to say so. These numbers
+are for version 0.4.0 as released, with its search and instructions.</p>
 <table style="width:100%;" class="table">
 <colgroup>
 <col width="16%">
@@ -144,61 +144,63 @@ Server; the right reply to those is to say so.</p>
 <th>Costco figures right</th>
 <th>R questions right</th>
 <th>Wrong or empty, of those 55</th>
-<th>Declined the 10 it could not answer</th>
+<th>Declined the 20 it could not answer</th>
 <th>Seconds per answer</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td>0.5B</td>
-<td>12 of 23</td>
-<td>22 of 32</td>
-<td>21</td>
-<td>0</td>
-<td>0.3</td>
+<td>17 of 23</td>
+<td>20 of 32</td>
+<td>14</td>
+<td>13</td>
+<td>0.8</td>
 </tr>
 <tr class="even">
 <td>1.5B</td>
-<td>18 of 23</td>
-<td>27 of 32</td>
-<td>10</td>
-<td>5</td>
-<td>0.7</td>
+<td>19 of 23</td>
+<td>26 of 32</td>
+<td>8</td>
+<td>20</td>
+<td>1.1</td>
 </tr>
 <tr class="odd">
 <td>3B</td>
-<td>19 of 23</td>
-<td>24 of 32</td>
-<td>11</td>
-<td>10</td>
-<td>2.1</td>
+<td>20 of 23</td>
+<td>28 of 32</td>
+<td>7</td>
+<td>19</td>
+<td>2.4</td>
 </tr>
 <tr class="even">
 <td>7B, 4-bit</td>
-<td>20 of 23</td>
+<td>23 of 23</td>
 <td>31 of 32</td>
 <td>1</td>
-<td>10</td>
+<td>20</td>
 <td>4.7</td>
 </tr>
 </tbody>
 </table>
 <p>“Right” means the answer contained the correct figure or function
 name. That is a lenient test: small models often named the right
-function with a wrong detail around it.</p>
+function with a wrong detail around it. The 0.5B also declined 4
+answerable questions.</p>
 <p>The columns that matter most are “wrong or empty” and “declined”. The
-7B was wrong once in 55 answers; when it could not find a figure it said
-so, three times on figures that were in the report. The other sizes were
-wrong or empty ten to twenty times as often. And the 0.5B answered every
-question it could not know: it gave Costco’s CEO a home address. The
-1.5B did the same half the time, and named a Costco mobile game the
-report never mentions. That is the real cost of a small model on
-documents: not fewer answers, but answers you cannot tell from the right
-ones.</p>
-<p>The 3B had its own failure: on 6 of 65 questions it replied with
-nothing but a citation marker, “[1]”. <code><a href="../reference/dragon_ask.html">dragon_ask()</a></code> now asks
-once more when that happens. With that retry the 3B left no reply empty
-and answered 28 of the 32 R questions instead of 24, with the Costco and
-declined columns unchanged.</p>
+7B was wrong once in 55 answers and declined every question it could not
+know. The smaller models were wrong seven to fourteen times as often,
+and the 0.5B still answered 7 of the 20 questions the documents do not
+cover. That is the real cost of a small model on documents: not fewer
+answers, but answers you cannot tell from the right ones.</p>
+<p>It used to be worse. Before 0.4.0’s fixes, the 0.5B declined none of
+the unanswerable questions (it gave Costco’s CEO a home address) and the
+1.5B half of them (it named a Costco mobile game the report never
+mentions). Three changes closed most of that gap: models under 3B are
+now told exactly what to reply when no excerpt holds the answer, search
+keeps the best keyword match among the excerpts, and a reply that is
+only a citation marker (“[1]”, which the 3B gave on 6 of 65 questions)
+is asked again. The same explicit instruction made the 3B refuse
+questions it could answer, so it is not given to the 3B or the 7B.</p>
 </div>
 <div class="section level2">
 <h2 id="writing-training-questions">2. Writing training questions<a class="anchor" aria-label="anchor" href="#writing-training-questions"></a>
