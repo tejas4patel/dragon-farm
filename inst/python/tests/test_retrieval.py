@@ -217,3 +217,18 @@ def test_keyword_index_includes_the_section_title():
     idx.bm25 = R.BM25([R.chunk_text_for_index(c) for c in idx.chunks])
     s = idx.bm25.scores("income statement")
     assert s[0] > s[1]
+
+
+def test_a_question_naming_a_year_finds_that_years_labelled_row():
+    from dragonfarm.retrieval import BM25, keyword_tokens
+
+    assert "y2023" in keyword_tokens("Net sales (2024: $249,625; 2023: $237,710)")
+    assert "y2023" not in keyword_tokens("In 2023 we opened new warehouses.")      # a plain year is not a label
+    assert "y2023" in keyword_tokens("What were net sales in fiscal 2023?", query=True)
+    texts = [
+        "Net sales grew 5 percent in 2024 to $249.6 billion, up from 2023, a record year for net sales.",
+        "Total company net sales increased in 2024 compared with 2023 and 2022 across all segments.",
+        "Net Sales (2024: $249,625; 2023: $237,710; 2022: $222,730) Membership fees (2024: 4,828; 2023: 4,580)",
+    ]
+    s = BM25(texts).scores("What were net sales in fiscal 2023?")
+    assert int(s.argmax()) == 2

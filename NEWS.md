@@ -72,6 +72,14 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## Asking documents
 
+* A question that names a year now finds the table row labelled with that
+  year. Rows read as "Net sales (2024: $249,625; 2023: $237,710)" carry a
+  keyword per labelled year, which a question mentioning 2023 searches for;
+  a bare "2023" appears all over a report and did little. Known-answer
+  questions on the annual report reaching the top four excerpts: PDF 85 to
+  95 percent, Word 85 to 100 percent, other sets unchanged. A 7B answered
+  22 of 23 on the PDF (from 21) and stayed at 23 of 23 on the Word copy.
+
 * New: `dragon_index()` embeds a document set with a small encoder
   (`BAAI/bge-small-en-v1.5`, kept warm in the inference worker),
   `dragon_retrieve()` returns the most relevant chunks, and `dragon_ask()`

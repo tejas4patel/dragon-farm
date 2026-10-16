@@ -127,11 +127,21 @@ _STOP = frozenset("a an the of to in for on and or is are was were be by with as
 RRF_K = 60   # reciprocal-rank-fusion constant; 60 is the usual choice and was not tuned
 
 
-def keyword_tokens(text):
-    """Lower-cased words and numbers ("$4,409", "10-k", "2.4") minus a few stop words."""
+def keyword_tokens(text, query=False):
+    """Lower-cased words and numbers ("$4,409", "10-k", "2.4") minus a few stop words.
+
+    Tables read with their years ("Net sales (2024: $249,625; 2023: $237,710)")
+    also give a "y2023" token per year-labelled value, and a question that names
+    a year asks for it; a plain "2023" is everywhere in a report, so on its own
+    it did little to pull up the row for that year."""
     import re
 
-    return [t for t in re.findall(r"[a-z0-9][a-z0-9.,$%-]*[a-z0-9%]|[a-z0-9]", text.lower()) if t not in _STOP]
+    toks = [t for t in re.findall(r"[a-z0-9][a-z0-9.,$%-]*[a-z0-9%]|[a-z0-9]", text.lower()) if t not in _STOP]
+    if query:
+        years = re.findall(r"\b((?:19|20)\d{2})\b", text)
+    else:
+        years = re.findall(r"\b((?:19|20)\d{2}): ", text)
+    return toks + ["y" + y for y in years]
 
 
 class BM25:
@@ -157,7 +167,7 @@ class BM25:
         import numpy as np
 
         out = np.zeros(len(self.tf), dtype="float32")
-        q = keyword_tokens(query)
+        q = keyword_tokens(query, query=True)
         if not q or not self.avg:
             return out
         for i, tf in enumerate(self.tf):
