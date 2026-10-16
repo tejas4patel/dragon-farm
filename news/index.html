@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">dragonfarm</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,9 +36,13 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/tejas4patel/dragon-farm/blob/v0.3.3/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/tejas4patel/dragon-farm/blob/v0.3.4/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.4" id="dragonfarm-034">dragonfarm 0.3.4<a class="anchor" aria-label="anchor" href="#dragonfarm-034"></a></h2><p class="text-muted">CRAN release: 2026-10-12</p>
+<ul><li>Fixed a test that failed on macOS (CRAN’s M1mac additional check) though it passed everywhere else. It compared <code><a href="../reference/dragon_runs_dir.html">dragon_runs_dir()</a></code>’s default, a directory that does not exist yet, against <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> after <code><a href="https://rdrr.io/r/base/normalizePath.html" class="external-link">normalizePath()</a></code>; on macOS that resolves <code>/var</code> to <code>/private/var</code> for the existing <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> but leaves the nonexistent path unresolved, so the prefix check failed. The test now compares the existing parent directory. No change to package code or behaviour.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.3" id="dragonfarm-033">dragonfarm 0.3.3<a class="anchor" aria-label="anchor" href="#dragonfarm-033"></a></h2><p class="text-muted">CRAN release: 2026-10-07</p>
 <ul><li>Fixed the Shiny app’s Try it, Chat, Train, and Pipeline panels sometimes keeping a stale runs list until the page was reloaded – most visibly, a run that had just finished training would not appear as selectable in Try it. Their <code>reactivePoll()</code>s watched only each run’s own <code>status.json</code> mtime, which misses a change when the file that actually matters (the adapter, or a run’s directory being renamed by archive/restore) is written or moved without <code>status.json</code> itself changing again. All of the app’s run-list pollers now share <code>runs_change_signature()</code>, which changes whenever any file anywhere under the runs directory is added, edited, or moved.</li>
