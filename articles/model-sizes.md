@@ -11,7 +11,7 @@ questions, and for fine-tuning the same training rows.
 
 | If you want to | Use | Because |
 |----|----|----|
-| Answer questions from documents | 7B in 4-bit if you have an 8 GB NVIDIA card; otherwise 3B | The 7B was wrong once in 55 questions, the 0.5B 14 times |
+| Answer questions from documents | 7B in 4-bit if you have an 8 GB NVIDIA card; otherwise 3B | The 7B was right on all 55 questions, the 0.5B wrong 14 times |
 | Write training questions from documents | 7B | It kept 104 of 120 questions, and every one we checked was right |
 | Fine-tune on your documents | 3B or 7B | With the default “not covered” examples every size learns to decline; the larger ones keep more answers right |
 | Fine-tune a fixed format (JSON, labels, a house style) | 0.5B to 1.5B | They reach the same score in minutes |
@@ -35,25 +35,32 @@ are for version 0.4.0 as released, with its search and instructions.
 |----|----|----|----|----|----|
 | 0.5B | 17 of 23 | 19 of 32 | 14 | 16 | 0.8 |
 | 1.5B | 19 of 23 | 28 of 32 | 6 | 20 | 1.1 |
-| 3B | 20 of 23 | 30 of 32 | 5 | 20 | 2.4 |
-| 7B, 4-bit | 23 of 23 | 31 of 32 | 1 | 20 | 4.4 |
+| 3B | 21 of 23 | 30 of 32 | 4 | 20 | 9.0 |
+| 7B, 4-bit | 23 of 23 | 32 of 32 | 0 | 20 | 10.1 |
 
 “Right” means the answer contained the correct figure or function name.
 That is a lenient test: small models often named the right function with
 a wrong detail around it. The 0.5B also declined 5 answerable questions.
 
+The 3B and 7B give full answers, a median of 52 and 60 words with the
+figures, steps, or code the excerpts hold, which is why they take 9 to
+10 seconds. Asked for answers that long, the smaller models made things
+up more often (the 0.5B then declined only 10 of 25 questions it could
+not know), so they are asked for short ones: a sentence or two, often a
+single figure or function name.
+
 As a check that these numbers are not tuned to the two test sets, the
 same models answered 20 questions about R’s installation and data import
-manuals, which were never used while developing: 15, 12, 15, and 18
+manuals, which were never used while developing: 15, 12, 19, and 20
 right for the 0.5B, 1.5B, 3B, and 7B, with the 1.5B, 3B, and 7B
 declining at least four of five questions those manuals do not cover.
 
 The columns that matter most are “wrong or empty” and “declined”. The 7B
-was wrong once in 55 answers and declined every question it could not
-know. The smaller models were wrong five to fourteen times as often, and
-the 0.5B still answered 4 of the 20 questions the documents do not
-cover. That is the real cost of a small model on documents: not fewer
-answers, but answers you cannot tell from the right ones.
+was right on all 55 and declined every question it could not know. The
+smaller models were wrong four to fourteen times, and the 0.5B still
+answered 4 of the 20 questions the documents do not cover. That is the
+real cost of a small model on documents: not fewer answers, but answers
+you cannot tell from the right ones.
 
 It used to be worse. Before 0.4.0’s fixes, the 0.5B declined none of the
 unanswerable questions (it made up details about Costco’s executives)
