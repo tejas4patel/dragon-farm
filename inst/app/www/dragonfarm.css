@@ -395,3 +395,8 @@ pre.shiny-text-output:empty { min-height: 44px; }
   background: radial-gradient(260px 90px at 50% 0%, rgba(255, 181, 71, 0.10), transparent 70%);
 }
 #tryit-base:empty::before { content: "The base model's reply appears here, for comparison."; }
+
+/* Long run ids in a single-select ran under the dropdown arrow: cut them off
+   with an ellipsis and keep room for the arrow. */
+.selectize-control.single .selectize-input { padding-right: 34px !important; }
+.selectize-control.single .selectize-input > .item { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
