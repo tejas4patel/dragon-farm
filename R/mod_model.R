@@ -32,7 +32,8 @@ mod_model_server <- function(id, state, nav_to) {
         shiny::tags$span(class = "df-model",
           shiny::tags$span(class = "df-model-head",
             shiny::tags$span(class = "df-model-name", sub("^.*/", "", p$id)),
-            shiny::tags$span(class = "df-chip size", p$params)
+            shiny::tags$span(class = "df-chip size", p$params),
+            shiny::tags$span(class = "df-chip stage", dragon_stage(model_size_b(p$id)))
           ),
           shiny::tags$span(class = "df-model-org", org),
           shiny::tags$span(class = "df-model-note", p$notes),

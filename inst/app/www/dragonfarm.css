@@ -382,6 +382,7 @@ pre.shiny-text-output:empty { min-height: 44px; }
 .df-chip { display: inline-block; padding: 1px 8px; border-radius: 999px; font: 600 0.7rem "Inter", sans-serif; background: var(--df-bg); color: var(--df-muted); border: 1px solid var(--df-line); }
 .df-chip.size { background: var(--df-navy); color: #FFD28A; border-color: transparent; font-family: "Space Grotesk", sans-serif; }
 .df-chip.warn { background: #FEF3C7; color: #92400E; border-color: transparent; }
+.df-chip.stage { background: linear-gradient(135deg, #FFB547, #FF6B35); color: #2A1205; border-color: transparent; font-family: "Space Grotesk", sans-serif; }
 
 /* Shiny adds .btn-default to every actionButton; keep the danger outline red. */
 .btn.btn-outline-danger { color: var(--df-bad); border-color: rgba(194, 65, 12, 0.45); background: var(--df-card); }

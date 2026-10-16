@@ -73,6 +73,17 @@ model_size_b <- function(model_id) {
   max(ifelse(unit == "m", num / 1000, num))
 }
 
+# The app and the site call model sizes by dragon life stage. Only a label:
+# nothing in the package depends on it.
+dragon_stage <- function(size_b) {
+  if (is.null(size_b) || is.na(size_b)) return("")
+  if (size_b < 0.4) "Egg"
+  else if (size_b < 1) "Hatchling"
+  else if (size_b < 2.5) "Drake"
+  else if (size_b < 5) "Wyvern"
+  else "Elder"
+}
+
 # Should training load this model in 4-bit (QLoRA)? Training needs room for
 # activations as well as the weights, so the bar is lower than for answering:
 # bf16 weights (about 2.1 GB per billion parameters) over 60% of GPU memory.

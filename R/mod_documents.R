@@ -10,7 +10,7 @@ mod_documents_ui <- function(id) {
   shiny::tagList(
     mod_documents_top_ui(ns),
     bslib::card(
-      bslib::card_header("Teach: questions and answers from these documents"),
+      bslib::card_header("Teach: practice questions from these documents"),
       shiny::p(class = "hint", "A model writes questions each chunk can answer, filters mark the weak ones, and you review before anything trains. Expect to keep roughly half; the review is the point."),
       bslib::layout_columns(
         col_widths = c(4, 2, 3, 3),
@@ -20,7 +20,7 @@ mod_documents_ui <- function(id) {
         shiny::selectInput(ns("qset"), "Or review an earlier set", choices = c("Choose" = ""), width = "100%")
       ),
       shiny::div(class = "cloud-actions",
-        shiny::actionButton(ns("generate"), "Generate questions", class = "btn-primary"),
+        shiny::actionButton(ns("generate"), "Write practice questions", class = "btn-primary"),
         shiny::uiOutput(ns("gen_status"), inline = TRUE)
       ),
       shiny::uiOutput(ns("review"))
@@ -167,7 +167,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       if (is.null(state$hardware)) state$hardware <- tryCatch(hardware_info(), error = function(e) NULL)
       pending_files(pending_files()[0, , drop = FALSE])
       pending_urls(character())
-      shiny::showNotification(sprintf("%s: %d chunks ready to ask.", docs$name, docs$manifest$n_chunks), type = "message", duration = 5)
+      shiny::showNotification(sprintf("%s: %d chunks eaten. Ask away.", docs$name, docs$manifest$n_chunks), type = "message", duration = 5)
     })
 
     shiny::observeEvent(input$example, {
@@ -184,7 +184,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
 
     output$summary <- shiny::renderUI({
       docs <- state$documents
-      if (is.null(docs)) return(shiny::p(class = "hint", "No document set yet. Drop files above, or open a saved set."))
+      if (is.null(docs)) return(shiny::p(class = "hint", "The dragon is hungry. Drop files above, or open a saved set."))
       m <- docs$manifest
       shiny::tagList(
         shiny::div(class = "kv", shiny::span("Set"), shiny::strong(docs$name)),
@@ -224,7 +224,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       if (!nzchar(q)) { shiny::showNotification("Type a question first.", type = "warning"); return() }
       docs <- state$documents
       if (is.null(docs)) { shiny::showNotification("Read some documents first, or open a saved set.", type = "warning"); return() }
-      shiny::withProgress(message = "Asking the documents", value = 0.1, {
+      shiny::withProgress(message = "The dragon is reading", value = 0.1, {
         ans <- tryCatch(
           dragon_ask(docs, q, model = chosen_model(), k = input$k %||% 4,
                      on_stage = function(msg) shiny::incProgress(0.3, detail = msg)),

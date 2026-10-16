@@ -5,34 +5,35 @@
 [![Website](https://img.shields.io/badge/docs-dragonfarm.dev-FF6B35)](https://dragonfarm.dev)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tejas4patel/dragonfarm/blob/main/inst/remote/dragonfarm_remote.ipynb)
 
-![dragonfarm: fine-tune a language model from R in minutes. Six steps: Documents, Ask, Teach, Train, Monitor, Try it.](https://raw.githubusercontent.com/tejas4patel/dragonfarm/main/pkgdown/assets/banner.svg)
+![dragonfarm: raise your own dragon. Feed it your documents, ask it anything, teach it your ways. Six steps: Documents, Ask, Teach, Train, Monitor, Try it.](https://raw.githubusercontent.com/tejas4patel/dragonfarm/main/pkgdown/assets/banner.svg)
 
-**Fine-tune a language model on your own documents, from R.** Drop in PDFs,
-Word files, web pages, or spreadsheets and ask them questions: answers come
-back with cited sources before anything is trained. Then have a model write
-training questions from the documents, review them, and fine-tune. A 7B model
-trains in 4-bit on an 8 GB laptop GPU; small models train in minutes and suit
-fixed formats such as JSON extraction. You get back an adapter or a merged
-model that loads with plain Hugging Face `transformers`. Training runs in a
-background Python process that the package sets up for you, on your own GPU
-or on a free cloud one.
+**Raise your own dragon.** dragonfarm fine-tunes language models on your
+own documents, from R. Feed it PDFs, Word files, web pages, or spreadsheets
+and ask it questions: it answers in full from what it read, and says so
+when the documents are silent, all before anything is trained. Then it
+writes its own practice questions from the documents, you keep the good
+ones, and it learns your ways. A 7B dragon fits on an 8 GB laptop GPU;
+small ones learn fixed formats such as JSON in minutes. What hatches is an
+adapter or a merged model that loads with plain Hugging Face
+`transformers`, on your own GPU or a borrowed cloud one.
 
 ![The app, step by step: drop in documents, ask them with sources, review generated questions, train, watch the loss, compare against the base model.](https://raw.githubusercontent.com/tejas4patel/dragonfarm/main/pkgdown/assets/demo/dragonfarm-demo.gif)
 
-The app opens on documents and walks through the same six steps as the GIF:
+The app opens on documents and walks the same six steps as the GIF:
 
-1. **Documents**: drop in PDFs, Word files, HTML, Markdown, text, or
-   spreadsheets, or add web pages. They are read, chunked, and indexed.
-2. **Ask**: ask a question and get an answer with numbered sources. Nothing
-   is trained yet; for many uses this is already enough.
-3. **Teach**: a model writes questions and answers from each chunk, filters
-   flag the weak ones, and you tick what to keep. Expect to keep about half.
-4. **Train**: pick a base model, set a few numbers, press Start training (or
-   send the run to a cloud GPU). Each prompt carries the retrieved excerpts.
-5. **Monitor**: watch the loss curve; the panel also shows the R code that
+1. **Documents**: feed it PDFs, Word files, HTML, Markdown, text, or
+   spreadsheets, or web pages. It reads everything and forgets nothing.
+2. **Ask**: ask a question and get a full answer drawn from your documents.
+   Nothing is trained yet; for many uses this is already enough dragon.
+3. **Teach**: it writes practice questions and answers from each chunk,
+   filters flag the weak ones, and you tick what to keep. Expect to keep
+   about half.
+4. **Train**: pick a dragon size, set a few numbers, press Start training
+   (or send it to a cloud GPU). Each prompt carries the retrieved excerpts.
+5. **Monitor**: watch it learn; the panel also shows the R code that
    reproduces the run.
-6. **Try it**: compare the fine-tuned model with the base model, both
-   answering from your documents; then chat, judge, merge, or publish.
+6. **Try it**: put the trained dragon next to the wild one, both answering
+   from your documents; then chat, judge, merge, or publish.
 
 Already have a table of prompts and replies? One link switches the app to
 the table route: load the table, drag its columns into Prompt and Response
@@ -55,7 +56,7 @@ app with `dragon_app()`.
 ## Start with documents
 
 You do not need a table of prompts and replies. Drop in documents, ask them
-questions with cited sources, have a model write training questions from
+questions, have a model write training questions from
 them, review those, and fine-tune with the retrieved excerpts in every
 prompt. In the app this is the Documents tab, the first one; in code:
 

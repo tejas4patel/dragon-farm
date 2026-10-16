@@ -104,36 +104,41 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), route = c("documents", "tab
   shiny::shinyApp(ui, server, options = list(...))
 }
 
-# The logo: the website's amber-to-coral triangle on a navy tile.
+# The logo: the dragonfarm dragon on a navy tile, the same mark as the hex
+# sticker and the site's favicon (source in scripts/logo).
 brand_mark <- function() {
   shiny::HTML(paste0(
-    '<svg class="df-logo" viewBox="0 0 64 64" width="26" height="26" aria-hidden="true">',
-    '<defs><linearGradient id="dfLogoGrad" x1="0" y1="0" x2="1" y2="1">',
-    '<stop offset="0" stop-color="#FFB547"/><stop offset="1" stop-color="#FF6B35"/></linearGradient></defs>',
-    '<rect width="64" height="64" rx="14" fill="#151E3A"/><polygon points="32,13 52,49 12,49" fill="url(#dfLogoGrad)"/></svg>'
+    '<svg class="df-logo" aria-hidden="true" viewBox="0 0 100 100" width="26" height="26">',
+    '<rect width="100" height="100" rx="22" fill="#151E3A"/><g transform="translate(9,8) scale(0.84)">',
+    '<path d="M38 34 L10 12 L30 40 Z" fill="#FFB547"/><path d="M50 30 L36 6 L44 33 Z" fill="#FFB547"/>',
+    '<path d="M22 58 L6 54 L18 68 Z" fill="#FFB547"/><path d="M20 74 L4 74 L18 84 Z" fill="#FFB547"/>',
+    '<path d="M26 94 C16 72 18 52 30 40 C38 32 48 28 58 30 L86 40 C93 42 94 49 88 51 L66 56 L70 61 C64 66 56 66 50 64 C46 74 48 84 54 94 Z" fill="#FF6B35"/>',
+    '<circle cx="57" cy="40" r="4.2" fill="#0B1020"/><circle cx="86" cy="44" r="1.8" fill="#0B1020"/></g>',
+    '</svg>'
   ))
 }
 
-# A short heading over each step: what it is for, in one line.
+# A short heading over each step: what it is for, in one line, in the
+# dragon voice of the site. Errors and warnings elsewhere stay plain.
 step_intros <- list(
-  documents = c("Start here", "Bring your documents",
-                "Drop in files or web pages, ask them questions with cited sources, then have a model write training questions for you to review."),
-  data = c("Table route", "Load your examples",
+  documents = c("Start here", "Feed the dragon",
+                "Drop in files or web pages and ask them anything: it answers from what it read. When you're ready, it writes practice questions for you to mark."),
+  data = c("Table route", "Bring your own homework",
            "A CSV, Excel sheet, JSONL file, or data frame of prompts and replies."),
-  map = c("Table route", "Show the model what each column means",
+  map = c("Table route", "Show it what each column means",
           "Drag columns into the prompt, response, and system slots, or start from a template."),
-  model = c("Choose", "Pick a base model",
-            "Small models train in minutes and suit fixed formats. A 7B in 4-bit gives the best answers on an 8 GB NVIDIA card."),
-  train = c("Train", "Set it and start",
-            "LoRA trains a small adapter on top of the base model. Training runs in the background, so the app stays usable."),
+  model = c("Choose", "Pick your dragon",
+            "Hatchlings (0.5B) learn fixed formats in minutes. An Elder (7B, in 4-bit) gives the best answers on an 8 GB NVIDIA card."),
+  train = c("Train", "Off to dragon school",
+            "LoRA trains a small adapter on top of the base model. It studies in the background, so the app stays usable."),
   monitor = c("Watch", "Watch it learn",
-              "Training loss shows the model fitting your examples; held-out loss shows whether it carries over to new ones."),
-  tryit = c("Compare", "Try it side by side",
-            "Ask the fine-tuned and the base model the same question, let a judge compare them, then export or publish."),
-  chat = c("Talk", "Chat with a model",
-           "Multi-turn chat with context, answers from your documents, and feedback that becomes training data."),
-  pipeline = c("Automate", "Run the whole loop",
-               "Chain training, judging, and preference tuning into one recipe, and follow each run's lineage.")
+              "Training loss shows it fitting your examples; held-out loss shows whether it learned the lesson or just memorised the textbook."),
+  tryit = c("Compare", "Trained vs. wild",
+            "Ask the trained dragon and the original the same question, let a judge decide, then export or publish."),
+  chat = c("Talk", "Have a chat with it",
+           "Multi-turn chat with context, answers from your documents, and thumbs up or down that become training data."),
+  pipeline = c("Automate", "Run the whole training camp",
+               "Chain training, judging, and preference tuning into one recipe, and follow each run's family tree.")
 )
 
 step_page <- function(key, ui) {

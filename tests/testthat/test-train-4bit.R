@@ -40,3 +40,14 @@ test_that("4-bit runs use batch size 1 and keep the effective batch", {
   expect_equal(dragonfarm:::batch_for_4bit(1, 16), list(batch_size = 1L, grad_accum = 16L))
   expect_equal(dragonfarm:::batch_for_4bit(NA, 8), list(batch_size = 1L, grad_accum = 8L))
 })
+
+test_that("model sizes get a dragon life stage, and every preset card shows one", {
+  stage <- function(id) dragonfarm:::dragon_stage(dragonfarm:::model_size_b(id))
+  expect_equal(stage("HuggingFaceTB/SmolLM2-135M-Instruct"), "Egg")
+  expect_equal(stage("Qwen/Qwen2.5-0.5B-Instruct"), "Hatchling")
+  expect_equal(stage("Qwen/Qwen2.5-1.5B-Instruct"), "Drake")
+  expect_equal(stage("Qwen/Qwen2.5-3B-Instruct"), "Wyvern")
+  expect_equal(stage("Qwen/Qwen2.5-7B-Instruct"), "Elder")
+  expect_equal(stage("org/no-size-here"), "")
+  expect_true(all(nzchar(vapply(dragon_presets()$id, stage, ""))))
+})

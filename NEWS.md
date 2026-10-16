@@ -361,6 +361,12 @@ this release along with everything added since 0.2.0:
 
 ## Everything else added since 0.2.0
 
+* A dragon of its own: a new hex logo, favicon, and app icon with an
+  original dragon, the slogan "Raise your own dragon", and a lighter voice
+  in the app's step headings and on the website. Model cards in the app show
+  a life stage (Egg, Hatchling, Drake, Wyvern, Elder) beside the size.
+  Function names and error messages are unchanged.
+
 * The GitHub repository is now `tejas4patel/dragonfarm`, matching the
   package name: `pak::pak("tejas4patel/dragonfarm")`. Old
   `tejas4patel/dragon-farm` links keep working through GitHub's redirect.

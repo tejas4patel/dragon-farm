@@ -264,7 +264,7 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       }, error = function(e) { notify_error(e); NULL })
       if (!is.null(run)) {
         state$run <- run
-        shiny::showNotification(sprintf("Run %s launched.", run$id), type = "message")
+        shiny::showNotification(sprintf("Run %s is off to dragon school.", run$id), type = "message")
         nav_to("monitor")
       }
     })
