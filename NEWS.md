@@ -173,6 +173,13 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## Fixes
 
+* The app no longer slows to a crawl with many runs. Seven panels each
+  listed every file under the runs folder every three seconds, checkpoints
+  and indexes included; with a thousand files that took about a second a
+  time and kept the app busy. They now look two levels deep (7.5 times
+  faster here). The Monitor also stopped resetting a run you had just
+  picked back to the newest one when the run list refreshed.
+
 * A training run that runs out of GPU memory now says so, with the usual
   fixes, including when the error arrives as `CUBLAS_STATUS_EXECUTION_FAILED`
   (a 7B in 4-bit at batch size 4 on an 8 GB card) rather than "out of memory".

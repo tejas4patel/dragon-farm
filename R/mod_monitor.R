@@ -77,6 +77,10 @@ mod_monitor_server <- function(id, state, runs_dir) {
     )
     runs <- shiny::reactive(if (isTRUE(input$show_archived)) archived_runs_poll() else active_runs())
 
+    # Resend the choices only when the list itself changed. Resending an
+    # unchanged list also resent the server's last-known selection, which
+    # could undo a run the user had just picked but the server not yet seen.
+    sent <- new.env()
     shiny::observe({
       df <- runs()
       archived <- isTRUE(input$show_archived)
@@ -85,6 +89,9 @@ mod_monitor_server <- function(id, state, runs_dir) {
         selected <- state$run$id
       }
       labels <- if (nrow(df)) sprintf("%s  [%s]", df$id, if (archived) "archived" else df$state) else character()
+      key <- paste(archived, paste(df$id, labels, collapse = "|"))
+      if (identical(key, sent$key) && identical(selected, shiny::isolate(input$run))) return()
+      sent$key <- key
       shiny::updateSelectInput(session, "run", choices = stats::setNames(df$id, labels),
                                selected = if (!is.null(selected) && selected %in% df$id) selected else df$id[1])
     })

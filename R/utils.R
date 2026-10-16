@@ -133,8 +133,17 @@ estimate_tokens <- function(text) {
 # already sampled, leaving a run's UI stuck showing stale choices until the
 # page was reloaded.
 runs_change_signature <- function(dir) {
-  files <- sort(list.files(dir, recursive = TRUE, full.names = TRUE))
-  if (!length(files)) return("")
+  # Two levels only: each run, set, or pipeline record, and the files and
+  # folders directly inside it (status.json, progress.jsonl, adapter/, ...).
+  # Listing everything recursively walked every checkpoint and index file:
+  # about a second per call on a thousand files, from seven panels every three
+  # seconds, which kept the app busy and let a run-list refresh undo a choice
+  # the user had just made. A new or deleted file deeper down still changes
+  # its folder's mtime, which is listed.
+  top <- list.files(dir, full.names = TRUE)
+  if (!length(top)) return("")
+  inner <- unlist(lapply(top[dir.exists(top)], list.files, full.names = TRUE), use.names = FALSE)
+  files <- sort(c(top, inner))
   # Full paths, not just a count, so a rename (archive/restore moves a run's
   # files to a new path without touching their mtime) changes the signature
   # too, not just an edited file's content would.

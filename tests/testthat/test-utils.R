@@ -43,3 +43,14 @@ test_that("runs_change_signature handles an empty or missing directory", {
   expect_identical(runs_change_signature(dir), "")
   expect_identical(runs_change_signature(file.path(dir, "does-not-exist")), "")
 })
+
+test_that("runs_change_signature does not walk deeper than a run's own files", {
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "run-1", "checkpoints", "step-10"), recursive = TRUE)
+  writeLines("{}", file.path(dir, "run-1", "status.json"))
+  writeLines("x", file.path(dir, "run-1", "checkpoints", "step-10", "weights.bin"))
+  sig <- runs_change_signature(dir)
+  expect_false(grepl("weights.bin", sig, fixed = TRUE))
+  expect_true(grepl("status.json", sig, fixed = TRUE))
+  expect_true(grepl("checkpoints", sig, fixed = TRUE))
+})
