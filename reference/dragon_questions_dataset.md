@@ -46,8 +46,8 @@ dragon_questions_dataset(qa, docs = NULL, k = 4, cite = TRUE, negatives = 0.15)
   Without them every training prompt has its answer in the excerpts, and
   fine-tuned models learn to answer everything. Tuned on R's manuals, a
   0.5B, 1.5B, and 3B declined 0, 0, and 6 of 15 questions the manuals do
-  not cover; with 15 percent negatives they declined 14, 15, and 15, and
-  answered 26, 25, and 28 of 32 answerable questions, against 27, 29,
+  not cover; with 15 percent negatives all three declined 15 of 15, and
+  answered 27, 26, and 29 of 32 answerable questions, against 27, 29,
   and 30 without. `0` turns them off.
 
 ## Value

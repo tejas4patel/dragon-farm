@@ -116,13 +116,16 @@ plus those, and tested on 15 questions the manuals do not cover:
 
 | Model | Declined, before | Declined, with “not covered” rows | R questions right, before | after |
 |----|----|----|----|----|
-| 0.5B | 0 of 15 | 14 of 15 | 27 of 32 | 26 of 32 |
-| 1.5B | 0 of 15 | 15 of 15 | 29 of 32 | 25 of 32 |
-| 3B, 4-bit | 6 of 15 | 15 of 15 | 30 of 32 | 28 of 32 |
+| 0.5B | 0 of 15 | 15 of 15 | 27 of 32 | 27 of 32 |
+| 1.5B | 0 of 15 | 15 of 15 | 29 of 32 | 26 of 32 |
+| 3B, 4-bit | 6 of 15 | 15 of 15 | 30 of 32 | 29 of 32 |
 
-The cost is a few answerable questions declined or answered with a wrong
-detail; the gain is that a tuned model now says when it does not know. A
-small model still names fewer right details than a large one.
+Both sides of this table use the current search, which since this
+benchmark also keeps the keyword match’s best excerpt (the earlier
+tables use the search as it was). The cost is up to three answerable
+questions answered with a wrong detail; the gain is that a tuned model
+now says when it does not know. A small model still names fewer right
+details than a large one.
 
 ## 4. A fixed format: tickets to JSON
 
