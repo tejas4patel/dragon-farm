@@ -133,6 +133,14 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## Hardware and models
 
+* `dragon_presets()` adds Qwen 2.5 3B and 7B, both trained in 4-bit (a 3B
+  peaks at 4.3 GB on 1,536-token document prompts, a 7B at 7.9 GB), and its
+  notes now say which task each size suits. A new `load_in_4bit` column says
+  which presets need 4-bit to fit. On the documents route the app's Model
+  step starts from the model the hardware check recommends (a 7B at 8 GB,
+  a 3B at 6 GB) and warns when a model under 3B is chosen for documents.
+  The measurements behind this are in a new article, "Choosing a model size".
+
 * Training computes its loss through the output layer in chunks, so the
   scores for the whole vocabulary are never held at every position at once.
   With a 151,000-token vocabulary that tensor was about a gigabyte per row

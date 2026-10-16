@@ -259,8 +259,8 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       state$hardware
       choices <- c("Recommended local model" = "")
       if (nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) choices <- c(choices, "Claude API (ANTHROPIC_API_KEY)" = "anthropic")
-      choices <- c(choices, stats::setNames(dragon_presets()$id, dragon_presets()$id),
-                   "Qwen/Qwen2.5-3B-Instruct" = "Qwen/Qwen2.5-3B-Instruct", "Qwen/Qwen2.5-7B-Instruct (4-bit on 8 GB)" = "Qwen/Qwen2.5-7B-Instruct")
+      p <- dragon_presets()
+      choices <- c(choices, stats::setNames(p$id, ifelse(p$load_in_4bit, paste(p$id, "(4-bit)"), p$id)))
       shiny::updateSelectInput(session, "generator", choices = choices, selected = shiny::isolate(input$generator) %||% "")
     })
     shiny::observe({

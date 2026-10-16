@@ -1,12 +1,21 @@
-#' Recommended small models
+#' Recommended base models
 #'
-#' A table of small instruction-tuned models that work well with LoRA on a
-#' single consumer GPU or, for the smallest, a CPU. Any Hugging Face causal
-#' language model id can be passed to [dragon_train()]; these are just good
-#' starting points.
+#' A table of instruction-tuned models that work well with LoRA on a single
+#' consumer GPU, from a 135M model that trains on a CPU to a 7B that trains
+#' in 4-bit on an 8 GB NVIDIA card. Any Hugging Face causal language model id
+#' can be passed to [dragon_train()]; these are good starting points.
+#'
+#' Which size to pick depends on the task. Measured on an 8 GB laptop GPU
+#' (see the "Choosing a model size" article on the package website): for
+#' answering from documents, writing training questions, or fine-tuning on
+#' documents, use the 7B in 4-bit, or the 3B with less memory; models below
+#' 3B answer many questions but make up answers to the rest. For a fixed
+#' output format such as JSON fields or labels, the 0.5B and 1.5B reach the
+#' same score as larger models in a few minutes of training.
 #'
 #' @return A data frame with columns `id`, `params`, `license`, `gated`,
-#'   `rank`, `min_vram_gb`, and `notes`.
+#'   `rank`, `min_vram_gb`, `load_in_4bit` (whether it needs 4-bit loading to
+#'   fit `min_vram_gb`), and `notes`.
 #' @export
 #' @examples
 #' dragon_presets()
@@ -19,21 +28,27 @@ dragon_presets <- function() {
       "google/gemma-3-1b-it",
       "meta-llama/Llama-3.2-1B-Instruct",
       "Qwen/Qwen2.5-1.5B-Instruct",
-      "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+      "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "Qwen/Qwen2.5-3B-Instruct",
+      "Qwen/Qwen2.5-7B-Instruct"
     ),
-    params = c("135M", "360M", "0.5B", "1B", "1.2B", "1.5B", "1.7B"),
-    license = c("Apache 2.0", "Apache 2.0", "Apache 2.0", "Gemma", "Llama 3.2", "Apache 2.0", "Apache 2.0"),
-    gated = c(FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE),
-    rank = c(8L, 8L, 16L, 16L, 16L, 16L, 16L),
-    min_vram_gb = c(2, 3, 3, 5, 5, 7, 8),
+    params = c("135M", "360M", "0.5B", "1B", "1.2B", "1.5B", "1.7B", "3B", "7B"),
+    license = c("Apache 2.0", "Apache 2.0", "Apache 2.0", "Gemma", "Llama 3.2", "Apache 2.0", "Apache 2.0",
+                "Qwen Research", "Apache 2.0"),
+    gated = c(FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE),
+    rank = c(8L, 8L, 16L, 16L, 16L, 16L, 16L, 16L, 16L),
+    min_vram_gb = c(2, 3, 3, 5, 5, 7, 8, 5, 8),
+    load_in_4bit = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
     notes = c(
       "Fastest. Trains on a CPU in minutes. Used by the package tests.",
-      "Good laptop default.",
-      "App default. Strong for its size.",
+      "Tiny. For trying the workflow on a laptop.",
+      "App default. Fixed formats such as JSON: 20 of 20 after 3 minutes of training. Makes up answers on documents.",
       "Needs a Hugging Face token.",
       "Needs a Hugging Face token.",
-      "Top of the comfortable range on an 8 GB card.",
-      "Largest preset. Turn on gradient checkpointing on 8 GB cards."
+      "Fixed formats and house style. Answers many document questions but rarely says when it cannot.",
+      "Largest of the small presets. Turn on gradient checkpointing on 8 GB cards.",
+      "Documents on a smaller card: declines what the documents do not cover. Trains in 4-bit; research licence.",
+      "Best for documents: answering, writing training questions, fine-tuning. 4-bit, batch size 1 on an 8 GB NVIDIA card."
     ),
     stringsAsFactors = FALSE
   )

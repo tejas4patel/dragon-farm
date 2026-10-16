@@ -65,3 +65,22 @@ test_that("a failed hardware detection notifies instead of crashing", {
     expect_null(state$hardware)
   })
 })
+
+test_that("the documents route starts from the hardware's recommended model and warns below 3B", {
+  hw8 <- list(device = "cuda", vram_gb = 8, tier = list(model = "Qwen/Qwen2.5-7B-Instruct", load_in_4bit = TRUE))
+  expect_equal(dragonfarm:::recommended_preset(hw8, "documents"), "Qwen/Qwen2.5-7B-Instruct")
+  expect_null(dragonfarm:::recommended_preset(hw8, "table"))
+  expect_null(dragonfarm:::recommended_preset(NULL, "documents"))
+  expect_null(dragonfarm:::recommended_preset(list(tier = list(model = "org/unknown")), "documents"))
+
+  state <- shiny::reactiveValues(model = NULL, hardware = NULL, route = "documents")
+  shiny::testServer(dragonfarm:::mod_model_server, args = list(state = state, nav_to = function(panel) NULL), {
+    session$setInputs(preset = "Qwen/Qwen2.5-0.5B-Instruct", custom = "")
+    expect_match(as.character(output$verdict$html), "under 3B", fixed = TRUE)
+    session$setInputs(preset = "Qwen/Qwen2.5-7B-Instruct")
+    expect_no_match(as.character(output$verdict$html), "under 3B", fixed = TRUE)
+    state$route <- "table"
+    session$setInputs(preset = "Qwen/Qwen2.5-0.5B-Instruct")
+    expect_no_match(as.character(output$verdict$html), "under 3B", fixed = TRUE)
+  })
+})

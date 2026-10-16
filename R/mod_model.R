@@ -55,6 +55,15 @@ mod_model_server <- function(id, state, nav_to) {
       state$model <- list(id = chosen(), trust_remote_code = isTRUE(input$trust))
     })
 
+    # On the documents route, start from the model the hardware check
+    # recommends (7B in 4-bit at 8 GB, 3B at 6 GB, 1.5B below), unless a
+    # different preset or a custom id has already been chosen.
+    shiny::observeEvent(list(state$hardware, state$route), {
+      pick <- recommended_preset(state$hardware, state$route)
+      untouched <- identical(input$preset, "Qwen/Qwen2.5-0.5B-Instruct") && !nzchar(trimws(input$custom %||% ""))
+      if (!is.null(pick) && untouched) shiny::updateRadioButtons(session, "preset", selected = pick)
+    }, ignoreNULL = FALSE)
+
     shiny::observeEvent(input$detect, {
       shiny::withProgress(message = "Checking Python and hardware. First time builds the environment.", {
         hw <- tryCatch(hardware_info(), error = function(e) { notify_error(e); NULL })
@@ -86,6 +95,11 @@ mod_model_server <- function(id, state, nav_to) {
         notes <- c(notes, list(shiny::p(class = "text-danger small",
           "This model is gated. Accept its license on huggingface.co and set HF_TOKEN in the R session before training.")))
       }
+      size <- model_size_b(id)
+      if (identical(state$route, "documents") && !is.na(size) && size < 3) {
+        notes <- c(notes, list(shiny::p(class = "text-warning small",
+          "For documents, models under 3B answer many questions but make up answers to the ones the documents do not cover, even after fine-tuning. Use a 3B or 7B, or keep this one for a fixed format such as JSON.")))
+      }
       if (!is.null(hw) && !is.null(p)) {
         if (identical(hw$device, "cuda")) {
           if (hw$vram_gb < p$min_vram_gb) {
@@ -106,4 +120,12 @@ mod_model_server <- function(id, state, nav_to) {
     })
     shiny::observeEvent(input$`next`, nav_to("train"))
   })
+}
+
+# The preset to start from on the documents route: the model the hardware
+# check recommends for answering, when it is one of the presets.
+recommended_preset <- function(hw, route) {
+  if (!identical(route, "documents") || is.null(hw) || is.null(hw$tier$model)) return(NULL)
+  m <- hw$tier$model
+  if (m %in% dragon_presets()$id) m else NULL
 }

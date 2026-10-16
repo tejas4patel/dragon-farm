@@ -2,19 +2,29 @@
 % Please edit documentation in R/presets.R
 \name{dragon_presets}
 \alias{dragon_presets}
-\title{Recommended small models}
+\title{Recommended base models}
 \usage{
 dragon_presets()
 }
 \value{
 A data frame with columns \code{id}, \code{params}, \code{license}, \code{gated},
-\code{rank}, \code{min_vram_gb}, and \code{notes}.
+\code{rank}, \code{min_vram_gb}, \code{load_in_4bit} (whether it needs 4-bit loading to
+fit \code{min_vram_gb}), and \code{notes}.
 }
 \description{
-A table of small instruction-tuned models that work well with LoRA on a
-single consumer GPU or, for the smallest, a CPU. Any Hugging Face causal
-language model id can be passed to \code{\link[=dragon_train]{dragon_train()}}; these are just good
-starting points.
+A table of instruction-tuned models that work well with LoRA on a single
+consumer GPU, from a 135M model that trains on a CPU to a 7B that trains
+in 4-bit on an 8 GB NVIDIA card. Any Hugging Face causal language model id
+can be passed to \code{\link[=dragon_train]{dragon_train()}}; these are good starting points.
+}
+\details{
+Which size to pick depends on the task. Measured on an 8 GB laptop GPU
+(see the "Choosing a model size" article on the package website): for
+answering from documents, writing training questions, or fine-tuning on
+documents, use the 7B in 4-bit, or the 3B with less memory; models below
+3B answer many questions but make up answers to the rest. For a fixed
+output format such as JSON fields or labels, the 0.5B and 1.5B reach the
+same score as larger models in a few minutes of training.
 }
 \examples{
 dragon_presets()
