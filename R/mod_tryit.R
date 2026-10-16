@@ -5,7 +5,7 @@ mod_tryit_ui <- function(id) {
       col_widths = c(5, 7),
       bslib::card(
         bslib::card_header("Ask the model"),
-        shiny::selectInput(ns("run"), "Run", choices = character(), width = "100%"),
+        shiny::selectInput(ns("run"), label_with_info("Run", "train"), choices = character(), width = "100%"),
         shiny::textInput(ns("system"), "System prompt (optional)", width = "100%"),
         shiny::textAreaInput(ns("prompt"), "Prompt", rows = 5, width = "100%",
                              placeholder = "My Ember thermostat keeps dropping off Wi-Fi."),

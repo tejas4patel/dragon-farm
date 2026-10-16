@@ -9,7 +9,8 @@
 #' (see the "Choosing a model size" article on the package website): for
 #' answering from documents, writing training questions, or fine-tuning on
 #' documents, use the 7B in 4-bit, or the 3B with less memory; models below
-#' 3B answer many questions but make up answers to the rest. For a fixed
+#' 3B are wrong more often (untrained, the 0.5B on 14 of 55 test questions,
+#' the 7B on 1). For a fixed
 #' output format such as JSON fields or labels, the 0.5B and 1.5B reach the
 #' same score as larger models in a few minutes of training.
 #'
@@ -42,10 +43,10 @@ dragon_presets <- function() {
     notes = c(
       "Fastest. Trains on a CPU in minutes. Used by the package tests.",
       "Tiny. For trying the workflow on a laptop.",
-      "App default. Fixed formats such as JSON: 20 of 20 after 3 minutes of training. Makes up answers on documents.",
+      "App default. Fixed formats such as JSON: 20 of 20 after 3 minutes of training. Wrong on 14 of 55 document questions.",
       "Needs a Hugging Face token.",
       "Needs a Hugging Face token.",
-      "Fixed formats and house style. Answers many document questions but rarely says when it cannot.",
+      "Fixed formats and house style. Wrong on 6 of 55 document questions (the 7B on 1).",
       "Largest of the small presets. Turn on gradient checkpointing on 8 GB cards.",
       "Documents on a smaller card: declines what the documents do not cover. Trains in 4-bit; research licence.",
       "Best for documents: answering, writing training questions, fine-tuning. 4-bit, batch size 1 on an 8 GB NVIDIA card."

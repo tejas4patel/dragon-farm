@@ -400,3 +400,18 @@ pre.shiny-text-output:empty { min-height: 44px; }
    with an ellipsis and keep room for the arrow. */
 .selectize-control.single .selectize-input { padding-right: 34px !important; }
 .selectize-control.single .selectize-input > .item { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+
+/* Model comparison: an (i) icon by every model choice, a table on hover. */
+.df-label-info { display: inline-flex; align-items: center; gap: 6px; }
+.df-info { display: inline-grid; place-items: center; color: var(--df-muted); cursor: help; border-radius: 50%; line-height: 0; transition: color 0.15s; }
+.df-info:hover, .df-info:focus-visible { color: var(--df-coral-ink); outline: none; }
+.df-info:focus-visible { box-shadow: 0 0 0 3px rgba(255, 181, 71, 0.35); }
+.card-header .df-info { margin-left: 2px; }
+.df-popover { --bs-popover-max-width: 520px; --bs-popover-bg: var(--df-card); --bs-popover-border-color: var(--df-line-2); --bs-popover-header-bg: var(--df-card-2); --bs-popover-header-color: var(--df-ink); --bs-popover-body-color: var(--df-body); box-shadow: var(--df-shadow); border-radius: 0.9rem; }
+.df-popover .popover-header { font: 600 0.9rem "Space Grotesk", sans-serif; }
+.df-cmp { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-bottom: 8px; }
+.df-cmp th { text-align: left; font-weight: 600; color: var(--df-muted); font-size: 0.72rem; padding: 4px 8px 6px 0; border-bottom: 1px solid var(--df-line); vertical-align: bottom; }
+.df-cmp td { padding: 5px 8px 5px 0; border-bottom: 1px dashed var(--df-line); white-space: nowrap; }
+.df-cmp td:first-child { font-weight: 600; color: var(--df-ink); }
+.df-cmp tr:last-child td { border-bottom: 0; }
+.df-cmp-note { margin: 4px 0 0; font-size: 0.74rem; line-height: 1.45; color: var(--df-muted); }

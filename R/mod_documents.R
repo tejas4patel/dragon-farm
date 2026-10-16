@@ -14,7 +14,7 @@ mod_documents_ui <- function(id) {
       shiny::p(class = "hint", "A model writes questions each chunk can answer, filters mark the weak ones, and you review before anything trains. Expect to keep roughly half; the review is the point."),
       bslib::layout_columns(
         col_widths = c(4, 2, 3, 3),
-        shiny::selectInput(ns("generator"), "Written by", choices = c("Recommended local model" = ""), width = "100%"),
+        shiny::selectInput(ns("generator"), label_with_info("Written by", "questions"), choices = c("Recommended local model" = ""), width = "100%"),
         shiny::numericInput(ns("per_chunk"), "Per chunk", value = 3, min = 1, max = 6, step = 1),
         shiny::checkboxInput(ns("include_quotes"), "Include quoted passages", value = FALSE),
         shiny::selectInput(ns("qset"), "Or review an earlier set", choices = c("Choose" = ""), width = "100%")
@@ -61,7 +61,7 @@ mod_documents_top_ui <- function(ns) {
                            placeholder = "Ask anything the documents should be able to answer."),
       bslib::layout_columns(
         col_widths = c(8, 4),
-        shiny::selectInput(ns("model"), "Answered by", choices = c("Recommended for this machine" = ""), width = "100%"),
+        shiny::selectInput(ns("model"), label_with_info("Answered by", "answer"), choices = c("Recommended for this machine" = ""), width = "100%"),
         shiny::numericInput(ns("k"), "Excerpts", value = 4, min = 1, max = 12, step = 1)
       ),
       shiny::div(class = "cloud-actions",

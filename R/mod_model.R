@@ -3,7 +3,7 @@ mod_model_ui <- function(id) {
   bslib::layout_columns(
     col_widths = c(7, 5),
     bslib::card(
-      bslib::card_header("Pick a base model"),
+      bslib::card_header(label_with_info("Pick a base model", "train")),
       shiny::uiOutput(ns("preset_cards")),
       shiny::hr(),
       shiny::textInput(ns("custom"), "Or any Hugging Face model id", placeholder = "org/model-name", width = "100%"),
@@ -98,7 +98,7 @@ mod_model_server <- function(id, state, nav_to) {
       size <- model_size_b(id)
       if (identical(state$route, "documents") && !is.na(size) && size < 3) {
         notes <- c(notes, list(shiny::p(class = "text-warning small",
-          "For documents, models under 3B answer many questions but make up answers to the ones the documents do not cover, even after fine-tuning. Use a 3B or 7B, or keep this one for a fixed format such as JSON.")))
+          "For documents, models under 3B are wrong more often: untrained, the 0.5B on 14 of 55 test questions and the 1.5B on 6, against 1 for the 7B. Use a 3B or 7B, or keep this one for a fixed format such as JSON.")))
       }
       if (!is.null(hw) && !is.null(p)) {
         if (identical(hw$device, "cuda")) {

@@ -160,6 +160,14 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## The app
 
+* Every model choice in the app has an (i) icon: hovering over it, or
+  focusing it with the keyboard, shows how the four model sizes compare on
+  that task, as measured for the "Choosing a model size" article. Answering
+  ("Answered by" in Ask, the run in Chat): wrong answers, "not covered"
+  replies, and speed. Writing questions ("Written by" in Teach): pairs kept
+  and how many were correct. Training (the Model step and Try it):
+  results after fine-tuning, training time, and GPU memory.
+
 * The app starts with documents. A new **Documents** tab is tab 1: drop
   files or add web pages, read and index, ask with sources, continue in Chat.
   Its **Teach** card generates questions in the background, shows the yield

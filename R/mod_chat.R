@@ -7,7 +7,7 @@ chat_backend_inputs <- function(ns, suffix, title) {
       choices = c("A run on this machine" = "run", "Ollama on this machine" = "ollama", "OpenAI-compatible server" = "server")),
     shiny::conditionalPanel(
       condition = sprintf("input['%s'] == 'run'", ns(paste0("source", suffix))),
-      shiny::selectInput(ns(paste0("run", suffix)), "Run", choices = character(), width = "100%"),
+      shiny::selectInput(ns(paste0("run", suffix)), label_with_info("Run", "answer"), choices = character(), width = "100%"),
       shiny::checkboxInput(ns(paste0("base", suffix)), "Talk to what it started from instead", value = FALSE)
     ),
     shiny::conditionalPanel(
