@@ -13,6 +13,16 @@ a spreadsheet.
 
 ### Documents
 
+- Numbered headings in PDFs (“6.4 Updating packages”) start their
+  section even when the line before them was a long one that ended a
+  sentence; they used to be glued on to the end of the previous
+  paragraph, so the section was never started and search could not find
+  it (26 such headings in R’s installation and data manuals, 29 in An
+  Introduction to R). With R’s two installation and data manuals as a
+  held-out test, the answer reached the top four excerpts for 19 of 20
+  questions (from 17) and a 7B answered 18 (from 16); on R’s
+  introduction and FAQ, 32 of 32 (from 31).
+
 - PDF lists printed one entry per line, such as an annual report’s
   “CALIFORNIA – 140” location counts, keep their entries apart (“;”)
   instead of running together, and no-break spaces become plain spaces.
