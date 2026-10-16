@@ -400,8 +400,15 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       if (is.null(ds)) return()
       state$dataset <- ds
       state$mapped <- ds
-      shiny::showNotification(sprintf("%d training rows ready. Pick a model next.", nrow(ds$data)), type = "message")
+      shiny::showNotification(training_rows_message(ds$data), type = "message")
       nav_to("model")
     })
   })
+}
+
+# "40 training rows ready (34 questions and 6 'not covered' examples)."
+training_rows_message <- function(d) {
+  n_neg <- if (is.null(d$negative)) 0L else sum(d$negative)
+  detail <- if (n_neg > 0) sprintf(" (%d questions and %d 'not covered' example%s)", nrow(d) - n_neg, n_neg, if (n_neg == 1) "" else "s") else ""
+  sprintf("%d training rows ready%s. Pick a model next.", nrow(d), detail)
 }

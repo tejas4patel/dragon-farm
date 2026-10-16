@@ -131,3 +131,11 @@ test_that("Read and index with nothing queued explains a still-running upload", 
     expect_null(state$documents)
   })
 })
+
+test_that("the training-rows message counts 'not covered' examples", {
+  d <- data.frame(question = letters[1:5], negative = c(FALSE, FALSE, FALSE, FALSE, TRUE))
+  expect_equal(dragonfarm:::training_rows_message(d),
+               "5 training rows ready (4 questions and 1 'not covered' example). Pick a model next.")
+  expect_equal(dragonfarm:::training_rows_message(d[1:4, ]), "4 training rows ready. Pick a model next.")
+  expect_equal(dragonfarm:::training_rows_message(data.frame(question = "a")), "1 training rows ready. Pick a model next.")
+})
