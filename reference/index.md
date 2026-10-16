@@ -7,7 +7,7 @@
 - [`dragon_python_requirements()`](https://dragonfarm.dev/reference/dragon_python_requirements.md)
   : Python requirements used by dragonfarm
 - [`dragon_presets()`](https://dragonfarm.dev/reference/dragon_presets.md)
-  : Recommended small models
+  : Recommended base models
 
 ## Documents
 

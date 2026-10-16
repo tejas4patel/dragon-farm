@@ -164,6 +164,16 @@ a spreadsheet.
 
 ### Hardware and models
 
+- [`dragon_presets()`](https://dragonfarm.dev/reference/dragon_presets.md)
+  adds Qwen 2.5 3B and 7B, both trained in 4-bit (a 3B peaks at 4.3 GB
+  on 1,536-token document prompts, a 7B at 7.9 GB), and its notes now
+  say which task each size suits. A new `load_in_4bit` column says which
+  presets need 4-bit to fit. On the documents route the app’s Model step
+  starts from the model the hardware check recommends (a 7B at 8 GB, a
+  3B at 6 GB) and warns when a model under 3B is chosen for documents.
+  The measurements behind this are in a new article, “Choosing a model
+  size”.
+
 - Training computes its loss through the output layer in chunks, so the
   scores for the whole vocabulary are never held at every position at
   once. With a 151,000-token vocabulary that tensor was about a gigabyte
@@ -179,6 +189,7 @@ a spreadsheet.
   document prompts on an 8 GB card (616 pairs, three epochs, 4.3 hours);
   the tuned 7B matched the untrained one on accuracy and always cited
   its excerpt.
+
 - 4-bit loading for generation, on Windows as well as Linux.
   `dragon_backend_local(load_in_4bit = "auto")` quantizes a model to NF4
   only when its full weights would not fit the GPU, so a 7B runs on an 8
@@ -192,10 +203,12 @@ a spreadsheet.
   tickets took 22 minutes on the 8 GB card, peaked at 7.9 GB, and
   reproduced the example policies on held-out tickets where the 0.5B had
   drifted.
+
 - [`dragon_check()`](https://dragonfarm.dev/reference/dragon_check.md)
   reports GPU memory already held by other programs and lists dragonfarm
   processes started by other R sessions; training warns about them, and
   `dragon_worker_stop(all = TRUE)` stops them.
+
 - Generating for several prompts at once runs them in batches of eight:
   eight short prompts through a 0.5B went from 17 to 37 seconds to 6.
 
