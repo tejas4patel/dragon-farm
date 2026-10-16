@@ -13,6 +13,13 @@ a spreadsheet.
 
 ### Documents
 
+- PDF lists printed one entry per line, such as an annual report’s
+  “CALIFORNIA – 140” location counts, keep their entries apart (“;”)
+  instead of running together, and no-break spaces become plain spaces.
+  Asked for eight places’ counts, a 7B read 7 right against 4 with the
+  run-on text; the report’s California count, missed before, is now
+  answered (21 of 23 known-answer questions, from 20).
+
 - New:
   [`dragon_documents()`](https://dragonfarm.dev/reference/dragon_documents.md)
   reads PDF, HTML, Markdown, text, Word, spreadsheet files, directories
@@ -28,10 +35,12 @@ a spreadsheet.
   [`dragon_documents_list()`](https://dragonfarm.dev/reference/dragon_documents_list.md)
   go with it. The Python environment gains `pypdf`, `python-docx`, and
   `openpyxl`.
+
 - [`dragon_example_documents()`](https://dragonfarm.dev/reference/dragon_example_documents.md):
   three short policy documents for the fictional company behind the
   example tickets, so the route can be tried before bringing your own
   files.
+
 - PDFs. Pages whose text comes out of the standard extractor as
   two-letter fragments (`Co st co Wh ol es al e`, common in annual
   reports) are re-read in a layout-aware mode: a 76-page annual report
@@ -44,6 +53,7 @@ a spreadsheet.
   apostrophes a font did not map are restored. A PDF with no text layer
   (a scan) is reported by name with advice to run OCR first, instead of
   silently adding nothing.
+
 - Year columns. In a financial table the years are printed once, above
   the figures; flattened into text, nothing said which figure was which
   year, and answers came from the wrong column. Rows under a year header
@@ -55,24 +65,29 @@ a spreadsheet.
   header row of dates, and their merged cells are no longer repeated
   once per column they span (“249,625 \| 249,625”); the Word copy of the
   report went from 8 to 10 of 10.
+
 - Units. A note such as “(dollars in millions, except per share data)”
   is carried into later chunks that show money without a unit word, so
   answers from financial tables say “\$4,409 million” rather than
   “\$4,409”.
+
 - Word. Unit notes styled as headings set the unit instead of becoming a
   section; short paragraphs set entirely in bold or italic become
   headings when prose follows them (the sub-headings of a 10-K are
   italic), while table column labels, which look the same, stay text.
   The Word annual report went from one 38-chunk “Note 1” to 123 real
   sections.
+
 - Web pages. Blocks made mostly of links and regions marked as
   navigation, banner, footer, or search are dropped, so a page without a
   `<nav>` tag no longer leaks its menu into the first chunk. Heading
   anchor glyphs (the pilcrow after every R FAQ heading) are removed.
+
 - Spreadsheets. Each row becomes “column: value” pairs; a two-column
   label-and-value sheet is read as such rather than as a header plus
   data; a first row of numbers is not taken for column names; and each
   sheet starts its own chunk.
+
 - A manual or FAQ with numbered sections (“2.1 What is R?”) is no longer
   mistaken for a changelog; changelog-like files are still flagged and
   down-weighted, and quoted material and code blocks are marked on each

@@ -107,7 +107,8 @@ right</td>
 <tr class="odd">
 <td>Fine-tune on your documents</td>
 <td>3B or 7B</td>
-<td>Only these learned to say “the documents do not cover it”</td>
+<td>With the default “not covered” examples every size learns to
+decline; the larger ones keep more answers right</td>
 </tr>
 <tr class="even">
 <td>Fine-tune a fixed format (JSON, labels, a house style)</td>
@@ -311,6 +312,56 @@ recommends.</p>
 of an answer, sources included, without teaching it when to stop. If
 wrong answers are costly, train a 3B or 7B, or skip training and answer
 with the largest model your card runs.</p>
+<p>The cause turned out to be the training data: every training prompt
+contained its answer, so the models never saw a case where the right
+reply is “the documents do not cover this”.
+<code><a href="../reference/dragon_questions_dataset.html">dragon_questions_dataset()</a></code> now adds such cases by default,
+15 percent extra rows that show a question with excerpts from another
+section. Retrained on the same rows plus those, and tested on 15
+questions the manuals do not cover:</p>
+<table class="table">
+<colgroup>
+<col width="20%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
+</colgroup>
+<thead><tr class="header">
+<th>Model</th>
+<th>Declined, before</th>
+<th>Declined, with “not covered” rows</th>
+<th>R questions right, before</th>
+<th>after</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>0.5B</td>
+<td>0 of 15</td>
+<td>14 of 15</td>
+<td>27 of 32</td>
+<td>26 of 32</td>
+</tr>
+<tr class="even">
+<td>1.5B</td>
+<td>0 of 15</td>
+<td>15 of 15</td>
+<td>29 of 32</td>
+<td>25 of 32</td>
+</tr>
+<tr class="odd">
+<td>3B, 4-bit</td>
+<td>6 of 15</td>
+<td>15 of 15</td>
+<td>30 of 32</td>
+<td>28 of 32</td>
+</tr>
+</tbody>
+</table>
+<p>The cost is a few answerable questions declined or answered with a
+wrong detail; the gain is that a tuned model now says when it does not
+know. A small model still names fewer right details than a large
+one.</p>
 </div>
 <div class="section level2">
 <h2 id="a-fixed-format-tickets-to-json">4. A fixed format: tickets to JSON<a class="anchor" aria-label="anchor" href="#a-fixed-format-tickets-to-json"></a>

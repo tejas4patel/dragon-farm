@@ -13,7 +13,7 @@ questions, and for fine-tuning the same training rows.
 |----|----|----|
 | Answer questions from documents | 7B in 4-bit if you have an 8 GB NVIDIA card; otherwise 3B | Smaller models answer many questions but make up answers to the rest |
 | Write training questions from documents | 7B | It kept 104 of 120 questions, and every one we checked was right |
-| Fine-tune on your documents | 3B or 7B | Only these learned to say “the documents do not cover it” |
+| Fine-tune on your documents | 3B or 7B | With the default “not covered” examples every size learns to decline; the larger ones keep more answers right |
 | Fine-tune a fixed format (JSON, labels, a house style) | 0.5B to 1.5B | They reach the same score in minutes |
 
 dragonfarm already picks the answering model for your hardware: a 7B in
@@ -105,6 +105,24 @@ So fine-tuning a small model on documents teaches it the house style of
 an answer, sources included, without teaching it when to stop. If wrong
 answers are costly, train a 3B or 7B, or skip training and answer with
 the largest model your card runs.
+
+The cause turned out to be the training data: every training prompt
+contained its answer, so the models never saw a case where the right
+reply is “the documents do not cover this”.
+[`dragon_questions_dataset()`](https://dragonfarm.dev/reference/dragon_questions_dataset.md)
+now adds such cases by default, 15 percent extra rows that show a
+question with excerpts from another section. Retrained on the same rows
+plus those, and tested on 15 questions the manuals do not cover:
+
+| Model | Declined, before | Declined, with “not covered” rows | R questions right, before | after |
+|----|----|----|----|----|
+| 0.5B | 0 of 15 | 14 of 15 | 27 of 32 | 26 of 32 |
+| 1.5B | 0 of 15 | 15 of 15 | 29 of 32 | 25 of 32 |
+| 3B, 4-bit | 6 of 15 | 15 of 15 | 30 of 32 | 28 of 32 |
+
+The cost is a few answerable questions declined or answered with a wrong
+detail; the gain is that a tuned model now says when it does not know. A
+small model still names fewer right details than a large one.
 
 ## 4. A fixed format: tickets to JSON
 
