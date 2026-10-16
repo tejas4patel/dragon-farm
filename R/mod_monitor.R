@@ -10,8 +10,9 @@ mod_monitor_ui <- function(id) {
         shiny::uiOutput(ns("facts")),
         shiny::conditionalPanel(
           condition = sprintf("!input['%s']", ns("show_archived")),
-          shiny::actionButton(ns("cancel"), "Cancel run", class = "btn-outline-danger"),
-          shiny::actionButton(ns("resume"), "Resume from checkpoint", class = "btn-outline-secondary"),
+          # Cancel while a run is going, Resume once it stopped short; neither
+          # for a finished run (both used to show for every run).
+          shiny::uiOutput(ns("run_actions")),
           shiny::div(class = "cloud-actions", style = "margin-top: 8px;",
             shiny::actionButton(ns("archive"), "Archive", class = "btn-outline-secondary"),
             shiny::actionButton(ns("delete"), "Delete", class = "btn-outline-danger")
@@ -215,6 +216,10 @@ mod_monitor_server <- function(id, state, runs_dir) {
       tryCatch(dragon_code(r), error = function(e) conditionMessage(e))
     })
 
+    run_state <- shiny::reactiveVal(NULL)
+    shiny::observe(run_state(status()$state %||% "none"))   # unchanged states do not re-render
+    output$run_actions <- shiny::renderUI(run_actions_ui(run_state(), ns))
+
     shiny::observeEvent(input$cancel, {
       r <- run()
       st <- status()
@@ -338,4 +343,15 @@ mod_monitor_server <- function(id, state, runs_dir) {
       }
     })
   })
+}
+
+# The run-control buttons for a run in a given state.
+run_actions_ui <- function(state, ns = identity) {
+  state <- state %||% "none"
+  shiny::tagList(
+    if (state %in% c("running", "queued"))
+      shiny::actionButton(ns("cancel"), "Cancel run", class = "btn-outline-danger", width = "100%"),
+    if (state %in% c("failed", "cancelled"))
+      shiny::actionButton(ns("resume"), "Resume from checkpoint", class = "btn-outline-secondary", width = "100%")
+  )
 }

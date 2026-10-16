@@ -51,3 +51,14 @@ test_that("the Monitor module forgets a currently launched run when it is archiv
     expect_null(state$run)
   })
 })
+
+test_that("run buttons follow the run's state", {
+  html <- function(s) paste(as.character(dragonfarm:::run_actions_ui(s)), collapse = "")
+  expect_match(html("running"), "Cancel run")
+  expect_no_match(html("running"), "Resume")
+  expect_match(html("queued"), "Cancel run")
+  expect_match(html("failed"), "Resume from checkpoint")
+  expect_match(html("cancelled"), "Resume from checkpoint")
+  expect_no_match(html("succeeded"), "Cancel|Resume")
+  expect_no_match(html(NULL), "Cancel|Resume")
+})

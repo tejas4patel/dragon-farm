@@ -173,6 +173,10 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## Fixes
 
+* The Monitor shows "Cancel run" only while a run is queued or running, and
+  "Resume from checkpoint" only after it failed or was cancelled; both used
+  to show for every run, finished ones included.
+
 * `dragon_ask()` asks once more, in the same conversation, when a model
   replies with nothing but a citation marker such as "[1]". The 3B did this
   on 6 of 65 benchmark questions; with the retry it left none empty and
