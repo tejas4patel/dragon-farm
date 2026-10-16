@@ -148,7 +148,9 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
 # A reply with no words or figures once citation markers are removed: "[1]",
 # "[1], [2]", or nothing at all.
 citation_only <- function(reply) {
-  rest <- gsub("\\[[0-9]+\\]", "", reply %||% "")
+  # Any bracketed text counts as a marker: besides "[1]", a 1.5B replied with
+  # nothing but an echoed source label, "[R-admin.pdf, p. 28 > 6 Add-on packages]".
+  rest <- gsub("\\[[^]]*\\]", "", reply %||% "")
   !grepl("[[:alnum:]]", rest)
 }
 

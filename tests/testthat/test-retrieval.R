@@ -133,6 +133,8 @@ test_that("a reply that is only a citation is asked again once", {
   expect_true(dragonfarm:::citation_only(""))
   expect_false(dragonfarm:::citation_only("Thirty days [1]."))
   expect_false(dragonfarm:::citation_only("2 years [2]"))
+  expect_true(dragonfarm:::citation_only("[R-admin.pdf, p. 28 › 6 Add-on packages]"))   # an echoed source label
+  expect_false(dragonfarm:::citation_only("Set R_LIBS_USER [1]."))
 
   f <- write_fake_set()
   docs <- dragon_documents_load(f$dir)
