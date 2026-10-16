@@ -311,8 +311,10 @@ mod_monitor_server <- function(id, state, runs_dir) {
     })
 
     output$compare <- shiny::renderTable({
+      # The run-list poll already changes when any run's status or progress
+      # file does; status() also ticks every 5 s, which rebuilt this table
+      # (0.4 s with 40 runs) on every tick.
       runs()
-      status()
       cmp <- tryCatch(dragon_compare(runs_dir = runs_dir), error = function(e) NULL)
       if (is.null(cmp) || !nrow(cmp)) return(data.frame(note = "No runs yet."))
       df <- as.data.frame(cmp)
