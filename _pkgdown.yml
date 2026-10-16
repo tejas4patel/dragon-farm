@@ -129,6 +129,9 @@ articles:
   - quickstart
   - shiny-app
   - "`articles/cloud-gpu`"
+- title: Worked examples
+  contents:
+  - "`articles/fda-guidance`"
 - title: Go further
   contents:
   - post-training-loop
