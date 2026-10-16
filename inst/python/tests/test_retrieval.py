@@ -232,3 +232,33 @@ def test_a_question_naming_a_year_finds_that_years_labelled_row():
     ]
     s = BM25(texts).scores("What were net sales in fiscal 2023?")
     assert int(s.argmax()) == 2
+
+
+def test_hybrid_keeps_the_keyword_best_match_among_four_or_more_excerpts():
+    import numpy as np
+
+    class Vec:
+        def __init__(self, a):
+            self.a = np.asarray(a, dtype="float32")
+
+        def numpy(self):
+            return self.a
+
+    texts = ["Plotting a histogram of the data.", "Stem and leaf displays of the data.",
+             "Density estimates of the data.", "Quantile plots of the data.",
+             "Two sample tests on the data.", "Compare the two samples with boxplot(A, B)."]
+    idx = R.LoadedIndex.__new__(R.LoadedIndex)
+    idx.ids = [str(i) for i in range(len(texts))]
+    idx.chunks = [{"text": t} for t in texts]
+    idx.vectors = np.eye(len(texts), dtype="float32")
+    idx.weights = np.ones(len(texts), dtype="float32")
+    idx.bm25 = R.BM25(texts)
+    # the embedding ranks the boxplot chunk last; "data" ties the keyword
+    # ranking of the others, so fusion alone leaves the boxplot chunk out
+    q = Vec([[0.9, 0.85, 0.8, 0.75, 0.7, 0.1]])
+    top = [h["id"] for h in idx.search(q, k=4, queries=["How do I make a boxplot of the data?"])[0]]
+    assert "5" in top
+    assert "0" in top                       # the embedding's best stays too
+    # with k below 4 only the embedding's best is guaranteed
+    top3 = [h["id"] for h in idx.search(q, k=3, queries=["How do I make a boxplot of the data?"])[0]]
+    assert "0" in top3

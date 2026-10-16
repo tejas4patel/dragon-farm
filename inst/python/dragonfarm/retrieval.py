@@ -257,6 +257,13 @@ class LoadedIndex:
                 best = int(np.argmax(row))
                 if best not in top:
                     top[-1] = best
+                # And the keyword ranking's best, when a word matched: a rare
+                # exact term ("boxplot") puts its chunk first by keywords but
+                # far down by embedding, and the fusion lost it.
+                if k >= 4 and float(kw.max()) > 0:
+                    kbest = int(np.argmax(kw))
+                    if kbest not in top:
+                        top[-2] = kbest
             out.append([{"id": self.ids[i], "score": float(row[i]), "similarity": float(sim_row[i])} for i in top])
         return out
 
