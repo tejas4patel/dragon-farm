@@ -30,8 +30,8 @@
 
 ### Announcements
 
-- [Drop in your documents, ask questions, fine-tune: all from R,
-  free](https://dragonfarm.dev/articles/introducing-0-4-0.md):
+- [Ask your documents. Then teach a
+  model.](https://dragonfarm.dev/articles/introducing-0-4-0.md):
 
   dragonfarm 0.4.0 answers questions from your PDFs, Word files, and web
   pages with cited sources on your own GPU, then writes training
