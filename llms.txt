@@ -1,17 +1,20 @@
-# Fine-tune a language model from R. In minutes.
+# Raise your own dragon.
 
-R package · on CRAN · MIT licensed
+![The dragonfarm dragon: a friendly orange dragon with small wings and
+one tiny fang](dragon.svg)
 
-Drop in your documents, ask them questions with cited sources, then
-teach a model from them: a 7B fits an 8 GB laptop GPU. Or start from a
-table of prompts and replies. dragonfarm runs on your own GPU or a free
-cloud one, and the model you get is yours.
+R package · on CRAN · MIT licensed · mostly fireproof
+
+Feed it your documents. Ask it anything and get full answers drawn from
+what it read. Then teach it your ways. dragonfarm fine-tunes language
+models from R, on your own GPU or a free cloud one. A 7B dragon fits on
+an 8 GB laptop, and the dragon you raise is yours.
 
 `install.packages("dragonfarm")`
 
 Copy
 
-[Get started](https://dragonfarm.dev/articles/quickstart.md) [View on
+[Start hatching](https://dragonfarm.dev/articles/quickstart.md) [View on
 GitHub](https://github.com/tejas4patel/dragonfarm)
 
 ![](data:image/svg+xml;base64,PHN2ZyBpZD0iZGYtc3RlcHBlciIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJUaGUgc2l4IHN0ZXBzOiBEb2N1bWVudHMsIEFzaywgVGVhY2gsIFRyYWluLCBNb25pdG9yLCBUcnkgaXQiPjwvc3ZnPg==)
@@ -28,9 +31,9 @@ questions](demo/04-train.png)![Step 5, Monitor: the loss curve of a
 finished run](demo/05-monitor.png)![Step 6, Try it: the fine-tuned and
 base model replies side by side, each with sources](demo/06-tryit.png)
 
-Same model, same ticket
+Same dragon, same ticket
 
-## Teach it your house style.
+## Teach it some manners.
 
 A 0.5B-parameter model, before and after training on 190 example support
 tickets. This ticket was not in the training data. It is the median of
@@ -41,41 +44,43 @@ both replies are at temperature 0.
 today and the casing is split. The packaging looked fine from the
 outside so it must have happened before shipping.
 
-Base modelI’m sorry to hear that your Lumen bulb pack has been damaged.
-It’s important to take any damage seriously and report it to the
-manufacturer or seller as soon as possible. Here are some steps you can
-follow: 1. **Contact the Manufacturer**: Reach out to the company that
-sold you the Lumen bulb pack. They may be able to provide a replacement
-or offer a repair service. 2. **Report the Damage**: … (shortened)
+Wild dragon (base model)I’m sorry to hear that your Lumen bulb pack has
+been damaged. It’s important to take any damage seriously and report it
+to the manufacturer or seller as soon as possible. Here are some steps
+you can follow: 1. **Contact the Manufacturer**: Reach out to the
+company that sold you the Lumen bulb pack. They may be able to provide a
+replacement or offer a repair service. 2. **Report the Damage**: …
+(shortened)
 
-After fine-tuningI’m sorry your Lumen bulb pack arrived damaged. We will
-replace it at no cost. Please reply with a photo of the damage and one
-of the shipping label so we can file the carrier claim on our side. As
-soon as we have those, we ship a replacement Lumen bulb pack with a
-prepaid return label for the damaged unit. Usually a business day after
-the return is scanned in.Policy and tone are right. The last sentence
-mixes in a detail from another ticket type (the real policy is two
-business days), which is why small models still need review.
+Trained dragon (after fine-tuning)I’m sorry your Lumen bulb pack arrived
+damaged. We will replace it at no cost. Please reply with a photo of the
+damage and one of the shipping label so we can file the carrier claim on
+our side. As soon as we have those, we ship a replacement Lumen bulb
+pack with a prepaid return label for the damaged unit. Usually a
+business day after the return is scanned in.Policy and tone are right.
+The last sentence mixes in a detail from another ticket type (the real
+policy is two business days), which is why small models still need
+review.
 
 The example tickets are synthetic and built from templates, so this
 shows a model picking up a house style and policy, not open-ended
 reliability. Use your own data and check the output before relying on
 it.
 
-Three ways in
+Three ways to hatch one
 
-## Start where you’re comfortable.
+## Pick your nest.
 
-Documents first, a table if you have one, the cloud if you have no GPU.
-Everything the app does is also an R function, and every run is a plain
-folder of files you can inspect.
+Documents first, a table if you have one, the cloud if your laptop is
+more pebble than volcano. Everything the app does is also an R function,
+and every dragon lives in a plain folder you can inspect.
 
 Documents
 
-### Ask, then teach
+### Feed it, then teach it
 
-Drop in files or pages, ask with cited sources, write and review
-training questions, fine-tune.
+Drop in files or pages, ask anything, review the practice questions it
+writes, fine-tune.
 
     docs <- dragon_documents("policies/")
     dragon_ask(docs, "How long is the
@@ -87,9 +92,9 @@ training questions, fine-tune.
 
 App
 
-### No code needed
+### No code, no fire hazard
 
-Opens on Documents: drop files, ask, review the generated questions,
+Opens on Documents: drop files, ask, review the practice questions,
 train, try, chat. Have a table instead? One link switches to the
 drag-and-drop route.
 
@@ -98,9 +103,9 @@ drag-and-drop route.
 
 Cloud
 
-### No GPU? No problem.
+### No GPU? Borrow a volcano.
 
-Send the run to a free Colab or Kaggle GPU and bring the adapter home.
+Send the run to a free Colab or Kaggle GPU and bring the dragon home.
 Colab trains the example in about four minutes.
 
     run <- dragon_bundle(tickets,
@@ -108,12 +113,13 @@ Colab trains the example in about four minutes.
     dragon_remote(run, "colab")
     dragon_import(run, "results.zip")
 
-Go further
+Advanced dragon training
 
-## When one pass isn’t enough.
+## When one lesson isn’t enough.
 
 Preference tuning, reinforcement learning with rewards you can check,
-judges, chat, and publishing to the Hugging Face Hub are all in the box.
+judges, chat, and publishing to the Hugging Face Hub. Treats and tough
+love, both included.
 
 [](https://dragonfarm.dev/articles/post-training-loop.md)
 
@@ -124,27 +130,28 @@ result.
 
 [](https://dragonfarm.dev/articles/reinforcement-learning.md)
 
-### Rewards you can check
+### Treats it has to earn
 
 GRPO with exact, numeric, JSON, length, and test-runner rewards.
 
 [](https://dragonfarm.dev/reference/index.md)
 
-### Every function, documented
+### The full spellbook
 
-The full reference, from `dragon_check()` to `dragon_publish()`.
+Every function documented, from `dragon_check()` to `dragon_publish()`.
 
-## Your first fine-tune is ten minutes away.
+## Your first dragon is ten minutes away.
 
 Install the package, run
 [`dragon_check()`](https://dragonfarm.dev/reference/dragon_check.md),
-and open the app. The first run sets up Python for you.
+and open the app. The first run builds the nest (a Python environment)
+for you.
 
 `install.packages("dragonfarm")`
 
 Copy
 
-[Get started](https://dragonfarm.dev/articles/quickstart.md)
+[Start hatching](https://dragonfarm.dev/articles/quickstart.md)
 
 [CRAN](https://CRAN.R-project.org/package=dragonfarm)[GitHub](https://github.com/tejas4patel/dragonfarm)[News](https://dragonfarm.dev/news/index.md)[Report
 an issue](https://github.com/tejas4patel/dragonfarm/issues)
@@ -379,5 +386,5 @@ questions, build the training set.
   model.](https://dragonfarm.dev/articles/introducing-0-4-0.md):
 
   dragonfarm 0.4.0 answers questions from your PDFs, Word files, and web
-  pages with cited sources on your own GPU, then turns them into
-  training data and fine-tunes a model.
+  pages on your own GPU, then turns them into training data and
+  fine-tunes a model. Raise your own dragon.

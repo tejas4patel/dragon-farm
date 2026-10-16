@@ -46,12 +46,12 @@
     var shots = Array.prototype.slice.call(document.querySelectorAll(".df-shots img"));
     var cap = document.getElementById("df-cap");
     var captions = [
-      "Drop in PDFs, Word files, pages, or spreadsheets. They are read, chunked, and indexed.",
-      "Ask a question and get an answer with numbered sources. Nothing is trained yet.",
-      "A model writes questions from each chunk; filters flag the weak ones; you tick what to keep.",
-      "Pick a base model, set a few numbers, press Start training.",
-      "Watch the loss curve while it trains.",
-      "Compare the fine-tuned model with the base model, both answering from your documents.",
+      "Feed it PDFs, Word files, web pages, or spreadsheets. It reads everything and forgets nothing.",
+      "Ask it anything. It answers in full from what it read, and admits when the documents are silent.",
+      "It writes its own practice questions. You keep the good ones and toss the rest.",
+      "Pick a dragon size, set a few numbers, press Start training.",
+      "Watch it learn. The line going down is the good kind of trouble.",
+      "Put the trained dragon next to the wild one, both answering from your documents.",
     ];
     var narrow = window.innerWidth < 640;
     var opts = narrow

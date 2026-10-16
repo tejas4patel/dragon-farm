@@ -34,5 +34,5 @@
   model.](https://dragonfarm.dev/articles/introducing-0-4-0.md):
 
   dragonfarm 0.4.0 answers questions from your PDFs, Word files, and web
-  pages with cited sources on your own GPU, then turns them into
-  training data and fine-tunes a model.
+  pages on your own GPU, then turns them into training data and
+  fine-tunes a model. Raise your own dragon.

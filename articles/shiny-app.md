@@ -35,14 +35,14 @@ The answer appears with numbered, expandable sources under it; cited
 ones are bold. “Continue in Chat” opens the Chat tab with the same set
 selected.
 
-**Teach card.** “Generate questions” has a model write questions and
-answers from every chunk (the recommended local model in the background,
-the Claude API when `ANTHROPIC_API_KEY` is set, or a preset), with a
-live line showing pairs written and kept so far. The review that follows
-groups pairs by chunk with a checkbox each; rejected pairs are unticked
-and carry their reason. Save decisions writes them back; Continue to
-Model builds the training set from the ticked pairs, with retrieved
-excerpts in every prompt, and skips Data and Map.
+**Teach card.** “Write practice questions” has a model write questions
+and answers from every chunk (the recommended local model in the
+background, the Claude API when `ANTHROPIC_API_KEY` is set, or a
+preset), with a live line showing pairs written and kept so far. The
+review that follows groups pairs by chunk with a checkbox each; rejected
+pairs are unticked and carry their reason. Save decisions writes them
+back; Continue to Model builds the training set from the ticked pairs,
+with retrieved excerpts in every prompt, and skips Data and Map.
 
 ## The other tabs
 

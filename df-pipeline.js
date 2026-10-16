@@ -14,12 +14,12 @@
   else root.DragonPipeline = factory();
 })(typeof self !== "undefined" ? self : this, function () {
   var STEPS = [
-    { n: 1, name: "Documents", sub: "Drop in files or pages" },
-    { n: 2, name: "Ask", sub: "Answers with sources" },
-    { n: 3, name: "Teach", sub: "Review the questions" },
-    { n: 4, name: "Train", sub: "Pick a model, press start" },
-    { n: 5, name: "Monitor", sub: "Watch the loss" },
-    { n: 6, name: "Try it", sub: "Compare with base" },
+    { n: 1, name: "Documents", sub: "Feed it your files" },
+    { n: 2, name: "Ask", sub: "Full answers" },
+    { n: 3, name: "Teach", sub: "Practice questions" },
+    { n: 4, name: "Train", sub: "Pick a size, press start" },
+    { n: 5, name: "Monitor", sub: "Watch it learn" },
+    { n: 6, name: "Try it", sub: "Trained vs. wild" },
   ];
 
   // Default palette, for a dark background. render() takes options.colors
