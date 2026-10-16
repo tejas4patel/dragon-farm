@@ -265,3 +265,13 @@ footer { padding: 18px 24px; }
   .df-install { max-width: 100%; padding-left: 14px; gap: 8px; }
   .df-install code { font-size: 0.8rem; }
 }
+
+/* Question-and-answer cards in articles (the launch post) */
+.df-qa { margin: 18px 0 26px; }
+.df-qa .df-reply p { margin: 0 0 10px; }
+.df-qa .df-q { font-family: var(--df-head); font-weight: 700; font-size: 1.05rem; line-height: 1.4; }
+.df-qa .df-note { margin-top: 12px; }
+main > .df-note, main .section > .df-note { margin: 22px 0; font-size: 0.95rem; }
+/* At phone width pkgdown's "On this page" box keeps side margins and
+   pushes the page 7px wider than the screen. */
+@media (max-width: 767.98px) { aside.col-md-3 { margin-left: 0; margin-right: 0; } }
