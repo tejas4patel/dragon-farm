@@ -64,7 +64,7 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 12
+READER_VERSION = 14
 # "(dollars in millions, except per share data)": the unit note a filing puts
 # once above a section or statement. Carried into later chunks that show money
 # without a unit word, so "$11,339" is not read as eleven thousand dollars.
@@ -237,7 +237,9 @@ def pdf_to_text(fh):
                 text = tidy_layout(page.extract_text(extraction_mode="layout") or text)
             except Exception:   # older pypdf has no layout mode, and layout can fail on an odd page
                 pass
-        pages.append(LOST_APOSTROPHE.sub("\u2019", text))
+        # No-break spaces as plain spaces: with "CALIFORNIA\u00a0\u2013\u00a0140" a 7B read
+        # past the number and said the report did not give it.
+        pages.append(LOST_APOSTROPHE.sub("\u2019", text).replace("\u00a0", " "))
     return pages_to_text(pages)
 
 
@@ -343,6 +345,21 @@ def label_year_columns(lines):
     return out
 
 
+# One entry of a list printed a line each, "CALIFORNIA – 140" or
+# "Ontario - 41": a name, a dash, a count. Joined with spaces, a run of them
+# read "CALIFORNIA – 140 COLORADO – 16 CONNECTICUT – 8", and a 7B
+# answered 8 for California.
+LIST_ENTRY = re.compile(r"^[^\W\d_][^\d\n]{0,40}\s[–—-]\s\d[\d,]*$")
+
+
+def join_lines(lines):
+    """Lines of one paragraph, with "; " between consecutive list entries."""
+    out = lines[0]
+    for prev, line in zip(lines, lines[1:]):
+        out += ("; " if LIST_ENTRY.match(prev) and LIST_ENTRY.match(line) else " ") + line
+    return out
+
+
 def pages_to_text(pages):
     """Paragraphs and '## ' headings from the extracted text of each page.
 
@@ -355,7 +372,7 @@ def pages_to_text(pages):
 
     def flush():
         if buf:
-            paras.append(" ".join(buf))
+            paras.append(join_lines(buf))
             buf.clear()
 
     def last_text():

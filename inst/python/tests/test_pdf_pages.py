@@ -282,3 +282,31 @@ def test_a_capitalised_title_starts_a_section_even_after_an_unfinished_page():
     assert D.repetitive("52 Weeks Ended 53 Weeks Ended 52 Weeks Ended")
     assert not D.repetitive("Opinion on the Consolidated Financial Statements")
     assert D.all_caps_title("CONSOLIDATED STATEMENTS OF INCOME") and not D.all_caps_title("Net sales")
+
+
+def test_lists_printed_a_line_each_keep_their_entries_apart():
+    from dragonfarm.documents import join_lines, pages_to_text
+    text = pages_to_text(["Locations\nALABAMA \u2013 5\nALASKA \u2013 5\nCALIFORNIA \u2013 140\nNEW YORK \u2013 19"])
+    assert "ALABAMA \u2013 5; ALASKA \u2013 5; CALIFORNIA \u2013 140; NEW YORK \u2013 19" in text
+    # ordinary wrapped lines still join with a space
+    assert join_lines(["The total is", "897 locations \u2013 5 new."]) == "The total is 897 locations \u2013 5 new."
+    assert join_lines(["Item 1 \u2013 Business", "continued text"]) == "Item 1 \u2013 Business continued text"
+
+
+def test_no_break_spaces_from_pdfs_become_spaces(monkeypatch=None):
+    import types, sys
+    from dragonfarm import documents as Dm
+
+    class Page:
+        def extract_text(self, **kw):
+            return "Locations\nCALIFORNIA\u00a0\u2013\u00a0140\nCOLORADO\u00a0\u2013\u00a016"
+
+    fake = types.SimpleNamespace(PdfReader=lambda fh: types.SimpleNamespace(pages=[Page()]))
+    old = Dm._need
+    Dm._need = lambda *a, **k: fake
+    try:
+        text = Dm.pdf_to_text(None)
+    finally:
+        Dm._need = old
+    assert "\u00a0" not in text
+    assert "CALIFORNIA \u2013 140; COLORADO \u2013 16" in text

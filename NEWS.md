@@ -10,6 +10,13 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## Documents
 
+* PDF lists printed one entry per line, such as an annual report's
+  "CALIFORNIA – 140" location counts, keep their entries apart ("; ")
+  instead of running together, and no-break spaces become plain spaces. Asked
+  for eight places' counts, a 7B read 7 right against 4 with the run-on
+  text; the report's California count, missed before, is now answered (21
+  of 23 known-answer questions, from 20).
+
 * New: `dragon_documents()` reads PDF, HTML, Markdown, text, Word,
   spreadsheet files, directories of them, and web pages into a *document
   set*: chunks of about 170 words that never cross a heading, each keeping
