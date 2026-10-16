@@ -44,9 +44,9 @@ dragon_preview(ds, n = 1)
 #> 
 #> ── Row 1 
 #> user:
-#> Ember thermostat keeps dropping off Wi-Fi
+#> Breeze air purifier keeps dropping off Wi-Fi
 #> 
-#> I've tried setting up my Ember thermostat three times and it never gets past the Wi-Fi step. The app just says 'connection failed'. My phone is on the same 2.4 GHz network.
+#> My Breeze air purifier connects fine for a few hours and then drops off the network. I have to power cycle it to get it back. Router is a fairly new mesh system.
 #> assistant:
-#> Thanks for the details. Wi-Fi drops on the Ember thermostat are almost always a 2.4 GHz band-steering issue with mesh routers. Please try these steps: (1) In your router app, create a dedicated 2.4 GHz network or temporarily disable band steering. (2) Hold the reset button on the Ember thermostat for 10 seconds until the light blinks amber. (3) Set it up again in the app on that 2.4 GHz network. If it still drops after 24 hours, reply with your router model and we will escalate to our network team.
+#> Thanks for the details. Wi-Fi drops on the Breeze air purifier are almost always a 2.4 GHz band-steering issue with mesh routers. Please try these steps: (1) In your router app, create a dedicated 2.4 GHz network or temporarily disable band steering. (2) Hold the reset button on the Breeze air purifier for 10 seconds until the light blinks amber. (3) Set it up again in the app on that 2.4 GHz network. If it still drops after 24 hours, reply with your router model and we will escalate to our network team.
 ```

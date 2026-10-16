@@ -10,72 +10,37 @@ The app is a thin client over the R functions. Nothing happens in the
 app that you cannot do from the console, and every run it starts is a
 normal run directory.
 
-## Two routes through the tabs
+## The eight panels
 
-The app opens on documents: **1 Documents, 2 Model, 3 Train, 4 Monitor,
-5 Try it, 6 Chat, 7 Pipeline**. “Have a table of prompts and replies
-instead?” at the bottom of the Documents card switches to the table
-route, **1 Data, 2 Map, 3 Model, …**, which is the same app with two
-tabs in front of Model; the Data tab has the link back. Nothing is lost
-when switching. `dragon_app(route = "table")` starts on the table route.
+**1 Data.** Drop a CSV, TSV, JSONL, JSON, or Parquet file on the input,
+or click “Load the example tickets”. You see row and column counts and
+the first eight rows.
 
-## The Documents tab
+**2 Map.** Choose the kind of data first: prompt and response rows for
+fine-tuning, chosen and rejected pairs for preference optimization, or
+prompts with an optional reference for reinforcement learning. The
+columns appear as chips in the left bucket. Drag them into System,
+Prompt, or Response. Two chips in one slot are joined with a blank line.
+The template fields below fill in as you drag and can be edited by hand
+for anything else, for example `Ticket #{id}: {subject}`. The right side
+shows the first three rows exactly as the model will see them.
 
-**Documents card.** Drop PDF, Word, HTML, Markdown, text, or spreadsheet
-files (several at once), add web pages by URL, name the set, and press
-Read and index; or click “Load the example policies”, or open a saved
-set. Files are copied into the set’s folder under the runs directory, so
-the set survives the session, and reading the same set again picks up
-only what changed. The summary lists each source with its chunk count
-and flags changelog-like files, which are down-weighted when retrieving.
-
-**Ask card.** Type a question, choose who answers (the model recommended
-for this machine, any run with an adapter, or a preset), and press Ask.
-The answer appears with numbered, expandable sources under it; cited
-ones are bold. “Continue in Chat” opens the Chat tab with the same set
-selected.
-
-**Teach card.** “Generate questions” has a model write questions and
-answers from every chunk (the recommended local model in the background,
-the Claude API when `ANTHROPIC_API_KEY` is set, or a preset), with a
-live line showing pairs written and kept so far. The review that follows
-groups pairs by chunk with a checkbox each; rejected pairs are unticked
-and carry their reason. Save decisions writes them back; Continue to
-Model builds the training set from the ticked pairs, with retrieved
-excerpts in every prompt, and skips Data and Map.
-
-## The other tabs
-
-**Data** (table route). Drop a CSV, TSV, JSONL, JSON, or Parquet file on
-the input, or click “Load the example tickets”. You see row and column
-counts and the first eight rows.
-
-**Map** (table route). Choose the kind of data first: prompt and
-response rows for fine-tuning, chosen and rejected pairs for preference
-optimization, or prompts with an optional reference for reinforcement
-learning. The columns appear as chips in the left bucket. Drag one or
-more into System, Prompt, or Response; several chips in one slot are
-joined with a blank line. The template fields below fill in as you drag
-and can be edited by hand, for example `Ticket #{id}: {subject}`. The
-right side shows the first three rows exactly as the model will see
-them.
-
-**Model.** Pick a preset or type a Hugging Face model id. “Detect
+**3 Model.** Pick a preset or type a Hugging Face model id. “Detect
 hardware” runs the same check as
 [`dragon_check()`](https://dragonfarm.dev/reference/dragon_check.md) and
-reports whether the chosen model fits in GPU memory, whether it needs a
-token, and the default answering model for this machine.
+reports whether the chosen model fits in GPU memory and whether it needs
+a token.
 
-**Train.** Epochs, learning rate, rank, sequence length, and batch size
-are on the front. Everything else is under Advanced. The stage follows
-the data kind: preference pairs show the DPO or ORPO method and beta, RL
-prompts show a reward builder. “Start from” continues from an earlier
-run instead of a base model. The panel refuses to start until there are
-training rows and a model, and estimates the number of optimizer steps
-from your settings. “No GPU here?” packages the run for a cloud GPU
-instead.
+**4 Train.** Epochs, learning rate, rank, sequence length, and batch
+size are on the front. Everything else is under Advanced. The stage
+follows the data kind: preference pairs show the DPO or ORPO method and
+beta, RL prompts show a reward builder. “Start from” continues from an
+earlier run instead of a base model. The panel refuses to start until
+the first three steps are complete, and estimates the number of
+optimizer steps from your settings. “No GPU here?” packages the run for
+a cloud GPU instead.
 
-**Monitor.** A live loss curve with evaluation points (and mean reward
+**5 Monitor.** A live loss curve with evaluation points (and mean reward
 for RL runs), step count, ETA, the trainer log, and the R code for the
 run. Cancel asks the trainer to stop after the current step and save.
 Resume picks up from the last checkpoint. Every run in the runs
@@ -83,22 +48,19 @@ directory is listed, including ones started from the console. Below:
 task metrics over the held-out rows, a comparison table of every run,
 and import of results trained in the cloud.
 
-**Try it.** Type a prompt and see the fine-tuned reply next to the base
-model’s reply. With “Answer from documents” set, both replies come from
-the chosen set and show their sources. Judge compares the run against
-what it started from with a language model as referee. Improve samples
-the run’s own replies, has the judge rank them, and loads the result as
-preference pairs for the next stage. “Merge and save” writes a
-standalone model directory.
+**6 Try it.** Type a prompt and see the fine-tuned reply next to the
+base model’s reply. Judge compares the run against what it started from
+with a language model as referee. Improve samples the run’s own replies,
+has the judge rank them, and loads the result as preference pairs for
+the next stage. “Merge and save” writes a standalone model directory.
 
-**Chat.** A conversation with memory: every turn sends the whole
+**7 Chat.** A conversation with memory: every turn sends the whole
 history. Answer from a run on this machine, an Ollama model, or any
-OpenAI-compatible server, optionally from a document set with sources
-under each reply. Rate replies, edit them, or ask again;
+OpenAI-compatible server. Rate replies, edit them, or ask again;
 [`dragon_feedback()`](https://dragonfarm.dev/reference/dragon_feedback.md)
 turns those verdicts into training data. Save the transcript as JSON.
 
-**Pipeline.** Runs the standard loop in a background R process:
+**8 Pipeline.** Runs the standard loop in a background R process:
 fine-tune, sample and judge into pairs, DPO, judge again, metrics. Shows
 each pipeline’s steps as they finish and the lineage of every run in the
 directory.
@@ -123,9 +85,7 @@ dragon_app(runs_dir = "/srv/dragonfarm/runs", host = "0.0.0.0", port = 3838)
 The Map panel uses the `sortable` package for the drag-and-drop buckets.
 Progress in the Monitor panel comes from polling `progress.jsonl` and
 `status.json` once a second with `reactivePoll()`, so it works over a
-remote connection and survives a browser refresh. Retrieval and
-generation go through the local inference worker, a Python process that
-keeps the embedding model and the last two language models loaded, so
-the first question in a session is slow and the rest are quick. Question
-generation runs as its own background process and writes a progress file
-the Teach card polls.
+remote connection and survives a browser refresh. The Try it panel calls
+[`dragon_generate()`](https://dragonfarm.dev/reference/dragon_generate.md),
+which loads the model in a short-lived process, so each request takes a
+few seconds.

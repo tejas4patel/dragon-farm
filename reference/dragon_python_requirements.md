@@ -19,19 +19,9 @@ A list with `packages` (pip requirement strings) and `python_version`.
 ``` r
 dragon_python_requirements()
 #> $packages
-#>  [1] "torch>=2.4"                                     
-#>  [2] "transformers>=4.46"                             
-#>  [3] "peft>=0.13"                                     
-#>  [4] "accelerate>=1.0"                                
-#>  [5] "safetensors>=0.4"                               
-#>  [6] "numpy"                                          
-#>  [7] "sentencepiece"                                  
-#>  [8] "protobuf"                                       
-#>  [9] "huggingface_hub>=0.25"                          
-#> [10] "pypdf>=4"                                       
-#> [11] "python-docx>=1.1"                               
-#> [12] "openpyxl>=3.1"                                  
-#> [13] "bitsandbytes>=0.45; platform_system != 'Darwin'"
+#> [1] "torch>=2.4"            "transformers>=4.46"    "peft>=0.13"           
+#> [4] "accelerate>=1.0"       "safetensors>=0.4"      "numpy"                
+#> [7] "sentencepiece"         "protobuf"              "huggingface_hub>=0.25"
 #> 
 #> $python_version
 #> [1] ">=3.10,<3.14"

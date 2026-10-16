@@ -4,7 +4,7 @@ Machines without a GPU can still fine-tune:
 [`dragon_bundle()`](https://dragonfarm.dev/reference/dragon_bundle.md)
 packages a run as a zip,
 [`dragon_remote()`](https://dragonfarm.dev/reference/dragon_remote.md)
-opens one of these providers with the dragonfarm notebook, and
+opens one of these providers with the dragon-farm notebook, and
 [`dragon_import()`](https://dragonfarm.dev/reference/dragon_import.md)
 brings the trained adapter back. Google Colab and Kaggle have free GPU
 tiers. Lightning AI gives free monthly credits. RunPod is pay per hour.

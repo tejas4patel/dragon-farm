@@ -7,15 +7,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/tejas4patel/dragon-farm/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/tejas4patel/dragon-farm/blob/v0.3.0/DESCRIPTION)
 
-Patel T (2026). *dragonfarm: Fine-Tune Language Models with LoRA on Your
-Documents and Data*. R package version 0.4.0, <https://dragonfarm.dev>.
+Patel T (2026). *dragonfarm: Fine-Tune Small Language Models with LoRA
+from R*. R package version 0.3.0,
+<https://github.com/tejas4patel/dragon-farm>.
 
     @Manual{,
-      title = {dragonfarm: Fine-Tune Language Models with LoRA on Your Documents and Data},
+      title = {dragonfarm: Fine-Tune Small Language Models with LoRA from R},
       author = {Tejas Patel},
       year = {2026},
-      note = {R package version 0.4.0},
-      url = {https://dragonfarm.dev},
+      note = {R package version 0.3.0},
+      url = {https://github.com/tejas4patel/dragon-farm},
     }
