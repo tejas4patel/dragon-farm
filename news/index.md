@@ -95,6 +95,14 @@ a spreadsheet.
 
 ### Asking documents
 
+- With four or more excerpts, the keyword search’s best match is always
+  among them, as the embedding’s best already was. A rare exact word
+  (“boxplot”) put its chunk first by keywords but far down by embedding,
+  and the combined ranking dropped it. Questions about R’s manuals with
+  the answer in the top four: 30 to 31 of 32; a 7B answered all 23
+  known-answer questions on the annual report PDF (from 22). Other sets
+  unchanged.
+
 - A question that names a year now finds the table row labelled with
   that year. Rows read as “Net sales (2024: \$249,625; 2023: \$237,710)”
   carry a keyword per labelled year, which a question mentioning 2023
