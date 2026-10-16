@@ -16,10 +16,10 @@ CORAL, AMBER, NAVY, TILE = "#FF6B35", "#FFB547", "#0B1020", "#151E3A"
 # The mark, in a 100 x 100 box: a dragon's head in profile with two horns,
 # spikes down the neck, an open jaw, an eye, and a nostril.
 MARK = (
-    '<path d="M38 34 L10 12 L30 40 Z" fill="%s"/>' % AMBER
-    + '<path d="M50 30 L36 6 L44 33 Z" fill="%s"/>' % AMBER
-    + '<path d="M22 58 L6 54 L18 68 Z" fill="%s"/>' % AMBER
-    + '<path d="M20 74 L4 74 L18 84 Z" fill="%s"/>' % AMBER
+    '<path d="M42 38 L10 12 L32 44 Z" fill="%s"/>' % AMBER
+    + '<path d="M54 34 L36 6 L46 36 Z" fill="%s"/>' % AMBER
+    + '<path d="M30 56 L6 54 L26 70 Z" fill="%s"/>' % AMBER
+    + '<path d="M28 72 L4 74 L28 86 Z" fill="%s"/>' % AMBER
     + '<path d="M26 94 C16 72 18 52 30 40 C38 32 48 28 58 30 L86 40 C93 42 94 49 88 51 L66 56 L70 61 C64 66 56 66 50 64 C46 74 48 84 54 94 Z" fill="%s"/>' % CORAL
     + '<circle cx="57" cy="40" r="4.2" fill="%s"/>' % NAVY
     + '<circle cx="86" cy="44" r="1.8" fill="%s"/>' % NAVY
