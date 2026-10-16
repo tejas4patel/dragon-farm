@@ -17,6 +17,7 @@ dragon_train_args(
   logging_steps = 5,
   save_steps = 100,
   gradient_checkpointing = FALSE,
+  eval_batch_size = 1,
   seed = 42,
   ...
 )
@@ -69,6 +70,14 @@ dragon_train_args(
 
   Trade compute for memory. Turn on if you run out of GPU memory.
 
+- eval_batch_size:
+
+  Held-out rows scored per forward pass, during training and at the end.
+  Defaults to 1: scoring materializes a `batch x tokens x vocabulary`
+  tensor, so at long `max_seq_len` a larger value can run a GPU out of
+  memory after training has already succeeded. Raise it for speed on a
+  large GPU.
+
 - seed:
 
   Random seed.
@@ -117,6 +126,9 @@ dragon_train_args(epochs = 1, learning_rate = 1e-4)
 #> 
 #> $gradient_checkpointing
 #> [1] FALSE
+#> 
+#> $eval_batch_size
+#> [1] 1
 #> 
 #> $seed
 #> [1] 42

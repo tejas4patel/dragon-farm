@@ -10,7 +10,12 @@ for a session.
 ## Usage
 
 ``` r
-dragon_backend_local(keep_loaded = TRUE, device = "auto", dtype = "auto")
+dragon_backend_local(
+  keep_loaded = TRUE,
+  device = "auto",
+  dtype = "auto",
+  load_in_4bit = "auto"
+)
 
 dragon_backend_server(url, model, api_key = NULL, headers = NULL)
 
@@ -29,6 +34,15 @@ dragon_backend()
 
   Device and precision for the local worker. See
   [`dragon_hardware()`](https://dragonfarm.dev/reference/dragon_hardware.md).
+
+- load_in_4bit:
+
+  Load models in 4-bit (NF4 through bitsandbytes) on an NVIDIA GPU.
+  `"auto"`, the default, quantizes only models whose full weights would
+  not fit: a 7B on an 8 GB card, not a 3B. `TRUE` forces it, `FALSE`
+  never does. A 4-bit 7B uses about the memory of a 3B in full precision
+  and generates about 40 percent slower per token. The weights are
+  downloaded in full (about 15 GB for a 7B) and quantized at load.
 
 - url:
 

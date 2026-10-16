@@ -95,6 +95,28 @@ so the checks run first.
 | `architecture/` | design notes written before larger features |
 | `scripts/` | measurement scripts behind numbers quoted in the docs |
 
+## Releasing (maintainer)
+
+1.  Bump `Version:` in DESCRIPTION and change the top NEWS heading to
+    that version. Update `cran-comments.md`.
+
+2.  `R CMD build` and `R CMD check --as-cran` on the tarball: no errors
+    or warnings; explain any note in `cran-comments.md`.
+
+3.  Submit at <https://cran.r-project.org/submit.html>. CRAN asks for at
+    most one update every one to two months.
+
+4.  Once CRAN accepts it, tag the release commit and create the GitHub
+    release from that version’s NEWS section, so the repository’s
+    “Latest” release matches CRAN:
+
+    ``` bash
+    git tag v0.4.0 && git push origin v0.4.0
+    gh release create v0.4.0 --title "dragonfarm 0.4.0" --notes-file notes.md --latest
+    ```
+
+5.  Add `.9000` to the version for development.
+
 ## Conduct
 
 Be kind and assume good faith. Harassment or personal attacks in issues,

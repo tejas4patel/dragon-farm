@@ -1,9 +1,19 @@
-# Quickstart: fine-tune a small model from R
+# Quickstart: from documents to a model, in R
 
-This walks through one complete fine-tune: a support-ticket dataset, a
-135M parameter model that trains on a CPU in minutes, and a
-before-and-after comparison. Swap in your own file and a bigger model
-afterwards.
+dragonfarm turns your material into a small language model that is
+yours: it answers in your domain and your voice, and it loads anywhere
+with plain `transformers`. This page walks the default route once, on
+the example documents that ship with the package: read documents, ask
+them questions, have a model write training questions, review them,
+fine-tune, compare. The same six steps are the tabs of the app
+([`dragon_app()`](https://dragonfarm.dev/reference/dragon_app.md)).
+
+Every output shown below is from one real run of this page on a laptop
+with an 8 GB GPU (an RTX 4060), on 2026-10-13. Your numbers will differ;
+the shape will not.
+
+If your data is already a table of prompts and replies, skip to [the
+table route](#the-table-route) at the end.
 
 ## 1. Check the machine
 
@@ -11,124 +21,225 @@ afterwards.
 
 library(dragonfarm)
 dragon_check()
+#> ✔ Python: '.../python.exe'
+#> ✔ torch 2.14.1+cu130 · transformers 5.19.0 · peft 0.21.2
+#> ✔ Device: CUDA 13.0 · NVIDIA GeForce RTX 4060 Laptop GPU · 8 GB · bf16 yes
+#> ✔ 4-bit loading available (bitsandbytes 0.50.2).
+#> ℹ Default model for answering and question generation here: "Qwen/Qwen2.5-7B-Instruct" in 4-bit (8 GB and up: 7B in 4-bit).
+#> ℹ No Hugging Face token. Open models work; gated ones need `HF_TOKEN`.
 ```
 
 The first call builds a Python environment with torch and transformers.
-That is a 2 to 3 GB download and takes a few minutes. Later calls take a
-second. The report tells you which device training will use. A CPU is
-fine for the 135M and 360M models. Anything larger wants a GPU.
+That is a 2 to 3 GB download and takes a few minutes; later calls take a
+second. The report names the device, whether 4-bit loading is available,
+and the model it will use by default to answer questions on this
+machine: a 1.5B model under 6 GB of GPU memory or on a CPU, a 3B at 6 to
+8 GB, a 7B in 4-bit at 8 GB and up.
 
-## 2. Load and map the data
-
-A dataset is a table with one row per example. The bundled example has
-`subject`, `body`, `product`, and `reply` columns.
+Keep your sets and runs somewhere permanent; by default they live under
+a temporary folder and vanish with the session:
 
 ``` r
 
-ds <- dragon_dataset(dragon_example_data())
+options(dragonfarm.runs_dir = "~/dragonfarm_runs")
+```
+
+## 2. Read the documents
+
+``` r
+
+docs <- dragon_documents(dragon_example_documents(), name = "policies")
+#> ✔ Document set policies: 3 sources, 11 chunks.
+#> ✔ Indexed 11 chunks of policies with "BAAI/bge-small-en-v1.5".
+docs
+#> ── Document set policies
+#> • connectivity-and-app.md: 4 chunks, 324 words
+#> • orders-and-support.md: 4 chunks, 353 words
+#> • returns-and-warranty.md: 3 chunks, 298 words
+#> 11 chunks of about 170 words; index: BAAI/bge-small-en-v1.5
+```
+
+The example is three short Markdown files of support policies for a
+fictional smart-home company (the same company as the example tickets).
+Your own PDF, HTML, Word, text, and spreadsheet files, folders of them,
+and web pages work the same way:
+`dragon_documents(c("policies/", "https://..."))`. Text is split into
+chunks that never cross a heading, each remembering its file and
+section, and embedded with a small model (downloaded once, about 130
+MB). Reading the same set again re-reads only files that changed.
+
+## 3. Ask
+
+``` r
+
+ans <- dragon_ask(docs, "How long is the return window?")
+ans
+#> The return window is 30 days from the delivery date [1].
+#>
+#> [1]* returns-and-warranty.md › Returns, refunds, and warranty
+#> [2]  orders-and-support.md › Duplicate or unexpected charges: refunds
+#> [3]  returns-and-warranty.md › Damaged on arrival: replacement
+#> [4]  returns-and-warranty.md › Returns: refunds and setup
+#> * cited in the answer. Excerpt text is in $sources$text.
+```
+
+The most relevant chunks go in front of the model as numbered excerpts,
+with an instruction to answer only from them and to cite them. The first
+question in a session loads the model: this one took 52 seconds with the
+7B in 4-bit when its weights were already cached on disk, and about five
+minutes the first time after a reboot, when 15 GB had to be read from
+disk first. Later questions take a few seconds. For many uses this step
+is the whole job: nothing is trained, and you can swap the documents and
+ask again. `dragon_chat(documents = docs)` does the same with memory
+across turns.
+
+## 4. Write training questions, and review them
+
+``` r
+
+qa <- dragon_questions(docs)
+#> ℹ Writing questions with "Qwen/Qwen2.5-7B-Instruct" in the background.
+#> ✔ 33 questions written, 29 kept by the filters (88%). Review them before training.
+#> Rejected: answer not grounded (2), refers to the passage (2).
+```
+
+For every chunk a model writes three self-contained questions and
+answers them from that chunk alone; deterministic filters then mark
+pairs that are not grounded in the chunk, name things it does not, refer
+to “the passage”, or repeat another question. Nothing is thrown away:
+each pair has `keep` and a `reason`. This took a minute and a half for
+the eleven chunks with the 7B. On a CPU, pass a small generator such as
+`generator = "Qwen/Qwen2.5-0.5B-Instruct"` and expect to keep far fewer;
+a stronger teacher such as
+[`dragon_llm_anthropic()`](https://dragonfarm.dev/reference/dragon_llm_anthropic.md)
+keeps more.
+
+Now read them. This is the step that decides whether the fine-tune is
+worth having: on larger, messier documents about a fifth of the pairs
+that passed the filters were still wrong or trivial, and a model trained
+on unreviewed pairs learned to sound sure when it was wrong. (The
+example policies are short and tidy, which is why 88 percent passed
+here.)
+
+``` r
+
+qa[!qa$keep, c("question", "reason")]
+#>                                                                                            question                     reason
+#> 1                  How long should a customer wait before escalating an unresolved Wi-Fi drop issue? answer not grounded (0.50)
+#> 2               What are the first three steps to troubleshoot Wi-Fi drops according to the passage?      refers to the passage
+#> 3                              What does the passage indicate about the content of support policies?      refers to the passage
+#> 4 How long should a customer wait before a single charge appears after an authorization and capture? answer not grounded (0.46)
+# qa$keep[qa$id == "p0005"] <- TRUE        # to rescue one after reading it
+dragon_questions_save(qa)                  # decisions stay with the set
+```
+
+The first rejected question is a reasonable one whose answer the filter
+scored as only half grounded; reading it, you might well rescue it. The
+two that say “the passage” would not make sense to a user, so they stay
+out. This run kept the filters’ verdicts as they were. In the app this
+is the Teach card: tick and untick, Save decisions, Continue to Model.
+
+## 5. Fine-tune
+
+``` r
+
+ds <- dragon_questions_dataset(qa, docs)   # kept pairs, with retrieved excerpts in every prompt
 ds
+#> <dragon_dataset> policies questions: 29 rows, 4 columns
+#> Prompt: "Documentation excerpts:\n{context}\n\nQuestion: {question}"
+#> Response: "{`answer`}"
+run <- dragon_train(ds, "HuggingFaceTB/SmolLM2-135M-Instruct",
+                    lora = dragon_lora(r = 8, alpha = 16),
+                    args = dragon_train_args(epochs = 2, batch_size = 2, grad_accum = 4, max_seq_len = 1024),
+                    wait = TRUE)
+#> ✔ Launched run 20261014-215041-smollm2-135m-instruct (28 training rows, 1 held out).
+#> ✔ Run 20261014-215041-smollm2-135m-instruct succeeded. Eval loss 0.58, perplexity 1.78.
 ```
 
-[`dragon_map()`](https://dragonfarm.dev/reference/dragon_map.md) says
-which columns form the user turn and the assistant turn. Each argument
-is a column name or a template that combines columns.
+Each training prompt is the excerpts retrieved for that question (always
+including the one the pair was written from), then the question; the
+answer, ending with the number of that excerpt, is the response. The
+model learns the style and how to use excerpts, and the documents stay
+the source of truth, so they can change later without retraining. This
+run took under a minute on the laptop GPU; the 135M model also trains on
+a CPU, more slowly. With `wait = TRUE` you get a progress bar; without
+it the function returns at once and `dragon_status(run)`,
+`dragon_progress(run)`, and `dragon_wait(run)` follow along. Runs
+survive the session: `dragon_run("~/dragonfarm_runs/<id>")` reopens one.
+
+## 6. Compare and use
 
 ``` r
 
-ds <- dragon_map(ds,
-  prompt = "{subject}\n\n{body}",
-  response = "reply",
-  system = "You are a support agent for a smart-home company. Be concrete and brief."
-)
-dragon_preview(ds, n = 1)
+dragon_ask(docs, "Can I return a device I have already set up?", model = run)
+#> Yes, you can return a device you have already set up. The device is still in
+#> the app, and you can use the app to set up the device. The device is still in
+#> the app, ...
+#> [1]  returns-and-warranty.md › Returns, refunds, and warranty
+#> [2]  returns-and-warranty.md › Returns: refunds and setup
+#> ...
+dragon_evaluate(run)                        # held-out loss and a sample reply
+chat <- dragon_chat(run, documents = docs)  # a conversation, answering from the documents
+chat$say("A customer wants to return an opened device.")
+dragon_merge(run, "models/policies-135m")   # a standalone model for plain transformers
 ```
 
-The system argument here is a constant. It could also be a column.
+Be honest with yourself about what you just built. A 135M model trained
+on twenty-nine pairs for eight optimizer steps gets the gist (“yes, you
+can return it”), then repeats itself and never cites; its held-out loss
+of 0.58 is over a single held-out row. This run exists to see the parts
+move in a few minutes, not to produce a model you would keep. Three
+things change the result: a bigger base model
+(`Qwen/Qwen2.5-0.5B-Instruct` on a GPU, which the README demo uses),
+your own documents, and a reviewed set of a few hundred pairs. The
+measured numbers behind each step, and what to expect from each model
+size, are in [From your documents to your
+model](https://dragonfarm.dev/articles/documents.html). Meanwhile, step
+3 already answered this question correctly from the documents with no
+training at all, which is the point of doing it first.
 
-## 3. Train
+## The table route
+
+If your data already comes as rows of prompt and response, start from a
+table instead. The bundled example tickets have `subject`, `body`, and
+`reply` columns:
 
 ``` r
 
-run <- dragon_train(
-  ds,
-  model = "HuggingFaceTB/SmolLM2-135M-Instruct",
-  lora = dragon_lora(r = 8, alpha = 16),
-  args = dragon_train_args(epochs = 2, batch_size = 4, grad_accum = 2, max_seq_len = 512),
-  wait = TRUE
-)
+ds <- dragon_dataset(dragon_example_data()) |>
+  dragon_map(prompt = "{subject}\n\n{body}", response = "reply")
+dragon_preview(ds, n = 1)                   # the first row exactly as the model sees it
+run <- dragon_train(ds, "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+dragon_generate(run, "Charged twice for Sentry doorbell\n\nMy card shows two charges for one order.")
 ```
 
-With `wait = TRUE` you get a progress bar and the function returns when
-training ends. Without it, the function returns at once and you poll:
-
-``` r
-
-run <- dragon_train(ds, "HuggingFaceTB/SmolLM2-135M-Instruct")
-dragon_status(run)$state
-tail(dragon_progress(run))
-dragon_logs(run, 10)
-dragon_wait(run)
-```
-
-Runs are directories under `dragonfarm_runs/`. They survive the R
-session:
-
-``` r
-
-dragon_runs()
-run <- dragon_run(dragon_runs()$dir[1])
-```
-
-## 4. Evaluate and try it
-
-Training holds out 5 percent of rows and reports loss and perplexity on
-them, plus a few generated replies next to the reference replies.
-
-``` r
-
-ev <- dragon_evaluate(run)
-ev
-ev$samples
-```
-
-Compare the tuned model with the base model on a fresh prompt:
-
-``` r
-
-prompt <- "Charged twice for Sentry doorbell\n\nMy card shows two charges for one order."
-dragon_generate(run, prompt, temperature = 0)
-dragon_generate(run, prompt, temperature = 0, base = TRUE)
-```
-
-## 5. Ship it
-
-The adapter alone is small and loads with `peft`. For a standalone model
-that needs neither peft nor dragonfarm, merge:
-
-``` r
-
-merged <- dragon_merge(run, "models/support-135m")
-dragon_generate(merged, prompt)
-```
-
-To reproduce the run later, or share it, ask for the code:
-
-``` r
-
-cat(dragon_code(run))
-```
+[`dragon_map()`](https://dragonfarm.dev/reference/dragon_map.md) takes
+column names or templates that combine columns, and an optional
+`system =`. Everything after that is the same: evaluate, chat, merge,
+publish. The 0.5B model trains on the 190 tickets in two to four minutes
+on a laptop GPU (the 135M works on a CPU but its replies on this task
+ramble). In the app, “Have a table of prompts and replies instead?” on
+the Documents tab switches to this route, where the Map step is drag and
+drop.
 
 ## Choosing settings
 
-- **Model.** Start with `HuggingFaceTB/SmolLM2-360M-Instruct` or
-  `Qwen/Qwen2.5-0.5B-Instruct`. Move up only if quality is not enough.
-- **Rank.** 8 to 16 is plenty for format and tone. Go to 32 or 64 when
-  the model must learn a lot of new facts.
-- **Learning rate.** `2e-4` for LoRA. Halve it if the loss curve is
-  jagged.
-- **Epochs.** 2 to 3. Watch the eval loss: if it rises while train loss
-  keeps falling, you are overfitting.
-- **Sequence length.** Set it just above your longest example. Shorter
-  is faster and uses less memory.
-- **Out of memory.** Lower `batch_size`, raise `grad_accum` to
-  compensate, and turn on `gradient_checkpointing`.
+**Model.** Start with `HuggingFaceTB/SmolLM2-360M-Instruct` or
+`Qwen/Qwen2.5-0.5B-Instruct`. Move up only if quality is not enough; for
+answering from documents, a bigger *base* model with retrieval often
+beats a small fine-tuned one.
+
+**Rank.** 8 to 16 is plenty for format and tone. Go to 32 or 64 when the
+model must learn a lot of new facts.
+
+**Learning rate.** 2e-4 for LoRA. Halve it if the loss curve is jagged.
+
+**Epochs.** 2 to 3. Watch the eval loss: if it rises while training loss
+falls, stop earlier.
+
+**Sequence length.** Long enough for your longest prompt plus reply;
+document prompts with four excerpts need about 1024 tokens. Shorter is
+faster and uses less memory.
+
+**Out of memory?** Lower `batch_size`, raise `grad_accum` to compensate,
+and turn on `gradient_checkpointing`.

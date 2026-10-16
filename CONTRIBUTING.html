@@ -114,6 +114,18 @@
 <td>measurement scripts behind numbers quoted in the docs</td>
 </tr></tbody></table></div>
 <div class="section level2">
+<h2 id="releasing-maintainer">Releasing (maintainer)<a class="anchor" aria-label="anchor" href="#releasing-maintainer"></a></h2>
+<ol style="list-style-type: decimal"><li><p>Bump <code>Version:</code> in DESCRIPTION and change the top NEWS heading to that version. Update <code>cran-comments.md</code>.</p></li>
+<li><p><code>R CMD build</code> and <code>R CMD check --as-cran</code> on the tarball: no errors or warnings; explain any note in <code>cran-comments.md</code>.</p></li>
+<li><p>Submit at <a href="https://cran.r-project.org/submit.html" class="external-link uri">https://cran.r-project.org/submit.html</a>. CRAN asks for at most one update every one to two months.</p></li>
+<li>
+<p>Once CRAN accepts it, tag the release commit and create the GitHub release from that version’s NEWS section, so the repository’s “Latest” release matches CRAN:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">git</span> tag v0.4.0 <span class="kw">&amp;&amp;</span> <span class="fu">git</span> push origin v0.4.0</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="ex">gh</span> release create v0.4.0 <span class="at">--title</span> <span class="st">"dragonfarm 0.4.0"</span> <span class="at">--notes-file</span> notes.md <span class="at">--latest</span></span></code></pre></div>
+</li>
+<li><p>Add <code>.9000</code> to the version for development.</p></li>
+</ol></div>
+<div class="section level2">
 <h2 id="conduct">Conduct<a class="anchor" aria-label="anchor" href="#conduct"></a></h2>
 <p>Be kind and assume good faith. Harassment or personal attacks in issues, pull requests, or discussions are not acceptable and will be removed.</p>
 </div>
