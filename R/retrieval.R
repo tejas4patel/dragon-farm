@@ -106,7 +106,7 @@ dragon_retrieve <- function(docs, query, k = 4, method = c("hybrid", "dense")) {
 #' ans$sources
 #' }
 dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backend = dragon_backend(),
-                       max_new_tokens = 300, temperature = 0, top_p = 0.9, base = FALSE, on_stage = NULL) {
+                       max_new_tokens = 600, temperature = 0, top_p = 0.9, base = FALSE, on_stage = NULL) {
   docs <- as_documents(docs)
   check_string(question, "question")
   if (!inherits(backend, "dragon_backend")) cli::cli_abort("{.arg backend} must be a {.cls dragon_backend}.")
@@ -123,7 +123,7 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
     if (isTRUE(base)) model_label <- paste0(model_label, " (base)")
   }
   convo <- list(
-    list(role = "system", content = documents_system(system, small = decline_note_for(target))),
+    list(role = "system", content = documents_system(system, small = decline_note_for(target), full = full_answers_for(target))),
     list(role = "user", content = documents_prompt(question, hits))
   )
   stage(sprintf("Answering with %s (the first question loads it, about a minute for a 7B)", model_label))
@@ -195,13 +195,32 @@ decline_note_for <- function(target) {
   !is.na(size) && size < 3
 }
 
-documents_system <- function(extra = NULL, small = FALSE) {
-  base <- paste(
-    "You answer questions about the user's documents using only the numbered excerpts provided.",
-    "After each sentence that uses an excerpt, cite it like [1] or [2].",
-    "If the excerpts do not contain the answer, say that the documents do not cover it; do not guess.",
-    "Be concise."
+# Models of 3B and up are asked for full answers; smaller ones for short ones.
+# Measured on 75 answerable and 25 unanswerable questions (Costco, R manuals,
+# held-out R manuals), short -> full instructions: right 7B 72 -> 75,
+# 3B 65 -> 70, declines unchanged (25 of 25); median answer 23 -> 86 words for
+# the 7B. Under 3B full answers made things up: declines 1.5B 24 -> 17,
+# 0.5B 19 -> 10. A model of unknown size (a server backend) gets full answers.
+full_answers_for <- function(target) {
+  if (is.null(target)) return(TRUE)
+  size <- model_size_b(target$model)
+  is.na(size) || size >= 3
+}
+
+documents_system <- function(extra = NULL, small = FALSE, full = TRUE) {
+  rules <- if (isTRUE(full)) c(
+    "Answer the question fully, in clear sentences: include the details the excerpts give, such as figures,",
+    "dates, names, conditions, steps, or code, and explain them where that helps.",
+    "Cite the excerpts you use like [1] or [2]."
+  ) else c(
+    "After each sentence that uses an excerpt, cite it like [1] or [2]."
   )
+  base <- paste(c(
+    "You answer questions about the user's documents using only the numbered excerpts provided.",
+    rules,
+    "If the excerpts do not contain the answer, say that the documents do not cover it; do not guess.",
+    if (!isTRUE(full)) "Be concise."
+  ), collapse = " ")
   out <- if (is.null(extra) || !nzchar(trimws(extra))) base else paste(base, trimws(extra))
   if (isTRUE(small)) out <- paste(out, decline_note)
   out

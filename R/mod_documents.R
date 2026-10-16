@@ -68,7 +68,7 @@ mod_documents_top_ui <- function(ns) {
         shiny::actionButton(ns("ask"), "Ask", class = "btn-primary"),
         shiny::actionButton(ns("to_chat"), "Continue in Chat", class = "btn-outline-secondary")
       ),
-      shiny::p(class = "hint", "Answers come from the most relevant excerpts, with sources under each answer. Nothing is trained; swap documents and ask again."),
+      shiny::p(class = "hint", "It reads the most relevant parts of your documents and answers in full; the sources are listed underneath if you want to check. Nothing is trained yet."),
       shiny::uiOutput(ns("answer"))
     )
   )
@@ -238,7 +238,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       if (is.null(a)) return(NULL)
       shiny::tagList(
         shiny::div(class = "bubble user", shiny::span(class = "role", "you"), shiny::div(class = "content", a$question)),
-        shiny::div(class = "bubble assistant", shiny::span(class = "role", a$model), shiny::div(class = "content", a$answer), sources_footnotes(a$sources))
+        shiny::div(class = "bubble assistant", shiny::span(class = "role", a$model), shiny::div(class = "content md", md_html(a$answer)), sources_footnotes(a$sources))
       )
     })
 

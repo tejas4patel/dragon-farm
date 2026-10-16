@@ -313,7 +313,7 @@ mod_chat_server <- function(id, state, runs_dir) {
         }
         shiny::div(class = paste("bubble", m$role),
           shiny::span(class = "role", if (m$role == "assistant") "model" else "you"),
-          shiny::div(class = "content", m$content),
+          if (m$role == "assistant") shiny::div(class = "content md", md_html(m$content)) else shiny::div(class = "content", m$content),
           footnotes,
           controls
         )

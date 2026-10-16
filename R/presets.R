@@ -10,7 +10,7 @@
 #' answering from documents, writing training questions, or fine-tuning on
 #' documents, use the 7B in 4-bit, or the 3B with less memory; models below
 #' 3B are wrong more often (untrained, the 0.5B on 14 of 55 test questions,
-#' the 7B on 1). For a fixed
+#' the 7B on none). For a fixed
 #' output format such as JSON fields or labels, the 0.5B and 1.5B reach the
 #' same score as larger models in a few minutes of training.
 #'
@@ -46,7 +46,7 @@ dragon_presets <- function() {
       "App default. Fixed formats such as JSON: 20 of 20 after 3 minutes of training. Wrong on 14 of 55 document questions.",
       "Needs a Hugging Face token.",
       "Needs a Hugging Face token.",
-      "Fixed formats and house style. Wrong on 6 of 55 document questions (the 7B on 1).",
+      "Fixed formats and house style. Wrong on 6 of 55 document questions (the 7B on none).",
       "Largest of the small presets. Turn on gradient checkpointing on 8 GB cards.",
       "Documents on a smaller card: declines what the documents do not cover. Trains in 4-bit; research licence.",
       "Best for documents: answering, writing training questions, fine-tuning. 4-bit, batch size 1 on an 8 GB NVIDIA card."

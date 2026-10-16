@@ -26,6 +26,22 @@ test_that("the documents prompt numbers excerpts and the parser reads citations 
   expect_match(dragonfarm:::documents_system("Answer in French."), "Answer in French\\.$")
 })
 
+test_that("models of 3B and up are asked for full answers, smaller ones for short ones", {
+  full <- dragonfarm:::full_answers_for
+  expect_true(full(list(model = "Qwen/Qwen2.5-7B-Instruct")))
+  expect_true(full(list(model = "Qwen/Qwen2.5-3B-Instruct")))
+  expect_false(full(list(model = "Qwen/Qwen2.5-1.5B-Instruct")))
+  expect_false(full(list(model = "Qwen/Qwen2.5-0.5B-Instruct", adapter = "some/adapter")))
+  expect_true(full(list(model = "org/no-size")))
+  expect_true(full(NULL))
+  long <- dragonfarm:::documents_system(full = TRUE)
+  short <- dragonfarm:::documents_system(full = FALSE)
+  expect_match(long, "Answer the question fully", fixed = TRUE)
+  expect_false(grepl("Be concise", long, fixed = TRUE))
+  expect_match(short, "Be concise.$")
+  expect_match(dragonfarm:::documents_system(full = FALSE, small = TRUE), "do not cover this\\.\"$")
+})
+
 test_that("dragon_ask retrieves, asks the backend with the excerpts, and marks cited sources", {
   f <- write_fake_set()
   docs <- dragon_documents_load(f$dir)
@@ -225,4 +241,20 @@ test_that("untrained models under 3B get an explicit 'not covered' line; others 
   ch <- dragon_chat("Qwen/Qwen2.5-0.5B-Instruct", documents = docs)
   ch$say("q")
   expect_match(seen, "reply only")
+})
+
+test_that("model replies render as Markdown, but cannot add markup of their own", {
+  h <- function(x) as.character(dragonfarm:::md_html(x))
+  expect_match(h("**Check the machine** first.\n\n1. one\n2. two"), "<strong>Check the machine</strong>", fixed = TRUE)
+  expect_match(h("1. one\n2. two"), "<ol>", fixed = TRUE)
+  out <- h("Hi <script>alert(1)</script> and <b>bold</b>")
+  expect_false(grepl("<script>", out, fixed = TRUE))
+  expect_false(grepl("<b>", out, fixed = TRUE))
+  expect_match(out, "&lt;script&gt;", fixed = TRUE)
+  expect_match(h("Use `x <- 1` here."), "<code>x &lt;- 1</code>", fixed = TRUE)
+  expect_match(h("```r\nif (a < b) x\n```"), "if (a &lt; b) x", fixed = TRUE)
+  expect_match(h("[bad](javascript:alert(1)) [good](https://dragonfarm.dev)"), "href=\"#\"", fixed = TRUE)
+  expect_match(h("[good](https://dragonfarm.dev)"), "href=\"https://dragonfarm.dev\"", fixed = TRUE)
+  expect_false(grepl("<img", h("![x](https://example.com/t.png)"), fixed = TRUE))
+  expect_equal(h(NULL), "")
 })

@@ -163,3 +163,20 @@ fmt_arg <- function(x) {
   if (is.numeric(x) && length(x) == 1 && !is.na(x) && x == round(x) && abs(x) < 1e15) return(format(x, scientific = FALSE))
   deparse(x)
 }
+
+# Model replies as HTML: Markdown (bold, lists, code) rendered, but nothing
+# the model writes can add markup of its own. Raw HTML outside code is
+# escaped before rendering, links other than http(s), mailto, and anchors are
+# neutralised, and images are dropped (they would load from anywhere).
+md_html <- function(text) {
+  text <- paste(as.character(text %||% ""), collapse = "\n")
+  m <- gregexpr("```[\\s\\S]*?(```|$)|`[^`\n]*`", text, perl = TRUE)
+  code <- regmatches(text, m)[[1]]
+  other <- gsub("<", "&lt;", regmatches(text, m, invert = TRUE)[[1]], fixed = TRUE)
+  safe <- other[1]
+  for (i in seq_along(code)) safe <- paste0(safe, code[i], other[i + 1])
+  html <- commonmark::markdown_html(safe, extensions = TRUE)
+  html <- gsub("href=\"(?!https?://|mailto:|#)[^\"]*\"", "href=\"#\"", html, perl = TRUE)
+  html <- gsub("<img[^>]*>", "", html, perl = TRUE)
+  shiny::HTML(html)
+}

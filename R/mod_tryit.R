@@ -137,9 +137,9 @@ mod_tryit_server <- function(id, state, runs_dir) {
     reply_ui <- function(x) {
       if (is.null(x)) return(shiny::p(class = "hint", "Nothing generated yet."))
       if (inherits(x, "dragon_answer")) {
-        return(shiny::div(class = "bubble assistant", shiny::div(class = "content", x$answer), sources_footnotes(x$sources)))
+        return(shiny::div(class = "bubble assistant", shiny::div(class = "content md", md_html(x$answer)), sources_footnotes(x$sources)))
       }
-      shiny::div(class = "bubble assistant", shiny::div(class = "content", x))
+      shiny::div(class = "bubble assistant", shiny::div(class = "content md", md_html(x)))
     }
 
     shiny::observe({

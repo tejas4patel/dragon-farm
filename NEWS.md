@@ -361,6 +361,15 @@ this release along with everything added since 0.2.0:
 
 ## Everything else added since 0.2.0
 
+* Full answers from documents: `dragon_ask()` and chat with documents ask
+  models of 3B and up for complete answers with the figures, steps, or code
+  the excerpts hold, instead of one short sentence. On 75 questions with
+  known answers the 7B now gets all 75 right (was 72) and the 3B 70 (was 65),
+  still declining all 25 the documents do not cover; answers are longer (a
+  median of 60 words for the 7B) and take about twice as long. Smaller
+  models keep the short instructions, since full answers made them invent
+  more. `max_new_tokens` now defaults to 600.
+
 * A dragon of its own: a new hex logo, favicon, and app icon with an
   original dragon, the slogan "Raise your own dragon", and a lighter voice
   in the app's step headings and on the website. Model cards in the app show

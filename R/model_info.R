@@ -8,9 +8,9 @@ model_comparison <- function(task = c("answer", "questions", "train")) {
   switch(task,
     answer = data.frame(
       Model = c("0.5B", "1.5B", "3B", "7B, 4-bit"),
-      `Wrong or empty (of 55)` = c(14, 6, 5, 1),
+      `Wrong or empty (of 55)` = c(14, 6, 4, 0),
       `Says "not covered" (of 20)` = c(16, 20, 20, 20),
-      `Seconds per answer` = c(0.8, 1.1, 2.4, 4.4),
+      `Seconds per answer` = c(0.8, 1.1, 9.0, 10.1),
       Needs = c("any machine", "any machine", "6 GB GPU", "8 GB NVIDIA"),
       check.names = FALSE, stringsAsFactors = FALSE
     ),
@@ -35,7 +35,8 @@ model_comparison <- function(task = c("answer", "questions", "train")) {
 model_comparison_text <- list(
   answer = c(title = "Answering from documents, by model size",
              note = paste("Untrained models, 55 questions with known answers and 20 the documents do not cover",
-                          "(an annual report and R's manuals). Smaller models answer faster but are wrong more often.")),
+                          "(an annual report and R's manuals). The 3B and 7B give full answers, so they take longer;",
+                          "smaller models answer in a sentence or two and are wrong more often.")),
   questions = c(title = "Writing training questions, by model size",
                 note = paste("Three questions from each of 40 chunks of R's manuals; kept by the filters, then",
                              "twelve checked by hand against the source. The 7B's were all correct.")),

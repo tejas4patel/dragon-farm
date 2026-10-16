@@ -11,7 +11,7 @@ dragon_ask(
   k = 4,
   system = NULL,
   backend = dragon_backend(),
-  max_new_tokens = 300,
+  max_new_tokens = 600,
   temperature = 0,
   top_p = 0.9,
   base = FALSE,
