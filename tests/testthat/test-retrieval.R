@@ -126,3 +126,46 @@ test_that("documents are indexed and asked for real", {
   expect_equal(nrow(ans$sources), 2L)
   dragon_worker_stop()
 })
+
+test_that("a reply that is only a citation is asked again once", {
+  expect_true(dragonfarm:::citation_only("[1]"))
+  expect_true(dragonfarm:::citation_only("[1], [2]"))
+  expect_true(dragonfarm:::citation_only(""))
+  expect_false(dragonfarm:::citation_only("Thirty days [1]."))
+  expect_false(dragonfarm:::citation_only("2 years [2]"))
+
+  f <- write_fake_set()
+  docs <- dragon_documents_load(f$dir)
+  replies <- list("[1]", "You can return it within 30 days [1].")
+  seen <- list()
+  testthat::local_mocked_bindings(
+    dragon_retrieve = function(docs, query, k = 4) fake_hits(),
+    default_answer_model = function() "Qwen/Qwen2.5-3B-Instruct",
+    worker_start = function(backend = NULL) invisible(NULL),
+    worker_request = function(req, on_token = NULL, timeout = 3600) {
+      seen[[length(seen) + 1]] <<- req
+      out <- replies[[1]]; replies <<- replies[-1]
+      list(outputs = list(out))
+    }
+  )
+  ans <- dragon_ask(docs, "How long is the return window?")
+  expect_equal(ans$answer, "You can return it within 30 days [1].")
+  expect_length(seen, 2)
+  retry <- seen[[2]]$conversations[[1]]
+  expect_equal(vapply(retry, `[[`, "", "role"), c("system", "user", "assistant", "user"))
+  expect_equal(retry[[3]]$content, "[1]")
+  expect_equal(ans$sources$cited, c(TRUE, FALSE, FALSE))
+
+  # A second citation-only reply keeps the first, and nothing loops.
+  replies <- list("[2]", "[1]")
+  seen <- list()
+  ans2 <- dragon_ask(docs, "q")
+  expect_equal(ans2$answer, "[2]")
+  expect_length(seen, 2)
+
+  # A normal reply is not asked again.
+  replies <- list("Two years [2].")
+  seen <- list()
+  dragon_ask(docs, "q")
+  expect_length(seen, 1)
+})

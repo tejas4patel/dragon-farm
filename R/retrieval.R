@@ -130,10 +130,32 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
   reply <- backend_generate(backend, target, list(convo), max_new_tokens = as.integer(max_new_tokens),
                             temperature = temperature, top_p = top_p)[[1]]
   reply <- as.character(reply %||% "")
+  if (citation_only(reply)) {
+    # Small models sometimes reply with nothing but "[1]" (the 3B did on 6 of
+    # 65 benchmark questions). Ask once more, in the same conversation.
+    stage("The reply was only a citation; asking for a full answer")
+    retry <- c(convo, list(list(role = "assistant", content = reply),
+                           list(role = "user", content = citation_retry_prompt)))
+    again <- as.character(backend_generate(backend, target, list(retry), max_new_tokens = as.integer(max_new_tokens),
+                                           temperature = temperature, top_p = top_p)[[1]] %||% "")
+    if (!citation_only(again)) reply <- again
+  }
   hits$cited <- hits$n %in% parse_citations(reply, nrow(hits))
   structure(list(question = question, answer = reply, sources = hits, model = model_label, documents = docs$name),
             class = "dragon_answer")
 }
+
+# A reply with no words or figures once citation markers are removed: "[1]",
+# "[1], [2]", or nothing at all.
+citation_only <- function(reply) {
+  rest <- gsub("\\[[0-9]+\\]", "", reply %||% "")
+  !grepl("[[:alnum:]]", rest)
+}
+
+citation_retry_prompt <- paste(
+  "Write the answer as one or two full sentences using the excerpts, then cite them like [1].",
+  "If the excerpts do not contain the answer, say that the documents do not cover it."
+)
 
 #' @export
 print.dragon_answer <- function(x, ...) {
