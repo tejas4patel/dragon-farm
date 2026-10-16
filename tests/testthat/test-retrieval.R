@@ -195,3 +195,32 @@ test_that("a chat with documents asks again once when the reply is only a citati
   expect_equal(h[[2]]$content, "Thirty days [1].")
   expect_equal(ch$sources()$cited, c(TRUE, FALSE))
 })
+
+test_that("untrained models under 3B get an explicit 'not covered' line; others do not", {
+  expect_true(dragonfarm:::decline_note_for(list(model = "Qwen/Qwen2.5-1.5B-Instruct")))
+  expect_true(dragonfarm:::decline_note_for(list(model = "Qwen/Qwen2.5-0.5B-Instruct")))
+  expect_false(dragonfarm:::decline_note_for(list(model = "Qwen/Qwen2.5-3B-Instruct")))
+  expect_false(dragonfarm:::decline_note_for(list(model = "Qwen/Qwen2.5-7B-Instruct")))
+  expect_false(dragonfarm:::decline_note_for(list(model = "Qwen/Qwen2.5-0.5B-Instruct", adapter = "/runs/x/adapter")))
+  expect_false(dragonfarm:::decline_note_for(list(model = "org/model-name")))
+  expect_false(dragonfarm:::decline_note_for(NULL))
+
+  f <- write_fake_set()
+  docs <- dragon_documents_load(f$dir)
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    dragon_retrieve = function(docs, query, k = 4) fake_hits(),
+    worker_start = function(backend = NULL) invisible(NULL),
+    worker_request = function(req, on_token = NULL, timeout = 3600) {
+      seen <<- req$conversations[[1]][[1]]$content
+      list(outputs = list("Thirty days [1]."))
+    }
+  )
+  dragon_ask(docs, "q", model = "Qwen/Qwen2.5-1.5B-Instruct", system = "Answer in French.")
+  expect_true(endsWith(seen, 'Answer in French. If no excerpt states the answer, reply only: "The documents do not cover this."'))
+  dragon_ask(docs, "q", model = "Qwen/Qwen2.5-7B-Instruct")
+  expect_no_match(seen, "reply only")
+  ch <- dragon_chat("Qwen/Qwen2.5-0.5B-Instruct", documents = docs)
+  ch$say("q")
+  expect_match(seen, "reply only")
+})

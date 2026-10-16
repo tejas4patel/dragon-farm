@@ -123,7 +123,7 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
     if (isTRUE(base)) model_label <- paste0(model_label, " (base)")
   }
   convo <- list(
-    list(role = "system", content = documents_system(system)),
+    list(role = "system", content = documents_system(system, small = decline_note_for(target))),
     list(role = "user", content = documents_prompt(question, hits))
   )
   stage(sprintf("Answering with %s (the first question loads it, about a minute for a 7B)", model_label))
@@ -179,14 +179,30 @@ default_answer_model <- function() {
   hw$tier$model %||% "Qwen/Qwen2.5-1.5B-Instruct"
 }
 
-documents_system <- function(extra = NULL) {
+# Untrained models under 3B made up answers to questions the excerpts do not
+# cover. A last line saying exactly what to reply changed that a lot for them
+# and hurt the 3B (it then declined answerable questions), so it is added only
+# for small models without an adapter. Measured on 55 answerable and 20
+# unanswerable questions: wrong or made-up answers 0.5B 33 -> 25, 1.5B 21 -> 10;
+# 3B 8 -> 18 with the line, so not for it.
+decline_note <- 'If no excerpt states the answer, reply only: "The documents do not cover this."'
+
+decline_note_for <- function(target) {
+  if (is.null(target) || !is.null(target$adapter) || length(target$base_adapters)) return(FALSE)
+  size <- model_size_b(target$model)
+  !is.na(size) && size < 3
+}
+
+documents_system <- function(extra = NULL, small = FALSE) {
   base <- paste(
     "You answer questions about the user's documents using only the numbered excerpts provided.",
     "After each sentence that uses an excerpt, cite it like [1] or [2].",
     "If the excerpts do not contain the answer, say that the documents do not cover it; do not guess.",
     "Be concise."
   )
-  if (is.null(extra) || !nzchar(trimws(extra))) base else paste(base, trimws(extra))
+  out <- if (is.null(extra) || !nzchar(trimws(extra))) base else paste(base, trimws(extra))
+  if (isTRUE(small)) out <- paste(out, decline_note)
+  out
 }
 
 documents_prompt <- function(question, hits) {

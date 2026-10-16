@@ -135,7 +135,7 @@ dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max
     if (!is.null(self$documents)) {
       hits <- dragon_retrieve(self$documents, text, k = self$k)
       sent <- documents_prompt(text, hits)
-      system <- documents_system(self$system)
+      system <- documents_system(self$system, small = decline_note_for(self$target))
       self$last_sources <- hits
     }
     trim_for_context(sent)
