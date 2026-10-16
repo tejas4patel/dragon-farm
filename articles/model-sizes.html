@@ -151,25 +151,25 @@ are for version 0.4.0 as released, with its search and instructions.</p>
 <tr class="odd">
 <td>0.5B</td>
 <td>17 of 23</td>
-<td>20 of 32</td>
+<td>19 of 32</td>
 <td>14</td>
-<td>13</td>
+<td>16</td>
 <td>0.8</td>
 </tr>
 <tr class="even">
 <td>1.5B</td>
 <td>19 of 23</td>
-<td>26 of 32</td>
-<td>8</td>
+<td>28 of 32</td>
+<td>6</td>
 <td>20</td>
 <td>1.1</td>
 </tr>
 <tr class="odd">
 <td>3B</td>
 <td>20 of 23</td>
-<td>28 of 32</td>
-<td>7</td>
-<td>19</td>
+<td>30 of 32</td>
+<td>5</td>
+<td>20</td>
 <td>2.4</td>
 </tr>
 <tr class="even">
@@ -178,18 +178,24 @@ are for version 0.4.0 as released, with its search and instructions.</p>
 <td>31 of 32</td>
 <td>1</td>
 <td>20</td>
-<td>4.7</td>
+<td>4.4</td>
 </tr>
 </tbody>
 </table>
 <p>“Right” means the answer contained the correct figure or function
 name. That is a lenient test: small models often named the right
-function with a wrong detail around it. The 0.5B also declined 4
+function with a wrong detail around it. The 0.5B also declined 5
 answerable questions.</p>
+<p>As a check that these numbers are not tuned to the two test sets, the
+same models answered 20 questions about R’s installation and data import
+manuals, which were never used while developing: 15, 12, 15, and 18
+right for the 0.5B, 1.5B, 3B, and 7B, with the 1.5B, 3B, and 7B
+declining at least four of five questions those manuals do not
+cover.</p>
 <p>The columns that matter most are “wrong or empty” and “declined”. The
 7B was wrong once in 55 answers and declined every question it could not
-know. The smaller models were wrong seven to fourteen times as often,
-and the 0.5B still answered 7 of the 20 questions the documents do not
+know. The smaller models were wrong five to fourteen times as often, and
+the 0.5B still answered 4 of the 20 questions the documents do not
 cover. That is the real cost of a small model on documents: not fewer
 answers, but answers you cannot tell from the right ones.</p>
 <p>It used to be worse. Before 0.4.0’s fixes, the 0.5B declined none of
@@ -341,31 +347,32 @@ questions the manuals do not cover:</p>
 <td>0.5B</td>
 <td>0 of 15</td>
 <td>15 of 15</td>
-<td>27 of 32</td>
-<td>27 of 32</td>
+<td>24 of 32</td>
+<td>26 of 32</td>
 </tr>
 <tr class="even">
 <td>1.5B</td>
-<td>0 of 15</td>
+<td>1 of 15</td>
 <td>15 of 15</td>
 <td>29 of 32</td>
-<td>26 of 32</td>
+<td>28 of 32</td>
 </tr>
 <tr class="odd">
 <td>3B, 4-bit</td>
-<td>6 of 15</td>
+<td>5 of 15</td>
 <td>15 of 15</td>
 <td>30 of 32</td>
-<td>29 of 32</td>
+<td>30 of 32</td>
 </tr>
 </tbody>
 </table>
-<p>Both sides of this table use the current search, which since this
-benchmark also keeps the keyword match’s best excerpt (the earlier
-tables use the search as it was). The cost is up to three answerable
-questions answered with a wrong detail; the gain is that a tuned model
-now says when it does not know. A small model still names fewer right
-details than a large one.</p>
+<p>Both sides of this table use 0.4.0’s reading and search, which
+improved after the first tables above were measured. The cost is at most
+one answerable question; the gain is that a tuned model now says when it
+does not know. Over all 47 questions, wrong, made-up, or wrongly
+declined answers fell from 23 to 6 (0.5B), 17 to 4 (1.5B), and 12 to 2
+(3B). A small model still names fewer right details than a large
+one.</p>
 </div>
 <div class="section level2">
 <h2 id="a-fixed-format-tickets-to-json">4. A fixed format: tickets to JSON<a class="anchor" aria-label="anchor" href="#a-fixed-format-tickets-to-json"></a>

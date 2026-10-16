@@ -33,19 +33,25 @@ are for version 0.4.0 as released, with its search and instructions.
 
 | Model | Costco figures right | R questions right | Wrong or empty, of those 55 | Declined the 20 it could not answer | Seconds per answer |
 |----|----|----|----|----|----|
-| 0.5B | 17 of 23 | 20 of 32 | 14 | 13 | 0.8 |
-| 1.5B | 19 of 23 | 26 of 32 | 8 | 20 | 1.1 |
-| 3B | 20 of 23 | 28 of 32 | 7 | 19 | 2.4 |
-| 7B, 4-bit | 23 of 23 | 31 of 32 | 1 | 20 | 4.7 |
+| 0.5B | 17 of 23 | 19 of 32 | 14 | 16 | 0.8 |
+| 1.5B | 19 of 23 | 28 of 32 | 6 | 20 | 1.1 |
+| 3B | 20 of 23 | 30 of 32 | 5 | 20 | 2.4 |
+| 7B, 4-bit | 23 of 23 | 31 of 32 | 1 | 20 | 4.4 |
 
 “Right” means the answer contained the correct figure or function name.
 That is a lenient test: small models often named the right function with
-a wrong detail around it. The 0.5B also declined 4 answerable questions.
+a wrong detail around it. The 0.5B also declined 5 answerable questions.
+
+As a check that these numbers are not tuned to the two test sets, the
+same models answered 20 questions about R’s installation and data import
+manuals, which were never used while developing: 15, 12, 15, and 18
+right for the 0.5B, 1.5B, 3B, and 7B, with the 1.5B, 3B, and 7B
+declining at least four of five questions those manuals do not cover.
 
 The columns that matter most are “wrong or empty” and “declined”. The 7B
 was wrong once in 55 answers and declined every question it could not
-know. The smaller models were wrong seven to fourteen times as often,
-and the 0.5B still answered 7 of the 20 questions the documents do not
+know. The smaller models were wrong five to fourteen times as often, and
+the 0.5B still answered 4 of the 20 questions the documents do not
 cover. That is the real cost of a small model on documents: not fewer
 answers, but answers you cannot tell from the right ones.
 
@@ -117,16 +123,16 @@ plus those, and tested on 15 questions the manuals do not cover:
 
 | Model | Declined, before | Declined, with “not covered” rows | R questions right, before | after |
 |----|----|----|----|----|
-| 0.5B | 0 of 15 | 15 of 15 | 27 of 32 | 27 of 32 |
-| 1.5B | 0 of 15 | 15 of 15 | 29 of 32 | 26 of 32 |
-| 3B, 4-bit | 6 of 15 | 15 of 15 | 30 of 32 | 29 of 32 |
+| 0.5B | 0 of 15 | 15 of 15 | 24 of 32 | 26 of 32 |
+| 1.5B | 1 of 15 | 15 of 15 | 29 of 32 | 28 of 32 |
+| 3B, 4-bit | 5 of 15 | 15 of 15 | 30 of 32 | 30 of 32 |
 
-Both sides of this table use the current search, which since this
-benchmark also keeps the keyword match’s best excerpt (the earlier
-tables use the search as it was). The cost is up to three answerable
-questions answered with a wrong detail; the gain is that a tuned model
-now says when it does not know. A small model still names fewer right
-details than a large one.
+Both sides of this table use 0.4.0’s reading and search, which improved
+after the first tables above were measured. The cost is at most one
+answerable question; the gain is that a tuned model now says when it
+does not know. Over all 47 questions, wrong, made-up, or wrongly
+declined answers fell from 23 to 6 (0.5B), 17 to 4 (1.5B), and 12 to 2
+(3B). A small model still names fewer right details than a large one.
 
 ## 4. A fixed format: tickets to JSON
 
