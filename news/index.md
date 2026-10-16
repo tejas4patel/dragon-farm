@@ -203,6 +203,14 @@ a spreadsheet.
 
 ### The app
 
+- Every model choice in the app has an (i) icon: hovering over it, or
+  focusing it with the keyboard, shows how the four model sizes compare
+  on that task, as measured for the “Choosing a model size” article.
+  Answering (“Answered by” in Ask, the run in Chat): wrong answers, “not
+  covered” replies, and speed. Writing questions (“Written by” in
+  Teach): pairs kept and how many were correct. Training (the Model step
+  and Try it): results after fine-tuning, training time, and GPU memory.
+
 - The app starts with documents. A new **Documents** tab is tab 1: drop
   files or add web pages, read and index, ask with sources, continue in
   Chat. Its **Teach** card generates questions in the background, shows
@@ -210,15 +218,18 @@ a spreadsheet.
   chunk before Continue to Model, which skips Data and Map. The table
   route (Data and Map first) is one link away or
   `dragon_app(route = "table")`.
+
 - Panels take their natural height and the page scrolls; the Map step’s
   drop slots and the Try it cards are no longer clipped. A message now
   says to wait for “Upload complete” when Read and index is pressed
   while a large file is still uploading.
+
 - A new look that matches dragonfarm.dev: a dark navbar whose tabs read
   as numbered steps, a one-line introduction on each step, the website’s
   fonts and amber-to-coral accents, model presets as selectable cards
   with size, memory, and licence, a loss chart in the same colours, and
   a dark mode switch in the navbar.
+
 - The Training step can load the model in 4-bit (QLoRA), so a 7B trains
   from the app on an 8 GB NVIDIA card. The box ticks itself, with
   gradient checkpointing, when the chosen model’s full-precision weights
