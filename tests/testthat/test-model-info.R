@@ -9,7 +9,7 @@ test_that("each task has a four-size comparison", {
 })
 
 test_that("the info icon is a focusable popover trigger with the table inside", {
-  html <- as.character(htmltools::renderTags(dragonfarm:::model_info_icon("answer"))$html)
+  html <- paste(as.character(dragonfarm:::model_info_icon("answer")), collapse = "")
   expect_match(html, 'class="df-info"', fixed = TRUE)
   expect_match(html, 'tabindex="0"', fixed = TRUE)
   expect_match(html, "aria-label=\"Answering from documents, by model size: show the comparison\"", fixed = TRUE)
@@ -20,7 +20,7 @@ test_that("the info icon is a focusable popover trigger with the table inside", 
 
 test_that("every model choice in the app carries the icon for its task", {
   has <- function(ui, task) {
-    html <- as.character(htmltools::renderTags(ui)$html)
+    html <- paste(as.character(ui), collapse = "")
     grepl("df-info", html, fixed = TRUE) && grepl(dragonfarm:::model_comparison_text[[task]][["title"]], html, fixed = TRUE)
   }
   expect_true(has(dragonfarm:::mod_documents_ui("documents"), "answer"))      # Answered by

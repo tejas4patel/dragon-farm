@@ -23,10 +23,10 @@ model_comparison <- function(task = c("answer", "questions", "train")) {
     ),
     train = data.frame(
       Model = c("0.5B", "1.5B", "3B, 4-bit", "7B, 4-bit"),
-      `Documents: bad answers (of 47)` = c("6", "4", "2", "–"),
+      `Documents: bad answers (of 47)` = c("6", "4", "2", "\u2013"),
       `Tickets to JSON (of 20)` = c(20, 20, 20, 20),
       `Training time, 616 document pairs` = c("21 min", "36 min", "66 min", "4 h 19 min"),
-      `Peak GPU memory` = c("6.2 GB", "–", "4.3 GB", "7.9 GB"),
+      `Peak GPU memory` = c("6.2 GB", "\u2013", "4.3 GB", "7.9 GB"),
       check.names = FALSE, stringsAsFactors = FALSE
     )
   )
