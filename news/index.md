@@ -95,6 +95,15 @@ a spreadsheet.
 
 ### Asking documents
 
+- A question that names a year now finds the table row labelled with
+  that year. Rows read as “Net sales (2024: \$249,625; 2023: \$237,710)”
+  carry a keyword per labelled year, which a question mentioning 2023
+  searches for; a bare “2023” appears all over a report and did little.
+  Known-answer questions on the annual report reaching the top four
+  excerpts: PDF 85 to 95 percent, Word 85 to 100 percent, other sets
+  unchanged. A 7B answered 22 of 23 on the PDF (from 21) and stayed at
+  23 of 23 on the Word copy.
+
 - New:
   [`dragon_index()`](https://dragonfarm.dev/reference/dragon_index.md)
   embeds a document set with a small encoder (`BAAI/bge-small-en-v1.5`,
@@ -111,6 +120,7 @@ a spreadsheet.
   [`dragon_chat()`](https://dragonfarm.dev/reference/dragon_chat.md)
   gains `documents` and `k`; `$sources()` shows the excerpts behind the
   last reply.
+
 - Retrieval is hybrid by default: the embedding ranking is combined with
   a keyword (`BM25`) ranking over each chunk’s section title and text,
   counting only chunks that share a word with the question, and the
@@ -124,6 +134,7 @@ a spreadsheet.
   from 58 to 67. `dragon_retrieve(method = "dense")` keeps the embedding
   ranking alone, and `scripts/retrieval_eval.py` measures both on any
   indexed sets.
+
 - On the annual report the default 7B in 4-bit answers 20 to 23 of 23
   factual questions with known answers (Word copy 23, PDF 20 to 21),
   including ten that need a specific year’s figure from a table. The PDF
