@@ -95,6 +95,15 @@ a spreadsheet.
 
 ### Asking documents
 
+- Untrained models under 3B get one more line in their instructions when
+  answering from documents: “If no excerpt states the answer, reply
+  only: ‘The documents do not cover this.’” Over 55 answerable and 20
+  unanswerable questions, wrong or made-up answers fell from 33 to 25
+  (0.5B) and from 21 to 10 (1.5B, the default on CPUs and small GPUs,
+  which now declines all 20 unanswerable questions). The same line made
+  a 3B refuse questions it could answer (8 to 18 bad answers) and did
+  nothing for a 7B, so larger and fine-tuned models do not get it.
+
 - With four or more excerpts, the keyword search’s best match is always
   among them, as the embedding’s best already was. A rare exact word
   (“boxplot”) put its chunk first by keywords but far down by embedding,
