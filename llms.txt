@@ -349,6 +349,8 @@ questions, build the training set.
 
 - [From your documents to your
   model](https://dragonfarm.dev/articles/documents.md):
+- [Choosing a model
+  size](https://dragonfarm.dev/articles/model-sizes.md):
 - [Quickstart: from documents to a model, in
   R](https://dragonfarm.dev/articles/quickstart.md):
 - [The dragon-farm app](https://dragonfarm.dev/articles/shiny-app.md):

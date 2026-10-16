@@ -156,11 +156,15 @@ dragon_merge(run, "models/support-0.5b")        # a standalone model that loads 
   none of our test questions correctly and invented function names; with
   it, the same model answered most of the questions whose answer had
   been retrieved.
-- Model size matters for answering. A 1.5B answered 60 percent of our
-  questions, a 3B 69 percent, a 7B in 4-bit 86 percent, and the 7B said
-  “the documents do not cover this” instead of guessing when the right
-  chunk was not retrieved. The 4-bit 7B uses about the memory of a
-  full-precision 3B.
+- Model size matters for answering, mostly in how a model fails. On 55
+  questions with known answers (an annual report and R’s manuals), the
+  7B in 4-bit was wrong once; the 3B and 1.5B were wrong or empty about
+  ten times, the 0.5B 21 times. On ten questions the documents do not
+  cover, the 3B and 7B said so every time, the 1.5B half the time, the
+  0.5B never. The 4-bit 7B uses about the memory of a full-precision 3B.
+  All the numbers, including fine-tuning and a fixed-format task, are in
+  [Choosing a model
+  size](https://dragonfarm.dev/articles/model-sizes.md).
 - Fine-tuning on a few dozen unreviewed machine-written pairs barely
   helped a 0.5B and made its mistakes confident. Review, or use a
   stronger generator, before you train.
@@ -181,9 +185,11 @@ dragon_merge(run, "models/support-0.5b")        # a standalone model that loads 
   seconds; the 7B in 4-bit answered nine of ten questions from the right
   section and said “the documents do not cover this” on the tenth; the
   generator wrote 796 pairs in 21 minutes of which 78 percent passed the
-  filters. A 0.5B trained on the 617 kept pairs learned to cite and to
-  answer in one sentence, and was right about as often as the untrained
-  0.5B. The model size you can run matters more than the training.
+  filters. A 0.5B trained on the kept pairs learned to cite and to
+  answer in one sentence, and named the right function more often (27 of
+  32 R questions against 22 untrained), but it also made up an answer,
+  with a citation, to every question the manuals do not cover. The model
+  size you can run matters more than the training.
 - Fine-tuning a 7B is possible on 8 GB with
   `dragon_hardware(load_in_4bit = TRUE)` (QLoRA), but only just: batch
   1, 512 tokens, gradient checkpointing, about 22 minutes for three
@@ -195,8 +201,8 @@ dragon_merge(run, "models/support-0.5b")        # a standalone model that loads 
   tokens, gradient checkpointing). The tuned 7B was as accurate as the
   untrained one on ten test questions (nine of ten), answered more
   briefly, cited an excerpt every time, and was never confidently wrong;
-  a tuned 0.5B on the same pairs was wrong on about half. For speed, a
-  cloud GPU still does this in a fraction of the time.
+  a tuned 0.5B on the same pairs was wrong on about half of those ten.
+  For speed, a cloud GPU still does this in a fraction of the time.
 - PDFs come through as text, not layout. Where a table puts its years in
   a header row, each figure is labelled with its year; other tables can
   still be misread. Markdown, HTML, Word, and spreadsheets come through
