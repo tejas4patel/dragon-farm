@@ -383,5 +383,90 @@
   "set": "r-manuals",
   "question": "Who wrote An Introduction to R?",
   "answer_contains": "Venables"
+ },
+ {
+  "set": "r-heldout",
+  "question": "How do I read a fixed-width format file?",
+  "answer_contains": "read.fwf"
+ },
+ {
+  "set": "r-heldout",
+  "question": "Which function reads Stata files?",
+  "answer_contains": "read.dta"
+ },
+ {
+  "set": "r-heldout",
+  "question": "How do I write a data frame to a text file?",
+  "answer_contains": "write.table"
+ },
+ {
+  "set": "r-heldout",
+  "question": "How can I count the fields on each line of a file?",
+  "answer_contains": "count.fields"
+ },
+ {
+  "set": "r-heldout",
+  "question": "Which package provides an ODBC interface?",
+  "answer_contains": "RODBC"
+ },
+ {
+  "set": "r-heldout",
+  "question": "Which function reads SPSS data files?",
+  "answer_contains": "read.spss"
+ },
+ {
+  "set": "r-heldout",
+  "question": "How do I connect to a database with DBI?",
+  "answer_contains": "dbConnect"
+ },
+ {
+  "set": "r-heldout",
+  "question": "Which environment variable sets the user's personal package library?",
+  "answer_contains": "R_LIBS_USER"
+ },
+ {
+  "set": "r-heldout",
+  "question": "How do I see the library search path?",
+  "answer_contains": ".libPaths"
+ },
+ {
+  "set": "r-heldout",
+  "question": "How do I update installed packages?",
+  "answer_contains": "update.packages"
+ },
+ {
+  "set": "r-heldout",
+  "question": "How do I remove an installed package?",
+  "answer_contains": "remove.packages"
+ },
+ {
+  "set": "r-heldout",
+  "question": "How do I check an R build after compiling it?",
+  "answer_contains": "make check"
+ },
+ {
+  "set": "r-heldout",
+  "question": "What toolset do I need to build packages from source on Windows?",
+  "answer_contains": "Rtools"
+ },
+ {
+  "set": "r-heldout",
+  "question": "Which environment variable sets where R puts temporary files?",
+  "answer_contains": "TMPDIR"
+ },
+ {
+  "set": "r-heldout",
+  "question": "Which package interfaces to SQLite?",
+  "answer_contains": "RSQLite"
+ },
+ {
+  "set": "r-heldout",
+  "question": "How do I read a comma-separated file?",
+  "answer_contains": "read.csv"
+ },
+ {
+  "set": "r-heldout",
+  "question": "Which package reads SAS7BDAT files?",
+  "answer_contains": "sas7bdat"
  }
 ]
