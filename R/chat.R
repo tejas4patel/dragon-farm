@@ -146,6 +146,16 @@ dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max
                               max_new_tokens = self$settings$max_new_tokens,
                               temperature = self$settings$temperature, top_p = self$settings$top_p,
                               on_token = on_token)[[1]]
+    if (!is.null(self$documents) && citation_only(reply)) {
+      # As in dragon_ask(): a reply that is only "[1]" gets one more turn.
+      # Not streamed; the finished reply replaces what was streamed.
+      retry <- c(convo, list(list(role = "assistant", content = reply),
+                             list(role = "user", content = citation_retry_prompt)))
+      again <- backend_generate(self$backend, self$target, list(retry),
+                                max_new_tokens = self$settings$max_new_tokens,
+                                temperature = self$settings$temperature, top_p = self$settings$top_p)[[1]]
+      if (!citation_only(again)) reply <- again
+    }
     if (!is.null(self$documents) && !is.null(self$last_sources) && nrow(self$last_sources)) {
       self$last_sources$cited <- self$last_sources$n %in% parse_citations(reply, nrow(self$last_sources))
     }

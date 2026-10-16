@@ -169,3 +169,29 @@ test_that("a reply that is only a citation is asked again once", {
   dragon_ask(docs, "q")
   expect_length(seen, 1)
 })
+
+test_that("a chat with documents asks again once when the reply is only a citation", {
+  f <- write_fake_set()
+  docs <- dragon_documents_load(f$dir)
+  replies <- list("[1]", "Thirty days [1].")
+  sent <- list()
+  testthat::local_mocked_bindings(
+    dragon_retrieve = function(docs, query, k = 4) fake_hits(2),
+    default_answer_model = function() "Qwen/Qwen2.5-3B-Instruct",
+    worker_start = function(backend = NULL) invisible(NULL),
+    worker_request = function(req, on_token = NULL, timeout = 3600) {
+      sent[[length(sent) + 1]] <<- req$conversations[[1]]
+      out <- replies[[1]]; replies <<- replies[-1]
+      list(outputs = list(out))
+    }
+  )
+  ch <- dragon_chat(documents = docs)
+  reply <- ch$say("How long is the return window?")
+  expect_equal(reply, "Thirty days [1].")
+  expect_length(sent, 2)
+  expect_equal(sent[[2]][[length(sent[[2]])]]$role, "user")
+  h <- ch$history()
+  expect_length(h, 2)                                   # the retry is not kept in the history
+  expect_equal(h[[2]]$content, "Thirty days [1].")
+  expect_equal(ch$sources()$cited, c(TRUE, FALSE))
+})
