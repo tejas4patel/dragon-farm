@@ -16,7 +16,7 @@
 
 # ---- 0. Install dragonfarm from GitHub ---------------------------------------
 if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
-remotes::install_github("tejas4patel/dragon-farm", ref = "v0.3.4", upgrade = "never")
+remotes::install_github("tejas4patel/dragonfarm", ref = "v0.3.4", upgrade = "never")
 # ^ pinned to the 0.3.4 release candidate, so this always tests the exact
 #   version being submitted to CRAN. Drop `ref = "v0.3.4"` to track the
 #   latest commit on main instead.
@@ -40,7 +40,7 @@ dragon_remote(bundle, "colab")
 
 cat("\n================================================================\n")
 cat("Now, in a browser:\n")
-cat("  1. The link above opens the dragon-farm notebook directly in Colab\n")
+cat("  1. The link above opens the dragonfarm notebook directly in Colab\n")
 cat("     (log in with your Google account if it asks)\n")
 cat("  2. Runtime -> Change runtime type -> T4 GPU (the free tier), Save\n")
 cat("  3. Runtime -> Run all\n")

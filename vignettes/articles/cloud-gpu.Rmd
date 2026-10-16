@@ -7,7 +7,7 @@ Google Colab has been tested end to end with this workflow (a free T4 trains the
 The run directory is the whole contract between R and the trainer, so a run
 can be trained on any machine with a GPU and its results copied back.
 `dragon_bundle()` zips the run, `dragon_remote()` opens a provider with the
-dragon-farm notebook and prints the steps, and `dragon_import()` puts the
+dragonfarm notebook and prints the steps, and `dragon_import()` puts the
 trained adapter into place. Nothing else changes: `dragon_generate()` and
 `dragon_merge()` work on the imported run as if it had trained locally.
 
@@ -25,7 +25,7 @@ dragon_import(run, "~/Downloads/dragonfarm-results-<id>.zip")
 |---|---|---|
 | Google Colab | Free tier with a T4; paid tiers for longer sessions | The notebook, directly |
 | Kaggle | Free: about 30 GPU hours a week (T4 x2 or P100) | The notebook, directly |
-| Lightning AI | Free monthly credits, then pay as you go | The dragon-farm repo in a new Studio |
+| Lightning AI | Free monthly credits, then pay as you go | The dragonfarm repo in a new Studio |
 | RunPod | Pay per hour, wide choice of GPUs | The RunPod console |
 
 The app has the same path: the Train panel's "No GPU here?" section prepares

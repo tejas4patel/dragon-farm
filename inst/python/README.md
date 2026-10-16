@@ -2,7 +2,7 @@
 
 Fine-tune small language models (roughly 100M to 3B parameters) with LoRA,
 from a CLI or a few lines of Python. This is the Python side of
-[dragon-farm](https://github.com/tejas4patel/dragon-farm), which also ships
+[dragonfarm](https://github.com/tejas4patel/dragonfarm), which also ships
 an R package with a drag-and-drop Shiny app; the two share this same code,
 so a run started from R can be inspected or continued from Python and back.
 

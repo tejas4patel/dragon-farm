@@ -1,4 +1,4 @@
-// Small client-side helpers for the dragon-farm app.
+// Small client-side helpers for the dragonfarm app.
 (function () {
   // "1 Documents" -> a numbered step badge and a label, so the navbar reads
   // as a stepper. Titles without a leading number are left as text.

@@ -52,6 +52,6 @@ SystemRequirements: 'Python' (>= 3.10). The 'uv' tool is installed
 X-schema.org-keywords: fine-tuning, LoRA, QLoRA, large-language-models, llm,
     retrieval-augmented-generation, rag, documents, transformers, peft,
     shiny, local-llm, huggingface
-URL: https://dragonfarm.dev, https://github.com/tejas4patel/dragon-farm
-BugReports: https://github.com/tejas4patel/dragon-farm/issues
+URL: https://dragonfarm.dev, https://github.com/tejas4patel/dragonfarm
+BugReports: https://github.com/tejas4patel/dragonfarm/issues
 Config/roxygen2/version: 8.1.0

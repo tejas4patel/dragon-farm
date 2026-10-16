@@ -40,9 +40,9 @@ dependencies = [
 dragonfarm = "dragonfarm.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/tejas4patel/dragon-farm"
-Documentation = "https://tejas4patel.github.io/dragon-farm/"
-Repository = "https://github.com/tejas4patel/dragon-farm"
+Homepage = "https://github.com/tejas4patel/dragonfarm"
+Documentation = "https://dragonfarm.dev/"
+Repository = "https://github.com/tejas4patel/dragonfarm"
 
 [tool.setuptools.packages.find]
 include = ["dragonfarm*"]

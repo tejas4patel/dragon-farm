@@ -17,7 +17,7 @@
 
 # ---- 0. Install dragonfarm from GitHub ---------------------------------------
 if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
-remotes::install_github("tejas4patel/dragon-farm", ref = "v0.3.4", upgrade = "never")
+remotes::install_github("tejas4patel/dragonfarm", ref = "v0.3.4", upgrade = "never")
 # ^ pinned to the 0.3.4 release candidate, so this always tests the exact
 #   version being submitted to CRAN. Drop `ref = "v0.3.4"` to track the
 #   latest commit on main instead.
@@ -41,7 +41,7 @@ dragon_remote(bundle, "kaggle")
 
 cat("\n================================================================\n")
 cat("Now, in a browser:\n")
-cat("  1. The link above opens the dragon-farm notebook on Kaggle (log in,\n")
+cat("  1. The link above opens the dragonfarm notebook on Kaggle (log in,\n")
 cat("     or verify your phone number, if it asks -- one-time for a new\n")
 cat("     account). If it opens a blank notebook instead, use\n")
 cat("     File -> Import Notebook -> Link and paste the GitHub notebook\n")

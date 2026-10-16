@@ -1,11 +1,11 @@
 # dragonfarm <img src="man/figures/logo.png" align="right" height="139" alt="dragonfarm hex logo" />
 
 [![CRAN status](https://www.r-pkg.org/badges/version/dragonfarm)](https://CRAN.R-project.org/package=dragonfarm)
-[![R-CMD-check](https://github.com/tejas4patel/dragon-farm/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tejas4patel/dragon-farm/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/tejas4patel/dragonfarm/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tejas4patel/dragonfarm/actions/workflows/R-CMD-check.yaml)
 [![Website](https://img.shields.io/badge/docs-dragonfarm.dev-FF6B35)](https://dragonfarm.dev)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tejas4patel/dragon-farm/blob/main/inst/remote/dragonfarm_remote.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tejas4patel/dragonfarm/blob/main/inst/remote/dragonfarm_remote.ipynb)
 
-![dragonfarm: fine-tune a language model from R in minutes. Six steps: Documents, Ask, Teach, Train, Monitor, Try it.](https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/banner.svg)
+![dragonfarm: fine-tune a language model from R in minutes. Six steps: Documents, Ask, Teach, Train, Monitor, Try it.](https://raw.githubusercontent.com/tejas4patel/dragonfarm/main/pkgdown/assets/banner.svg)
 
 **Fine-tune a language model on your own documents, from R.** Drop in PDFs,
 Word files, web pages, or spreadsheets and ask them questions: answers come
@@ -17,7 +17,7 @@ model that loads with plain Hugging Face `transformers`. Training runs in a
 background Python process that the package sets up for you, on your own GPU
 or on a free cloud one.
 
-![The app, step by step: drop in documents, ask them with sources, review generated questions, train, watch the loss, compare against the base model.](https://raw.githubusercontent.com/tejas4patel/dragon-farm/main/pkgdown/assets/demo/dragonfarm-demo.gif)
+![The app, step by step: drop in documents, ask them with sources, review generated questions, train, watch the loss, compare against the base model.](https://raw.githubusercontent.com/tejas4patel/dragonfarm/main/pkgdown/assets/demo/dragonfarm-demo.gif)
 
 The app opens on documents and walks through the same six steps as the GIF:
 
@@ -49,7 +49,7 @@ library(dragonfarm)
 dragon_check()                   # first run builds the Python environment: 2 to 3 GB
 ```
 
-Or build it from GitHub with `pak::pak("tejas4patel/dragon-farm")`. Then open the
+Or build it from GitHub with `pak::pak("tejas4patel/dragonfarm")`. Then open the
 app with `dragon_app()`.
 
 ## Start with documents
@@ -147,7 +147,7 @@ model](https://dragonfarm.dev/articles/documents.html).
 | Go from documents to a model | [From your documents to your model](https://dragonfarm.dev/articles/documents.html) |
 | Pick a model size for my task and GPU | [Choosing a model size](https://dragonfarm.dev/articles/model-sizes.html) |
 | Walk through the whole workflow | [Quickstart](https://dragonfarm.dev/articles/quickstart.html) |
-| Use the app, or run it for other people | [The dragon-farm app](https://dragonfarm.dev/articles/shiny-app.html) |
+| Use the app, or run it for other people | [The dragonfarm app](https://dragonfarm.dev/articles/shiny-app.html) |
 | Train without a local GPU | [No GPU? Train in the cloud](https://dragonfarm.dev/articles/cloud-gpu.html) |
 | Improve a model with judges, preference pairs, DPO | [Fine-tune, judge, prefer, repeat](https://dragonfarm.dev/articles/post-training-loop.html) |
 | Train on rewards I can check (GRPO) | [Reinforcement learning](https://dragonfarm.dev/articles/reinforcement-learning.html) |

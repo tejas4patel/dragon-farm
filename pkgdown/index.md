@@ -7,7 +7,7 @@
 <div class="df-cta">
 <div class="df-install"><code>install.packages(&quot;dragonfarm&quot;)</code><button class="df-copy" type="button" data-copy="install.packages(&quot;dragonfarm&quot;)">Copy</button></div>
 <a class="df-btn df-btn-primary" href="articles/quickstart.html">Get started</a>
-<a class="df-btn df-btn-ghost" href="https://github.com/tejas4patel/dragon-farm">View on GitHub</a>
+<a class="df-btn df-btn-ghost" href="https://github.com/tejas4patel/dragonfarm">View on GitHub</a>
 </div>
 <div class="df-stage">
 <svg id="df-stepper" role="img" aria-label="The six steps: Documents, Ask, Teach, Train, Monitor, Try it"></svg>
@@ -84,7 +84,7 @@ dragon_import(run, "results.zip")</code></pre></div>
 <div class="df-install"><code>install.packages(&quot;dragonfarm&quot;)</code><button class="df-copy" type="button" data-copy="install.packages(&quot;dragonfarm&quot;)">Copy</button></div>
 <a class="df-btn df-btn-primary" href="articles/quickstart.html">Get started</a>
 </div>
-<div class="df-links"><a href="https://CRAN.R-project.org/package=dragonfarm">CRAN</a><a href="https://github.com/tejas4patel/dragon-farm">GitHub</a><a href="news/index.html">News</a><a href="https://github.com/tejas4patel/dragon-farm/issues">Report an issue</a></div>
+<div class="df-links"><a href="https://CRAN.R-project.org/package=dragonfarm">CRAN</a><a href="https://github.com/tejas4patel/dragonfarm">GitHub</a><a href="news/index.html">News</a><a href="https://github.com/tejas4patel/dragonfarm/issues">Report an issue</a></div>
 </div>
 </section>
 </div>

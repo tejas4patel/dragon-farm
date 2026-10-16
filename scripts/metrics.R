@@ -4,7 +4,7 @@
 # Needs the GitHub CLI (`gh`) already logged in. Nothing here stores a token.
 # CRAN download counts come from the public cranlogs API and lag by about a day.
 
-repo <- "tejas4patel/dragon-farm"
+repo <- "tejas4patel/dragonfarm"
 pkg <- "dragonfarm"
 published <- as.Date("2026-10-07")
 today <- Sys.Date()

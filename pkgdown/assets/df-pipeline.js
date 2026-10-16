@@ -1,4 +1,4 @@
-/* dragon-farm six-step pipeline, drawn with D3.
+/* dragonfarm six-step pipeline, drawn with D3.
  *
  * One drawing function shared by the website hero (animated), the demo GIF
  * and social card (static frames), and the README banner (built in Node).

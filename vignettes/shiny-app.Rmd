@@ -1,8 +1,8 @@
 ---
-title: "The dragon-farm app"
+title: "The dragonfarm app"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{The dragon-farm app}
+  %\VignetteIndexEntry{The dragonfarm app}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

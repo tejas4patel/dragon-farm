@@ -5,7 +5,7 @@
 # copied back into place. Nothing in this file needs Python on the local
 # machine.
 
-remote_repo_url <- "https://github.com/tejas4patel/dragon-farm"
+remote_repo_url <- "https://github.com/tejas4patel/dragonfarm"
 remote_notebook_file <- "dragonfarm_remote.ipynb"
 remote_notebook_repo_path <- paste0("inst/remote/", remote_notebook_file)
 
@@ -37,9 +37,9 @@ dragon_remote_providers <- function() {
       "Pay per hour, wide choice of GPUs"
     ),
     opens = c(
-      "The dragon-farm notebook, directly",
-      "The dragon-farm notebook, directly",
-      "The dragon-farm repository in a new Studio",
+      "The dragonfarm notebook, directly",
+      "The dragonfarm notebook, directly",
+      "The dragonfarm repository in a new Studio",
       "The RunPod console"
     ),
     stringsAsFactors = FALSE
@@ -294,7 +294,7 @@ remote_steps <- function(provider, run, paths = bundle_paths(run)) {
               paths$bundle_dir, paths$dir, kaggle_kernel_metadata(run)$id)
     ),
     lightning = c(
-      sprintf("Open a Studio from the dragon-farm repository: %s", url),
+      sprintf("Open a Studio from the dragonfarm repository: %s", url),
       "Switch the Studio to a GPU machine (machine picker, top right). A T4 is enough for models up to 1.5B parameters.",
       sprintf("Drag %s into the Studio file browser, open %s, and run all cells.", zipname, remote_notebook_repo_path),
       sprintf("Download %s from the file browser when the last cell finishes.", results),
