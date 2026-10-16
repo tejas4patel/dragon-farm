@@ -248,5 +248,140 @@
   "set": "costco-docx",
   "question": "What was gross margin in fiscal 2023?",
   "answer_contains": "2023: $25,124"
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I read a table from a text file into a data frame?",
+  "answer_contains": "read.table"
+ },
+ {
+  "set": "r-manuals",
+  "question": "Which function fits a linear model?",
+  "answer_contains": "lm("
+ },
+ {
+  "set": "r-manuals",
+  "question": "Which function fits a generalized linear model?",
+  "answer_contains": "glm("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I quit an R session?",
+  "answer_contains": "q()"
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I run the commands stored in a file?",
+  "answer_contains": "source("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I send output to a file instead of the console?",
+  "answer_contains": "sink("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I list the objects in my workspace?",
+  "answer_contains": "ls()"
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I repeat a vector several times?",
+  "answer_contains": "rep("
+ },
+ {
+  "set": "r-manuals",
+  "question": "Which operator performs matrix multiplication?",
+  "answer_contains": "%*%"
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I solve a system of linear equations?",
+  "answer_contains": "solve("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I compute eigenvalues of a matrix?",
+  "answer_contains": "eigen("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I compute the determinant of a matrix?",
+  "answer_contains": "det("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I compute the singular value decomposition?",
+  "answer_contains": "svd("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I compute the outer product of two arrays?",
+  "answer_contains": "%o%"
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I apply a function to groups defined by a factor?",
+  "answer_contains": "tapply("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I test which values are missing?",
+  "answer_contains": "is.na("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I make a histogram?",
+  "answer_contains": "hist("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I make a boxplot?",
+  "answer_contains": "boxplot("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I make a scatterplot matrix of a data frame?",
+  "answer_contains": "pairs("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I close the current graphics device?",
+  "answer_contains": "dev.off"
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I compare two nested models with an analysis of variance table?",
+  "answer_contains": "anova("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I fit a nonlinear least squares model?",
+  "answer_contains": "nls("
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I install a package from CRAN?",
+  "answer_contains": "install.packages"
+ },
+ {
+  "set": "r-manuals",
+  "question": "How do I load an installed package?",
+  "answer_contains": "library("
+ },
+ {
+  "set": "r-manuals",
+  "question": "Which function is run automatically at the start of every session if I define it?",
+  "answer_contains": ".First"
+ },
+ {
+  "set": "r-manuals",
+  "question": "Which file holds site-wide startup settings?",
+  "answer_contains": "Rprofile.site"
+ },
+ {
+  "set": "r-manuals",
+  "question": "Who wrote An Introduction to R?",
+  "answer_contains": "Venables"
  }
 ]
