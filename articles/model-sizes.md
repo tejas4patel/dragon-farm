@@ -13,7 +13,7 @@ questions, and for fine-tuning the same training rows.
 |----|----|----|
 | Answer questions from documents | 7B in 4-bit if you have an 8 GB NVIDIA card; otherwise 3B | Smaller models answer many questions but make up answers to the rest |
 | Write training questions from documents | 7B | It kept 104 of 120 questions, and every one we checked was right |
-| Fine-tune on your documents | 3B or 7B | With the default “not covered” examples every size learns to decline; the larger ones keep more answers right |
+| Fine-tune on your documents | 3B or 7B | Only these learned to say “the documents do not cover it” |
 | Fine-tune a fixed format (JSON, labels, a house style) | 0.5B to 1.5B | They reach the same score in minutes |
 
 dragonfarm already picks the answering model for your hardware: a 7B in
