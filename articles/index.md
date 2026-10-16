@@ -8,7 +8,7 @@
   size](https://dragonfarm.dev/articles/model-sizes.md):
 - [Quickstart: from documents to a model, in
   R](https://dragonfarm.dev/articles/quickstart.md):
-- [The dragon-farm app](https://dragonfarm.dev/articles/shiny-app.md):
+- [The dragonfarm app](https://dragonfarm.dev/articles/shiny-app.md):
 - [No GPU? Train in the
   cloud](https://dragonfarm.dev/articles/cloud-gpu.md):
 

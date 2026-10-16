@@ -452,6 +452,11 @@ into this release along with everything added since 0.2.0:
 
 ### Everything else added since 0.2.0
 
+- The GitHub repository is now `tejas4patel/dragonfarm`, matching the
+  package name: `pak::pak("tejas4patel/dragonfarm")`. Old
+  `tejas4patel/dragon-farm` links keep working through GitHub’s
+  redirect.
+
 - `dragon_reward("command", command = ...)`: a reward for
   [`dragon_reinforce()`](https://dragonfarm.dev/reference/dragon_reinforce.md)
   that runs a command (a test suite, a linter) against the completion

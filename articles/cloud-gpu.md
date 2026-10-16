@@ -10,7 +10,7 @@ back.
 [`dragon_bundle()`](https://dragonfarm.dev/reference/dragon_bundle.md)
 zips the run,
 [`dragon_remote()`](https://dragonfarm.dev/reference/dragon_remote.md)
-opens a provider with the dragon-farm notebook and prints the steps, and
+opens a provider with the dragonfarm notebook and prints the steps, and
 [`dragon_import()`](https://dragonfarm.dev/reference/dragon_import.md)
 puts the trained adapter into place. Nothing else changes:
 [`dragon_generate()`](https://dragonfarm.dev/reference/dragon_generate.md)
@@ -32,7 +32,7 @@ dragon_import(run, "~/Downloads/dragonfarm-results-<id>.zip")
 |----|----|----|
 | Google Colab | Free tier with a T4; paid tiers for longer sessions | The notebook, directly |
 | Kaggle | Free: about 30 GPU hours a week (T4 x2 or P100) | The notebook, directly |
-| Lightning AI | Free monthly credits, then pay as you go | The dragon-farm repo in a new Studio |
+| Lightning AI | Free monthly credits, then pay as you go | The dragonfarm repo in a new Studio |
 | RunPod | Pay per hour, wide choice of GPUs | The RunPod console |
 
 The app has the same path: the Train panel’s “No GPU here?” section

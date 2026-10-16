@@ -21,7 +21,7 @@
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/tejas4patel/dragon-farm/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/tejas4patel/dragonfarm/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch"><li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
@@ -36,7 +36,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/tejas4patel/dragon-farm/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/tejas4patel/dragonfarm/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
@@ -132,7 +132,8 @@
 <li>Added <code>testthat</code>-based tests for the three app modules (Data, Model, Try it) that had none, covering their server logic without needing a real Shiny session, Python, or a GPU.</li>
 </ul><div class="section level3">
 <h3 id="everything-else-added-since-0-3-0">Everything else added since 0.2.0<a class="anchor" aria-label="anchor" href="#everything-else-added-since-0-3-0"></a></h3>
-<ul><li><p><code>dragon_reward("command", command = ...)</code>: a reward for <code><a href="../reference/dragon_reinforce.html">dragon_reinforce()</a></code> that runs a command (a test suite, a linter) against the completion and scores by its exit code or a number in its stdout. Runs the command directly, never through a shell, so the completion’s own text cannot inject anything into the command line.</p></li>
+<ul><li><p>The GitHub repository is now <code>tejas4patel/dragonfarm</code>, matching the package name: <code>pak::pak("tejas4patel/dragonfarm")</code>. Old <code>tejas4patel/dragon-farm</code> links keep working through GitHub’s redirect.</p></li>
+<li><p><code>dragon_reward("command", command = ...)</code>: a reward for <code><a href="../reference/dragon_reinforce.html">dragon_reinforce()</a></code> that runs a command (a test suite, a linter) against the completion and scores by its exit code or a number in its stdout. Runs the command directly, never through a shell, so the completion’s own text cannot inject anything into the command line.</p></li>
 <li><p>The Chat tab streams replies token by token, for the local worker and for server backends alike, instead of showing the whole reply only once generation finishes. Compare mode still shows each side’s full reply once it lands.</p></li>
 <li><p>Starting a training run now stops the local inference worker first, if one is loaded from an earlier Try it or Chat call. Two heavy Python/CUDA processes starting at the same moment has occasionally crashed a fresh trainer on Windows; freeing the worker’s GPU memory first is the most likely trigger and costs nothing, since the worker restarts automatically on the next generation call.</p></li>
 <li><p>The Python side (<code>inst/python</code>) is now also its own installable package: <code>pip install ./inst/python</code> (or a built wheel) gives a <code>dragonfarm</code> command (<code>check</code>, <code>train</code>, <code>generate</code>, <code>pack</code>) and a <code>dragonfarm.api</code> module (<code>Run</code>, <code>runs()</code>) for reading a run directory from plain Python, with no R involved. A run started from R can be inspected or continued from Python and back, since both read and write the same files. Not yet published to PyPI.</p></li>

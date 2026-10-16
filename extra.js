@@ -1,4 +1,4 @@
-/* dragon-farm site behaviour: copy buttons, scroll reveal, and the animated
+/* dragonfarm site behaviour: copy buttons, scroll reveal, and the animated
    six-step pipeline on the home page (drawn with D3, see df-pipeline.js). */
 (function () {
   function ready(fn) {

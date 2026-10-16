@@ -1,4 +1,4 @@
-# The dragon-farm app
+# The dragonfarm app
 
 ``` r
 

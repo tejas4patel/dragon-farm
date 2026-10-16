@@ -30,9 +30,9 @@ dragon_remote_providers()
 #> 2    kaggle       Kaggle     Free: about 30 GPU hours a week (T4 x2 or P100)
 #> 3 lightning Lightning AI            Free monthly credits, then pay as you go
 #> 4    runpod       RunPod                   Pay per hour, wide choice of GPUs
-#>                                        opens
-#> 1         The dragon-farm notebook, directly
-#> 2         The dragon-farm notebook, directly
-#> 3 The dragon-farm repository in a new Studio
-#> 4                         The RunPod console
+#>                                       opens
+#> 1         The dragonfarm notebook, directly
+#> 2         The dragonfarm notebook, directly
+#> 3 The dragonfarm repository in a new Studio
+#> 4                        The RunPod console
 ```
