@@ -63,7 +63,11 @@ them. The model is whatever
 [dragon_check()](https://dragonfarm.dev/reference/dragon_check.md)
 recommends for your GPU memory: a 1.5B model under 6 GB, a 3B at 6 to 8
 GB, a 7B loaded in 4-bit at 8 GB and up. Pass `model =` to use a run,
-another id, or a server backend.
+another id, or a server backend. Models of 3B and up answer in full,
+with the figures, steps, or code the excerpts hold; smaller ones answer
+in a sentence or two, because asked for more they made things up. In the
+app the answer appears as it is written (`on_token =` does the same in
+code).
 
 This step is worth doing first for two reasons. It shows you whether the
 documents came through (if the answer cites the wrong file, look at
@@ -90,11 +94,13 @@ qa <- dragon_questions(docs)             # the recommended local model, in the b
 ```
 
 For each chunk a model writes three self-contained questions and answers
-them from that chunk alone. Simple deterministic filters then mark pairs
-whose answer is not grounded in the chunk, that name things the chunk
-does not, that refer to “the passage”, or that duplicate another
-question. Nothing is thrown away: every pair comes back with `keep` and
-a `reason`.
+them from that chunk alone: by default a mix of a “what”, a “why” or
+“how”, and, where the passage compares two things, a “how do they
+differ” (`mix = FALSE` asks for any three). Simple deterministic filters
+then mark pairs whose answer is not grounded in the chunk, that name
+things the chunk does not, that refer to “the passage”, or that
+duplicate another question. Nothing is thrown away: every pair comes
+back with `keep` and a `reason`.
 
 Review them. This is the step that decides whether fine-tuning helps. On
 the package’s own documentation, a 7B model’s pairs were about 60
