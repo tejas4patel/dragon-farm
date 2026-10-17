@@ -16,9 +16,9 @@ Four public guidances, 65 pages, downloaded from fda.gov:
 
 | Guidance | Year | Pages | Chunks |
 |----|----|----|----|
-| [Adjusting for Covariates in Randomized Clinical Trials](https://www.fda.gov/media/148910/download) | 2023 | 12 | 28 |
+| [Adjusting for Covariates in Randomized Clinical Trials](https://www.fda.gov/media/148910/download) | 2023 | 12 | 29 |
 | [Multiple Endpoints in Clinical Trials](https://www.fda.gov/media/162416/download) | 2022 | 29 | 54 |
-| [E9(R1) Estimands and Sensitivity Analysis](https://www.fda.gov/media/148473/download) | 2021 | 23 | 69 |
+| [E9(R1) Estimands and Sensitivity Analysis](https://www.fda.gov/media/148473/download) | 2021 | 23 | 72 |
 | [Statistical Software Clarifying Statement](https://www.fda.gov/media/109552/download) | 2015 | 1 | 2 |
 
 Reading and indexing all four took under a minute.
