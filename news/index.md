@@ -43,8 +43,8 @@ a spreadsheet.
   [`dragon_documents_load()`](https://dragonfarm.dev/reference/dragon_documents_load.md),
   and
   [`dragon_documents_list()`](https://dragonfarm.dev/reference/dragon_documents_list.md)
-  go with it. The Python environment gains `pypdf`, `python-docx`, and
-  `openpyxl`.
+  go with it. The Python environment gains `pypdf` (with `cryptography`,
+  for encrypted PDFs), `python-docx`, and `openpyxl`.
 
 - [`dragon_example_documents()`](https://dragonfarm.dev/reference/dragon_example_documents.md):
   three short policy documents for the fictional company behind the
@@ -110,13 +110,22 @@ a spreadsheet.
   labelled 48 of 153 chunks of four FDA guidances. Top-1 retrieval on 18
   questions about them rose from 44% to 67% (dense search) and from 61%
   to 72% (hybrid). Other PDFs read exactly as before. Document sets are
-  re-read on next use (reader version 18).
+  re-read on next use (reader version 19).
 
 - A short PDF (a one-line notice) is read instead of being called
   scanned; only a PDF with no text at all, or a few words over pictures
   of pages, is reported as scanned. When every file is a scan,
   [`dragon_documents()`](https://dragonfarm.dev/reference/dragon_documents.md)
   says so and suggests OCR, instead of listing the supported formats.
+
+- Encrypted PDFs that open without a password (common for official
+  documents) are read; before, AES-encrypted ones failed with
+  “cryptography is required”. A PDF that needs a password says so in
+  plain words. Text, CSV, and HTML files saved in Windows-1252 or UTF-16
+  read cleanly instead of with replacement marks for every accented
+  letter. Files in `.doc`, `.xls`, `.pptx` and similar formats are
+  refused with what to save them as. Saved sets read identically (reader
+  version 19).
 
 ### Asking documents
 

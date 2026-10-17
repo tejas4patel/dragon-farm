@@ -29,9 +29,10 @@ dragon_python_requirements()
 #>  [8] "protobuf"                                       
 #>  [9] "huggingface_hub>=0.25"                          
 #> [10] "pypdf>=4"                                       
-#> [11] "python-docx>=1.1"                               
-#> [12] "openpyxl>=3.1"                                  
-#> [13] "bitsandbytes>=0.45; platform_system != 'Darwin'"
+#> [11] "cryptography>=3.1"                              
+#> [12] "python-docx>=1.1"                               
+#> [13] "openpyxl>=3.1"                                  
+#> [14] "bitsandbytes>=0.45; platform_system != 'Darwin'"
 #> 
 #> $python_version
 #> [1] ">=3.10,<3.14"
