@@ -24,7 +24,7 @@ from a script file.
 ## Changes that touch the check
 
 * New 'Python' requirements for the document readers ('pypdf',
-  'python-docx', 'openpyxl') and for 4-bit loading ('bitsandbytes', skipped
+  'cryptography' for encrypted PDFs, 'python-docx', 'openpyxl') and for 4-bit loading ('bitsandbytes', skipped
   on macOS). They are declared with `reticulate::py_require()` and installed
   only when a user first runs a function that needs 'Python'.
 * New import: 'commonmark', already a dependency of 'shiny', used to show

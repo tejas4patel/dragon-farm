@@ -38,6 +38,17 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 SUPPORTED = {".pdf", ".html", ".htm", ".md", ".markdown", ".txt", ".docx", ".xlsx", ".xlsm", ".csv", ".tsv"}
+# Formats people often have, and the one-step way to a supported one.
+SAVE_AS = {
+    ".doc": "save it as .docx (Word: File > Save As) and add that",
+    ".rtf": "save it as .docx (Word: File > Save As) and add that",
+    ".odt": "save it as .docx and add that",
+    ".xls": "save it as .xlsx (Excel: File > Save As) and add that",
+    ".ods": "save it as .xlsx and add that",
+    ".ppt": "export it to PDF (PowerPoint: File > Export) and add that",
+    ".pptx": "export it to PDF (PowerPoint: File > Export) and add that",
+    ".odp": "export it to PDF and add that",
+}
 CHANGELOG_NAMES = re.compile(r"^(news|changelog|changes|history|releases?|whatsnew)\b", re.I)
 # "v1.2", "Version 1.2", "pkg 0.3.4", "0.3.4": an optional v/version marker or a
 # single leading word, then the dotted number.
@@ -64,7 +75,7 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 18   # 18: a short PDF without pictures is read, not called scanned
+READER_VERSION = 19   # 19: text files in Windows-1252 or UTF-16; 18: a short PDF without pictures is read
 # "(dollars in millions, except per share data)": the unit note a filing puts
 # once above a section or statement. Carried into later chunks that show money
 # without a unit word, so "$11,339" is not read as eleven thousand dollars.
@@ -207,12 +218,38 @@ def html_to_text(raw):
     return "\n\n".join(p.out)
 
 
+def decode_text(data, charset=None):
+    """Bytes of a text file to str. UTF-8 (with or without a byte-order mark)
+    when the bytes are valid UTF-8; UTF-16 when a byte-order mark says so; then
+    the charset a web server declared; then Windows-1252, which is what Excel
+    and Notepad on Windows long saved (read as UTF-8, its accented letters
+    came out as replacement marks). Latin-1 last, since it never fails.
+    A UTF-8 file with a stray bad byte stays UTF-8: more good accented
+    characters than bad bytes means the file is UTF-8, damaged in places."""
+    if data[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        return data.decode("utf-16", errors="replace")
+    try:
+        return data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        loose = data.decode("utf-8-sig", errors="replace")
+        bad = loose.count("�")
+        if sum(ord(c) > 127 for c in loose) - bad > bad:
+            return loose
+    for enc in (charset, "cp1252"):
+        if enc:
+            try:
+                return data.decode(enc)
+            except (UnicodeDecodeError, LookupError):
+                pass
+    return data.decode("latin-1")
+
+
 def read_html(path):
-    return html_to_text(Path(path).read_text(encoding="utf-8", errors="replace"))
+    return html_to_text(decode_text(Path(path).read_bytes()))
 
 
 def read_text(path):
-    return Path(path).read_text(encoding="utf-8", errors="replace")
+    return decode_text(Path(path).read_bytes())
 
 
 def _need(module, pip_name, kind):
@@ -225,8 +262,20 @@ def _need(module, pip_name, kind):
 
 def pdf_to_text(fh):
     pypdf = _need("pypdf", "pypdf", "PDF")
+    reader = pypdf.PdfReader(fh)
+    if getattr(reader, "is_encrypted", False):
+        # Most encrypted PDFs only restrict printing or editing and open with
+        # an empty password, which pypdf tries; AES ones need `cryptography`.
+        try:
+            opened = reader.decrypt("")
+        except pypdf.errors.DependencyError:
+            raise ValueError("this PDF is encrypted (AES) and reading it needs the Python package "
+                             "cryptography; install it in the Python dragonfarm uses") from None
+        if not opened:
+            raise ValueError("this PDF is password-protected; open it, save an unlocked copy "
+                             "(or print it to PDF), and add that")
     pages = []
-    for page in pypdf.PdfReader(fh).pages:
+    for page in reader.pages:
         text = page.extract_text() or ""
         if fragmented(text):
             # Some PDFs (typesetting tools that place every few glyphs as a
@@ -648,8 +697,7 @@ def read_xlsx(path):
 
 
 def read_csv(path, delimiter=","):
-    with open(path, encoding="utf-8-sig", errors="replace", newline="") as fh:
-        rows = list(csv.reader(fh, delimiter=delimiter))
+    rows = list(csv.reader(io.StringIO(decode_text(Path(path).read_bytes()), newline=""), delimiter=delimiter))
     if not rows:
         return ""
     header = [h.strip() for h in rows[0]]
@@ -682,12 +730,14 @@ def fetch_url(url, timeout=30):
 
 def read_url(url):
     data, ctype = fetch_url(url)
+    m = re.search(r"charset=[\"']?([\w.:-]+)", ctype)
+    charset = m.group(1) if m else None
     if "pdf" in ctype or url.lower().endswith(".pdf"):
         text = pdf_to_text(io.BytesIO(data))
     elif "html" in ctype or b"<html" in data[:2048].lower():
-        text = html_to_text(data.decode("utf-8", errors="replace"))
+        text = html_to_text(decode_text(data, charset))
     else:
-        text = data.decode("utf-8", errors="replace")
+        text = decode_text(data, charset)
     return text, data
 
 
@@ -834,7 +884,9 @@ def read_source(kind, locator):
         raise FileNotFoundError(f"{locator} does not exist")
     reader = READERS.get(path.suffix.lower())
     if reader is None:
-        raise ValueError(f"unsupported file type {path.suffix or '(none)'}; supported: " + ", ".join(sorted(SUPPORTED)))
+        hint = SAVE_AS.get(path.suffix.lower())
+        raise ValueError(f"unsupported file type {path.suffix or '(none)'}; "
+                         + (hint or "supported: " + ", ".join(sorted(SUPPORTED))))
     return reader(str(path)), path.read_bytes()
 
 

@@ -253,3 +253,54 @@ def test_a_short_pdf_is_read_and_only_a_picture_pdf_is_called_scanned():
             raise AssertionError("a picture of a page with only a stamp of text should be reported as scanned")
         except ValueError as e:
             assert "scanned PDF" in str(e)
+
+
+def test_text_files_in_windows_encodings_read_cleanly():
+    word = "caf" + chr(233)
+    assert D.decode_text(word.encode("utf-8")) == word
+    assert D.decode_text(b"\xef\xbb\xbf" + word.encode("utf-8")) == word
+    assert D.decode_text(word.encode("cp1252")) == word
+    assert D.decode_text(word.encode("utf-16")) == word
+    assert D.decode_text(word.encode("latin-1"), charset="iso-8859-1") == word
+    assert D.decode_text(b"plain", charset="no-such-charset") == "plain"
+    damaged = (word + " " + word + " " + word).encode("utf-8") + b" \x9d"
+    assert D.decode_text(damaged).startswith(word + " " + word)
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "menu.csv"
+        p.write_bytes(("dish,price\n" + word + " cr" + chr(232) + "me,4\n").encode("cp1252"))
+        text = D.read_csv(str(p))
+        assert word + " cr" + chr(232) + "me" in text and chr(0xFFFD) not in text
+
+
+def test_encrypted_pdfs_open_unless_they_need_a_password():
+    try:
+        import pypdf
+    except ImportError:
+        return
+    with tempfile.TemporaryDirectory() as tmp:
+        plain = Path(tmp) / "plain.pdf"
+        plain.write_bytes(_tiny_pdf(b"BT /F1 12 Tf 20 150 Td (Refunds are paid within ten working days.) Tj ET",
+                                    b"<< /Font << /F1 5 0 R >> >>"))
+        for name, user in (("owner.pdf", ""), ("locked.pdf", "secret")):
+            w = pypdf.PdfWriter(clone_from=str(plain))
+            w.encrypt(user_password=user, owner_password="own", algorithm="RC4-128")
+            with open(Path(tmp) / name, "wb") as fh:
+                w.write(fh)
+        assert "ten working days" in D.read_pdf(str(Path(tmp) / "owner.pdf"))
+        try:
+            D.read_pdf(str(Path(tmp) / "locked.pdf"))
+            raise AssertionError("a PDF that needs a password should say so")
+        except ValueError as e:
+            assert "password-protected" in str(e)
+
+
+def test_common_unsupported_formats_say_what_to_save_them_as():
+    with tempfile.TemporaryDirectory() as tmp:
+        for name, want in (("notes.doc", ".docx"), ("deck.pptx", "PDF"), ("data.xls", ".xlsx"), ("blob.bin", "supported:")):
+            p = Path(tmp) / name
+            p.write_bytes(b"x")
+            try:
+                D.read_source("file", str(p))
+                raise AssertionError(name + " should be refused")
+            except ValueError as e:
+                assert "unsupported file type" in str(e) and want in str(e), str(e)

@@ -21,6 +21,7 @@ dragon_python_requirements <- function() {
       "huggingface_hub>=0.25",
       # document readers (dragon_documents): pure Python, small
       "pypdf>=4",
+      "cryptography>=3.1",   # pypdf needs it for AES-encrypted PDFs (common, even without a password)
       "python-docx>=1.1",
       "openpyxl>=3.1",
       # 4-bit loading on NVIDIA GPUs; no macOS build, so it is left out there
