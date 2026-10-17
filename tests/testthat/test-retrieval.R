@@ -124,6 +124,39 @@ test_that("a chat with documents sends excerpts to the model but keeps plain his
   expect_match(convo2[[4]]$content, "Question: And the warranty\\?$")
 })
 
+test_that("a short follow-up is also searched with the question before it", {
+  lean <- dragonfarm:::leans_on_previous
+  expect_true(lean("And a boxplot?"))
+  expect_true(lean("Which ones, then?"))
+  expect_true(lean("How do I load it?"))
+  expect_false(lean("How do I quit an R session?"))
+  expect_false(lean("Which standard error does FDA suggest for a linear model without treatment-by-covariate interactions and why is it preferred?"))
+  f <- write_fake_set()
+  docs <- dragon_documents_load(f$dir)
+  queries <- character()
+  testthat::local_mocked_bindings(
+    dragon_retrieve = function(docs, query, k = 4) {
+      queries <<- c(queries, query)
+      h <- fake_hits(3)
+      if (grepl("return window", query)) h$id <- c("abc-000", "abc-007", "abc-008")
+      h
+    },
+    default_answer_model = function() "Qwen/Qwen2.5-1.5B-Instruct",
+    worker_start = function(backend = NULL) invisible(NULL),
+    worker_request = function(req, on_token = NULL, timeout = 3600) list(outputs = list("Thirty days [1]."))
+  )
+  ch <- dragon_chat(documents = docs, k = 3)
+  ch$say("How long is the return window?")
+  expect_equal(queries, "How long is the return window?")
+  ch$say("And does it cover opened boxes?")
+  expect_equal(queries[2:3], c("And does it cover opened boxes?", "How long is the return window? And does it cover opened boxes?"))
+  # its own best two excerpts, then the best one the joined search adds
+  expect_equal(ch$sources()$id, c("abc-000", "abc-001", "abc-007"))
+  expect_equal(ch$sources()$n, 1:3)
+  ch$say("Which device has the longest warranty of all the ones you sell?")
+  expect_length(queries, 4)          # a full question is searched on its own
+})
+
 test_that("documents are indexed and asked for real", {
   skip_if_not(identical(Sys.getenv("DRAGONFARM_INTEGRATION"), "true"), "set DRAGONFARM_INTEGRATION=true")
   skip_on_cran()

@@ -115,6 +115,14 @@ PDF and as Word, live web pages, and a spreadsheet.
   were cut off mid-sentence at the old limits. It is a ceiling, so short
   answers are no slower.
 
+* Chat with documents understands short follow-ups. "And a boxplot?" or
+  "Which ones, then?" names nothing to search for, so such a turn (ten words
+  or fewer, leaning on the last one with "it", "those", "what about" and the
+  like) keeps its own best two excerpts and fills the rest from a search
+  with the previous question in front. On 22 follow-ups about the FDA
+  guidances and R's manuals the right excerpt came back for 19 instead of
+  16; 12 changes of topic and 57 longer follow-ups were unaffected.
+
 * Full answers from documents: `dragon_ask()` and chat with documents ask
   models of 3B and up for complete answers with the figures, steps, or code
   the excerpts hold, instead of one short sentence. On 75 questions with
