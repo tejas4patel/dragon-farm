@@ -214,3 +214,42 @@ def test_sheets_never_share_a_chunk():
     assert last["section"] == "Notes" and "Source: Census estimates" in last["text"]
     assert all("Census" not in c["text"] for c in chunks[:-1])
     assert all(D.HARD_BREAK not in c["text"] for c in chunks)
+
+
+def _tiny_pdf(content, resources):
+    """A one-page PDF built by hand: content stream and resources as given."""
+    objs = [b"<< /Type /Catalog /Pages 2 0 R >>",
+            b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 300] /Contents 4 0 R /Resources " + resources + b" >>",
+            b"<< /Length %d >>\nstream\n" % len(content) + content + b"\nendstream",
+            b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+            b"<< /Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray "
+            b"/BitsPerComponent 8 /Length 1 >>\nstream\n\x80\nendstream"]
+    out, offsets = b"%PDF-1.4\n", []
+    for i, o in enumerate(objs, 1):
+        offsets.append(len(out))
+        out += b"%d 0 obj\n" % i + o + b"\nendobj\n"
+    xref = len(out)
+    out += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objs) + 1)
+    out += b"".join(b"%010d 00000 n \n" % o for o in offsets)
+    return out + b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (len(objs) + 1, xref)
+
+
+def test_a_short_pdf_is_read_and_only_a_picture_pdf_is_called_scanned():
+    try:
+        import pypdf  # noqa: F401
+    except ImportError:
+        return
+    with tempfile.TemporaryDirectory() as tmp:
+        short = Path(tmp) / "notice.pdf"
+        short.write_bytes(_tiny_pdf(b"BT /F1 12 Tf 20 150 Td (The office is closed on Friday.) Tj ET",
+                                    b"<< /Font << /F1 5 0 R >> >>"))
+        assert "closed on Friday" in D.read_pdf(str(short))
+        scan = Path(tmp) / "scan.pdf"
+        scan.write_bytes(_tiny_pdf(b"q 300 0 0 300 0 0 cm /Im1 Do Q BT /F1 8 Tf 5 5 Td (Page 1) Tj ET",
+                                   b"<< /Font << /F1 5 0 R >> /XObject << /Im1 6 0 R >> >>"))
+        try:
+            D.read_pdf(str(scan))
+            raise AssertionError("a picture of a page with only a stamp of text should be reported as scanned")
+        except ValueError as e:
+            assert "scanned PDF" in str(e)

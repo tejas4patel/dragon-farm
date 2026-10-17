@@ -72,6 +72,11 @@ dragon_documents <- function(paths, name = NULL, runs_dir = dragon_runs_dir(),
   summary <- parse_last_json(res$stdout, "Reading documents")
   for (f in summary$failed) cli::cli_warn("Could not read {.path {f$name}}: {f$error}")
   if (summary$n_chunks == 0) {
+    errors <- vapply(summary$failed, function(f) f$error %||% "", "")
+    if (length(errors) && all(grepl("no text layer", errors, fixed = TRUE))) {
+      cli::cli_abort(c("No text could be read from {.arg paths}: {cli::qty(length(errors))}{?the PDF looks/every PDF looks} scanned (pictures of pages, no text).",
+                       "i" = "Run OCR first, for example {.code ocrmypdf in.pdf out.pdf}, and read the result."))
+    }
     cli::cli_abort(c("No text could be read from {.arg paths}.",
                      "i" = "Supported: PDF, HTML, Markdown, text, Word (.docx), .xlsx, .csv, .tsv, and URLs."))
   }

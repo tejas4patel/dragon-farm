@@ -64,7 +64,7 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 17   # 17: no reading change; sets read during 16's development carried an earlier rule
+READER_VERSION = 18   # 18: a short PDF without pictures is read, not called scanned
 # "(dollars in millions, except per share data)": the unit note a filing puts
 # once above a section or statement. Carried into later chunks that show money
 # without a unit word, so "$11,339" is not read as eleven thousand dollars.
@@ -478,12 +478,21 @@ def read_pdf(path):
     with open(path, "rb") as fh:
         text = pdf_to_text(fh)
     words = len([w for w in re.sub(r"\x01page \d+", " ", text).split() if any(ch.isalnum() for ch in w)])
-    if words < 10:
+    if words < 10 and (words == 0 or pdf_has_images(path)):
         # No text layer: pages that are pictures of text (a scan, a photo, a
         # fax). Say so, rather than adding a source that contributes nothing.
+        # A short PDF with no pictures at all (a one-line notice) is just short.
         raise ValueError("no text layer; this looks like a scanned PDF. Run OCR on it first "
                          "(for example `ocrmypdf in.pdf out.pdf`) and add the result")
     return text
+
+
+def pdf_has_images(path):
+    pypdf = _need("pypdf", "pypdf", "PDF")
+    try:
+        return any(len(page.images) for page in pypdf.PdfReader(path).pages)
+    except Exception:   # an image pypdf cannot list still means a picture is there
+        return True
 
 
 def emphasis_title(para, text):

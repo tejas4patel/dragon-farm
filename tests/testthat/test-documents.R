@@ -10,6 +10,16 @@ test_that("dragon_documents validates its inputs before touching Python", {
   expect_error(dragon_documents(tempdir(), max_words = 100, min_words = 200), "min_words")
 })
 
+test_that("when every file is a scan, the error says so instead of listing formats", {
+  src <- tempfile("scan-", fileext = ".pdf"); writeLines("x", src)
+  scanned <- '{"n_sources": 0, "n_chunks": 0, "n_reused": 0, "failed": [{"name": "scan.pdf", "error": "ValueError: no text layer; this looks like a scanned PDF."}]}'
+  testthat::local_mocked_bindings(run_python = function(module, args, ...) list(status = 0L, stdout = scanned, stderr = ""))
+  expect_error(suppressWarnings(dragon_documents(src, runs_dir = tempfile("runs-"), index = FALSE)), "looks scanned")
+  other <- '{"n_sources": 0, "n_chunks": 0, "n_reused": 0, "failed": [{"name": "a.bin", "error": "unsupported file type"}]}'
+  testthat::local_mocked_bindings(run_python = function(module, args, ...) list(status = 0L, stdout = other, stderr = ""))
+  expect_error(suppressWarnings(dragon_documents(src, runs_dir = tempfile("runs-"), index = FALSE)), "Supported")
+})
+
 test_that("a saved set loads, prints, lists, and exposes its chunks", {
   f <- write_fake_set()
   docs <- dragon_documents_load(f$dir)
