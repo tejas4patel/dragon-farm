@@ -175,7 +175,9 @@ run <- dragon_train(ds, "Qwen/Qwen2.5-7B-Instruct",
 
 4-bit loading needs an NVIDIA GPU. On Apple Silicon or a CPU, the 1.5B and
 3B are the practical choices, and the advice above about declining
-unanswerable questions applies with more force.
+unanswerable questions applies with more force. On a 12-core laptop CPU
+the 1.5B starts answering after 5 to 8 seconds and finishes in 10 to 35;
+the first question also loads the model, about 45 seconds in all.
 
 ## How this was measured
 
