@@ -27,6 +27,8 @@ from a script file.
   'python-docx', 'openpyxl') and for 4-bit loading ('bitsandbytes', skipped
   on macOS). They are declared with `reticulate::py_require()` and installed
   only when a user first runs a function that needs 'Python'.
+* New import: 'commonmark', already a dependency of 'shiny', used to show
+  model replies in the app as formatted text.
 * New example data under `inst/extdata/policies/` (three short Markdown
   files, about 16 KB on disk).
 * `Language: en-GB` added to DESCRIPTION, with `inst/WORDLIST`.
