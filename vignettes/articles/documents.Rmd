@@ -167,7 +167,8 @@ dragon_merge(run, "models/support-0.5b")        # a standalone model that loads 
   specific year's figure in an annual report from 5 of 10 right to 9 (PDF) and
   10 (Word). Tables without such a header can still be misread. Scanned
   PDFs have no text to read: they are reported by name, and need OCR (for
-  example `ocrmypdf`) first. Numbers inside charts and maps are usually lost.
+  example `ocrmypdf`) first. A PDF that needs a password to open says so;
+  add an unlocked copy. Numbers inside charts and maps are usually lost.
 - On real PDFs it holds up. R's own manuals (*An Introduction to R* as PDF
   plus the R FAQ as HTML, 425 chunks) read and indexed in 41 seconds; the
   7B in 4-bit answered nine of ten questions from the right section and
