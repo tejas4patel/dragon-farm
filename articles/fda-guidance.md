@@ -128,13 +128,51 @@ answered (other names for the g-computation estimator). Training with
 “not covered” examples makes a model cautious; usually that is the right
 direction, and here it was once too cautious.
 
+## Teach it a house style
+
+Say your team wants every answer in two lines: the answer, then the
+guidance it comes from. You can ask for that in a prompt, or train it
+in. We tried both on the same 3B and the same 32 questions.
+
+|                      | Asked for in a prompt | Trained in |
+|----------------------|-----------------------|------------|
+| Two-line format      | 30 of 32              | 32 of 32   |
+| Right guidance named | 13 of 32              | 29 of 32   |
+| Right answers        | 19 of 24              | 22 of 24   |
+
+Asked in a prompt, the untrained dragon often named the file instead of
+the guidance (“fda-covariate-adjustment-2023.pdf”) and, tangled in the
+instructions, declined five questions it could answer. Trained for 42
+minutes on 422 practice answers written in the house style, it used the
+style every time without being told:
+
+Trained in, no instructions
+
+In the hypothetical example in Table 1 of the covariate guidance, what
+is the unconditional odds ratio?
+
+Answer: The unconditional odds ratio in the hypothetical target
+population is 4.8. \[1\]  
+Guidance: Adjusting for Covariates in Randomized Clinical Trials (FDA,
+2023)
+
+Trained in, no instructions
+
+What is the PDUFA application fee for fiscal year 2025?
+
+Answer: The documents do not cover this.  
+Guidance: none
+
+This is where fine-tuning earns its keep: not new facts, but a habit.
+
 ## What this tells you
 
 - **For facts, start with RAG.** On clean regulatory text, retrieval
   plus an untrained model was already perfect on our questions.
 - **Fine-tune for voice.** Training is how you get a model that answers
   the way your team writes: short and direct, a fixed template, your
-  terminology. It also makes a small model faster.
+  terminology. For a fixed format it beat prompting on every count, and
+  it also makes a small model faster.
 - **Review the practice questions.** Two of fifteen needed unticking.
   The review takes minutes and decides what the model learns.
 

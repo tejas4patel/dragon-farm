@@ -286,6 +286,67 @@ answered (other names for the g-computation estimator). Training with
 direction, and here it was once too cautious.</p>
 </div>
 <div class="section level2">
+<h2 id="teach-it-a-house-style">Teach it a house style<a class="anchor" aria-label="anchor" href="#teach-it-a-house-style"></a>
+</h2>
+<p>Say your team wants every answer in two lines: the answer, then the
+guidance it comes from. You can ask for that in a prompt, or train it
+in. We tried both on the same 3B and the same 32 questions.</p>
+<table class="table">
+<thead><tr class="header">
+<th></th>
+<th>Asked for in a prompt</th>
+<th>Trained in</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Two-line format</td>
+<td>30 of 32</td>
+<td>32 of 32</td>
+</tr>
+<tr class="even">
+<td>Right guidance named</td>
+<td>13 of 32</td>
+<td>29 of 32</td>
+</tr>
+<tr class="odd">
+<td>Right answers</td>
+<td>19 of 24</td>
+<td>22 of 24</td>
+</tr>
+</tbody>
+</table>
+<p>Asked in a prompt, the untrained dragon often named the file instead
+of the guidance (“fda-covariate-adjustment-2023.pdf”) and, tangled in
+the instructions, declined five questions it could answer. Trained for
+42 minutes on 422 practice answers written in the house style, it used
+the style every time without being told:</p>
+<div class="df-ba df-qa">
+<div class="df-reply after">
+<span class="df-who">Trained in, no instructions</span>
+<p class="df-q">
+In the hypothetical example in Table 1 of the covariate guidance, what
+is the unconditional odds ratio?
+</p>
+<p>
+Answer: The unconditional odds ratio in the hypothetical target
+population is 4.8. [1]<br>Guidance: Adjusting for Covariates in
+Randomized Clinical Trials (FDA, 2023)
+</p>
+</div>
+<div class="df-reply after">
+<span class="df-who">Trained in, no instructions</span>
+<p class="df-q">
+What is the PDUFA application fee for fiscal year 2025?
+</p>
+<p>
+Answer: The documents do not cover this.<br>Guidance: none
+</p>
+</div>
+</div>
+<p>This is where fine-tuning earns its keep: not new facts, but a
+habit.</p>
+</div>
+<div class="section level2">
 <h2 id="what-this-tells-you">What this tells you<a class="anchor" aria-label="anchor" href="#what-this-tells-you"></a>
 </h2>
 <ul>
@@ -296,7 +357,8 @@ questions.</li>
 <li>
 <strong>Fine-tune for voice.</strong> Training is how you get a
 model that answers the way your team writes: short and direct, a fixed
-template, your terminology. It also makes a small model faster.</li>
+template, your terminology. For a fixed format it beat prompting on
+every count, and it also makes a small model faster.</li>
 <li>
 <strong>Review the practice questions.</strong> Two of fifteen
 needed unticking. The review takes minutes and decides what the model
