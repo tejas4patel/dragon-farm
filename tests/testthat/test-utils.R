@@ -54,3 +54,14 @@ test_that("runs_change_signature does not walk deeper than a run's own files", {
   expect_true(grepl("status.json", sig, fixed = TRUE))
   expect_true(grepl("checkpoints", sig, fixed = TRUE))
 })
+
+test_that("a model id that does not exist gets a plain message and a suggestion", {
+  raw <- paste("OSError: Qwen/Qwen2.5-3B-Instuct is not a local folder and is not a valid model identifier listed on",
+               "'https://huggingface.co/models' If this is a private repository, make sure to pass a token")
+  msg <- dragonfarm:::explain_error(raw)
+  expect_match(msg, "There is no model called \"Qwen/Qwen2.5-3B-Instuct\"", fixed = TRUE)
+  expect_match(msg, "Did you mean \"Qwen/Qwen2.5-3B-Instruct\"?", fixed = TRUE)
+  far <- dragonfarm:::explain_error("OSError: nobody/nothing-like-it is not a local folder and is not a valid model identifier")
+  expect_false(grepl("Did you mean", far))
+  expect_equal(dragonfarm:::explain_error("CUDA out of memory"), "CUDA out of memory")
+})

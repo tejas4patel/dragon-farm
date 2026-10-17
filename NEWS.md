@@ -308,6 +308,10 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## Fixes
 
+* A model id with a typo ("Qwen/Qwen2.5-0.5B-Instruc") now says there is no
+  such model and suggests the closest preset, instead of passing on a
+  message about private repositories and tokens.
+
 * The Monitor shows "Cancel run" only while a run is queued or running, and
   "Resume from checkpoint" only after it failed or was cancelled; both used
   to show for every run, finished ones included.

@@ -133,7 +133,7 @@ dragon_wait <- function(run, timeout = Inf, poll = 2) {
   if (st$state == "failed") {
     # The error text comes from the trainer log and may contain braces; pass it
     # as a value so cli does not try to interpolate it.
-    err <- st$error %||% "unknown error"
+    err <- explain_error(st$error %||% "unknown error")
     cli::cli_abort(c("Run {.strong {run$id}} failed.", "x" = "{err}"))
   }
   if (st$state == "cancelled") {
