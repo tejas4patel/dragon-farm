@@ -139,3 +139,26 @@ test_that("the training-rows message counts 'not covered' examples", {
   expect_equal(dragonfarm:::training_rows_message(d[1:4, ]), "4 training rows ready. Pick a model next.")
   expect_equal(dragonfarm:::training_rows_message(data.frame(question = "a")), "1 training rows ready. Pick a model next.")
 })
+
+test_that("Write practice questions passes the mix checkbox to dragon_questions()", {
+  runs_dir <- tempfile("runs-")
+  f <- write_fake_set(root = runs_dir)
+  state <- shiny::reactiveValues(documents = dragon_documents_load(f$dir), route = "documents", hardware = NULL,
+                                 dataset = NULL, mapped = NULL)
+  got <- list()
+  testthat::local_mocked_bindings(
+    worker_start = function(backend = NULL) invisible(NULL), dragon_index = function(docs, ...) docs, hardware_info = function() NULL,
+    dragon_questions = function(docs, generator = NULL, n_per_chunk = 3, mix = TRUE, ...) {
+      got[[length(got) + 1]] <<- list(mix = mix, n = n_per_chunk)
+      NULL
+    }
+  )
+  shiny::testServer(dragonfarm:::mod_documents_server,
+    args = list(state = state, nav_to = function(p) NULL, runs_dir = runs_dir), {
+    session$flushReact()
+    session$setInputs(generator = "", per_chunk = 3, generate = 1)
+    session$setInputs(mix = FALSE, generate = 2)
+    session$setInputs(mix = TRUE, generate = 3)
+  })
+  expect_equal(vapply(got, `[[`, NA, "mix"), c(TRUE, FALSE, TRUE))   # on by default
+})

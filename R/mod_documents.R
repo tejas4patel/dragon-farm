@@ -17,6 +17,7 @@ mod_documents_ui <- function(id) {
         shiny::selectInput(ns("generator"), label_with_info("Written by", "questions"), choices = c("Recommended local model" = ""), width = "100%"),
         shiny::numericInput(ns("per_chunk"), "Per chunk", value = 3, min = 1, max = 6, step = 1),
         shiny::checkboxInput(ns("include_quotes"), "Include quoted passages", value = FALSE),
+        shiny::checkboxInput(ns("mix"), "Mix question types (what, why/how, how they differ)", value = TRUE),
         shiny::selectInput(ns("qset"), "Or review an earlier set", choices = c("Choose" = ""), width = "100%")
       ),
       shiny::div(class = "cloud-actions",
@@ -316,6 +317,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       if (identical(gen, "anthropic")) {
         shiny::withProgress(message = "Asking the Claude API for questions on each chunk.", value = 0.4, {
           qa <- tryCatch(dragon_questions(docs, generator = dragon_llm_anthropic(), n_per_chunk = n,
+                                          mix = !identical(input$mix, FALSE),
                                           include_quotes = isTRUE(input$include_quotes)),
                          error = function(e) { notify_error(e); NULL })
         })
@@ -323,6 +325,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
         return()
       }
       j <- tryCatch(dragon_questions(docs, generator = if (nzchar(gen)) gen else NULL, n_per_chunk = n,
+                                     mix = !identical(input$mix, FALSE),
                                      include_quotes = isTRUE(input$include_quotes), wait = FALSE),
                     error = function(e) { notify_error(e); NULL })
       if (!is.null(j)) { job(j); questions(NULL) }
