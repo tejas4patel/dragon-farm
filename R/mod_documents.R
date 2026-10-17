@@ -69,7 +69,23 @@ mod_documents_top_ui <- function(ns) {
         shiny::actionButton(ns("to_chat"), "Continue in Chat", class = "btn-outline-secondary")
       ),
       shiny::p(class = "hint", "It reads the most relevant parts of your documents and answers in full; the sources are listed underneath if you want to check. Nothing is trained yet."),
-      shiny::uiOutput(ns("answer"))
+      shiny::uiOutput(ns("answer")),
+      # While an answer is being written it streams into this bubble (the
+      # click handler blocks, so these messages bypass Shiny's reactive
+      # flush); the finished, formatted answer then replaces it.
+      shiny::div(id = ns("streaming_bubble"), class = "bubble assistant", style = "display:none;",
+                 shiny::span(class = "role", "writing"), shiny::div(id = ns("streaming_content"), class = "content")),
+      shiny::tags$script(shiny::HTML(sprintf(
+        "Shiny.addCustomMessageHandler('%s', function(msg) {
+           var bubble = document.getElementById('%s'), content = document.getElementById('%s'), answer = document.getElementById('%s');
+           if (!bubble || !content) return;
+           if (msg.reset) { content.textContent = ''; if (answer) answer.style.display = 'none'; }
+           if (msg.text) content.textContent += msg.text;
+           bubble.style.display = msg.hide ? 'none' : 'block';
+           if (msg.hide && answer) answer.style.display = '';
+         });",
+        ns("stream"), ns("streaming_bubble"), ns("streaming_content"), ns("answer")
+      )))
     )
   )
 }
@@ -219,18 +235,25 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       if (startsWith(m, "run:")) dragon_run(file.path(runs_dir, sub("^run:", "", m))) else m
     }
 
+    # Pieces of an answer pushed straight to the browser as they are written;
+    # never allowed to break asking (a test session may not support it).
+    stream_msg <- function(...) tryCatch(session$sendCustomMessage(session$ns("stream"), list(...)), error = function(e) NULL)
+
     shiny::observeEvent(input$ask, {
       q <- trimws(input$question %||% "")
       if (!nzchar(q)) { shiny::showNotification("Type a question first.", type = "warning"); return() }
       docs <- state$documents
       if (is.null(docs)) { shiny::showNotification("Read some documents first, or open a saved set.", type = "warning"); return() }
+      stream_msg(reset = TRUE)
       shiny::withProgress(message = "The dragon is reading", value = 0.1, {
         ans <- tryCatch(
           dragon_ask(docs, q, model = chosen_model(), k = input$k %||% 4,
-                     on_stage = function(msg) shiny::incProgress(0.3, detail = msg)),
+                     on_stage = function(msg) shiny::incProgress(0.3, detail = msg),
+                     on_token = function(piece) stream_msg(text = piece)),
           error = function(e) { notify_error(e); NULL })
       })
       if (!is.null(ans)) answer(ans)
+      stream_msg(hide = TRUE)
     })
 
     output$answer <- shiny::renderUI({

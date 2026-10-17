@@ -258,3 +258,22 @@ test_that("model replies render as Markdown, but cannot add markup of their own"
   expect_false(grepl("<img", h("![x](https://example.com/t.png)"), fixed = TRUE))
   expect_equal(h(NULL), "")
 })
+
+test_that("dragon_ask streams the answer to on_token as it is written", {
+  f <- write_fake_set()
+  docs <- dragon_documents_load(f$dir)
+  testthat::local_mocked_bindings(
+    dragon_retrieve = function(docs, query, k = 4) fake_hits(),
+    default_answer_model = function() "Qwen/Qwen2.5-7B-Instruct",
+    worker_start = function(backend = NULL) invisible(NULL),
+    worker_request = function(req, on_token = NULL, timeout = 3600) {
+      for (p in c("Thirty ", "days ", "[1].")) if (is.function(on_token)) on_token(p)
+      list(output = "Thirty days [1].", outputs = list("Thirty days [1]."))
+    }
+  )
+  pieces <- character()
+  ans <- dragon_ask(docs, "How long is the return window?", on_token = function(p) pieces <<- c(pieces, p))
+  expect_equal(paste(pieces, collapse = ""), "Thirty days [1].")
+  expect_equal(ans$answer, "Thirty days [1].")
+  expect_silent(dragon_ask(docs, "How long?"))      # no on_token: nothing streamed, nothing breaks
+})

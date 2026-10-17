@@ -93,6 +93,10 @@ dragon_retrieve <- function(docs, query, k = 4, method = c("hybrid", "dense")) {
 #'   stage (finding excerpts, loading the model, answering), for progress
 #'   displays. The first question in a session loads the model, which can
 #'   take a minute for a 7B.
+#' @param on_token Optional function called with each piece of the answer as
+#'   it is generated, for showing it as it is written (backends that stream:
+#'   the local worker and servers). A reply that is asked again because it
+#'   was only a citation is not streamed; the returned answer is final.
 #' @return A `dragon_answer`: `$answer`, `$sources` (a data frame of the
 #'   excerpts with `n`, `source`, `section`, `text`, `score`, and `cited`,
 #'   whether the answer refers to it), `$question`, and `$model`. `print()`
@@ -106,7 +110,8 @@ dragon_retrieve <- function(docs, query, k = 4, method = c("hybrid", "dense")) {
 #' ans$sources
 #' }
 dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backend = dragon_backend(),
-                       max_new_tokens = 600, temperature = 0, top_p = 0.9, base = FALSE, on_stage = NULL) {
+                       max_new_tokens = 600, temperature = 0, top_p = 0.9, base = FALSE, on_stage = NULL,
+                       on_token = NULL) {
   docs <- as_documents(docs)
   check_string(question, "question")
   if (!inherits(backend, "dragon_backend")) cli::cli_abort("{.arg backend} must be a {.cls dragon_backend}.")
@@ -128,7 +133,7 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
   )
   stage(sprintf("Answering with %s (the first question loads it, about a minute for a 7B)", model_label))
   reply <- backend_generate(backend, target, list(convo), max_new_tokens = as.integer(max_new_tokens),
-                            temperature = temperature, top_p = top_p)[[1]]
+                            temperature = temperature, top_p = top_p, on_token = on_token)[[1]]
   reply <- as.character(reply %||% "")
   if (citation_only(reply)) {
     # Small models sometimes reply with nothing but "[1]" (the 3B did on 6 of
