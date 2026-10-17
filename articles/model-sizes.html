@@ -450,7 +450,10 @@ In code:</p>
 <span>                                             gradient_checkpointing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>4-bit loading needs an NVIDIA GPU. On Apple Silicon or a CPU, the
 1.5B and 3B are the practical choices, and the advice above about
-declining unanswerable questions applies with more force.</p>
+declining unanswerable questions applies with more force. On a 12-core
+laptop CPU the 1.5B starts answering after 5 to 8 seconds and finishes
+in 10 to 35; the first question also loads the model, about 45 seconds
+in all.</p>
 </div>
 <div class="section level2">
 <h2 id="how-this-was-measured">How this was measured<a class="anchor" aria-label="anchor" href="#how-this-was-measured"></a>
