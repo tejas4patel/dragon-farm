@@ -120,6 +120,14 @@ a spreadsheet.
   first words arrived after a median 0.8 seconds against 14 seconds for
   the whole answer.
 
+- [`dragon_chat()`](https://dragonfarm.dev/reference/dragon_chat.md) and
+  the app’s Try it and Chat steps now allow 600 new tokens by default
+  (was 256 and 200), as
+  [`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md) does:
+  with full answers, 21 of 100 benchmark answers from the 7B ran past
+  150 words and were cut off mid-sentence at the old limits. It is a
+  ceiling, so short answers are no slower.
+
 - Full answers from documents:
   [`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md) and
   chat with documents ask models of 3B and up for complete answers with
