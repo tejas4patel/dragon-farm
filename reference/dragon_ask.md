@@ -22,7 +22,8 @@ dragon_ask(
   temperature = 0,
   top_p = 0.9,
   base = FALSE,
-  on_stage = NULL
+  on_stage = NULL,
+  on_token = NULL
 )
 ```
 
@@ -75,6 +76,13 @@ dragon_ask(
   (finding excerpts, loading the model, answering), for progress
   displays. The first question in a session loads the model, which can
   take a minute for a 7B.
+
+- on_token:
+
+  Optional function called with each piece of the answer as it is
+  generated, for showing it as it is written (backends that stream: the
+  local worker and servers). A reply that is asked again because it was
+  only a citation is not streamed; the returned answer is final.
 
 ## Value
 

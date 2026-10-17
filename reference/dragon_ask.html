@@ -69,7 +69,8 @@ whatever a server backend serves.</p>
 <span>  temperature <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  top_p <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>  base <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  on_stage <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  on_stage <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  on_token <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -119,6 +120,13 @@ answering only from the excerpts and citing them.</p></dd>
 stage (finding excerpts, loading the model, answering), for progress
 displays. The first question in a session loads the model, which can
 take a minute for a 7B.</p></dd>
+
+
+<dt id="arg-on-token">on_token<a class="anchor" aria-label="anchor" href="#arg-on-token"></a></dt>
+<dd><p>Optional function called with each piece of the answer as
+it is generated, for showing it as it is written (backends that stream:
+the local worker and servers). A reply that is asked again because it
+was only a citation is not streamed; the returned answer is final.</p></dd>
 
 </dl></div>
     <div class="section level2">
