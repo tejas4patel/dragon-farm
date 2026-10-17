@@ -10,6 +10,7 @@ dragon_questions(
   docs,
   generator = NULL,
   n_per_chunk = 3,
+  mix = TRUE,
   include_quotes = FALSE,
   include_code = TRUE,
   include_changelog = FALSE,
@@ -33,6 +34,13 @@ that local model; a teacher such as \code{\link[=dragon_llm_anthropic]{dragon_ll
 from R instead. Local generation runs as a background Python process.}
 
 \item{n_per_chunk}{Questions asked for per chunk.}
+
+\item{mix}{Ask for a mix of question types: one "what" or "which", one
+"why" or "how", and, where the passage compares two things, one "how do
+they differ". On FDA guidance this raised comparison questions from 11
+to 98 of the kept pairs and why/how questions from 113 to 142, kept 81
+percent of pairs instead of 89, and a 3B trained on either set answered
+the same 23 of 24 test questions. \code{FALSE} asks for any three questions.}
 
 \item{include_quotes, include_code, include_changelog}{Which chunks to use.
 Block quotes are skipped by default (a quoted example reply is not your

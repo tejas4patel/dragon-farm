@@ -83,3 +83,12 @@ def test_prompts_subcommand_lists_selected_chunks():
             Q.main(["prompts", "--dir", str(set_dir), "--per-chunk", "2"])
         out = json.loads(buf.getvalue())
         assert [o["chunk_id"] for o in out] == ["abc-000"] and "Write 2 different" in out[0]["prompt"]
+
+
+def test_mix_asks_for_varied_question_types_only_when_asked():
+    from dragonfarm.questions import prompt_for, MIX
+    chunk = {"source": "a.pdf", "section": "S", "text": "Some text here."}
+    assert MIX not in prompt_for(chunk, 3)
+    p = prompt_for(chunk, 3, mix=True)
+    assert MIX in p and p.index(MIX) < p.index("Use exactly this format:")
+    assert p.endswith("A3: ...")

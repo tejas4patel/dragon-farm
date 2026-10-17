@@ -50,9 +50,18 @@ def passage(chunk, max_words=MAX_PASSAGE_WORDS):
     return " ".join(words[:max_words]) + " ..."
 
 
-def prompt_for(chunk, n):
+# Asked of the generator when a mix of question types is wanted: without it a
+# 7B writes almost only "What is X?" questions whose answers restate a line.
+MIX = ("Vary the kinds of question: one asks what or which, one asks why or how (a reason, a purpose, or the steps "
+       "to do something), and, if the passage compares or contrasts two things, one asks how they differ. ")
+
+
+def prompt_for(chunk, n, mix=False):
     fmt = "\n".join(f"Q{i}: ...\nA{i}: ..." for i in range(1, n + 1))
-    return PROMPT.format(n=n, source=chunk["source"], section=chunk.get("section") or "", text=passage(chunk)) + fmt
+    p = PROMPT.format(n=n, source=chunk["source"], section=chunk.get("section") or "", text=passage(chunk))
+    if mix:
+        p = p.replace("Use exactly this format:", MIX + "Use exactly this format:")
+    return p + fmt
 
 
 def generate_batch(batch, gen_fn, log=None):
@@ -204,7 +213,7 @@ def write_json(path, obj):
 
 
 def generate(set_dir, out, model_id, n=3, load_in_4bit="auto", batch_size=4, max_new_tokens=420,
-             include_quotes=False, include_code=True, include_changelog=False, chunk_ids=None):
+             include_quotes=False, include_code=True, include_changelog=False, chunk_ids=None, mix=False):
     import torch
     from transformers import AutoTokenizer
 
@@ -217,7 +226,7 @@ def generate(set_dir, out, model_id, n=3, load_in_4bit="auto", batch_size=4, max
     chunks = select_chunks(load_chunks(set_dir), include_quotes, include_code, include_changelog, chunk_ids)
     meta = {"generator": model_id, "n_per_chunk": n, "n_chunks": len(chunks), "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "include_quotes": include_quotes, "include_code": include_code, "include_changelog": include_changelog,
-            "chunks_md5": chunks_md5(set_dir)}
+            "chunks_md5": chunks_md5(set_dir), "mix": bool(mix)}
     write_json(progress_path, {"state": "loading", "done": 0, "total": len(chunks), "pairs": 0, "kept": 0})
     if not chunks:
         write_rows(out, [])
@@ -237,7 +246,7 @@ def generate(set_dir, out, model_id, n=3, load_in_4bit="auto", batch_size=4, max
           file=sys.stderr, flush=True)
 
     def gen_fn(batch):
-        texts = [tok.apply_chat_template([{"role": "user", "content": prompt_for(c, n)}], tokenize=False,
+        texts = [tok.apply_chat_template([{"role": "user", "content": prompt_for(c, n, mix)}], tokenize=False,
                                          add_generation_prompt=True) for c in batch]
         enc = tok(texts, return_tensors="pt", padding=True, truncation=True, max_length=2048).to(hw.device)
         with torch.no_grad():
@@ -280,6 +289,7 @@ def main(argv=None):
         p.add_argument("--skip-code", action="store_true")
         p.add_argument("--include-changelog", action="store_true")
         p.add_argument("--chunk-ids", default=None, help="comma-separated subset")
+        p.add_argument("--mix", action="store_true", help="ask for a mix of question types")
 
     p = sub.add_parser("prompts"); selection(p)
     g = sub.add_parser("generate"); selection(g)
@@ -312,11 +322,11 @@ def main(argv=None):
     kw = dict(include_quotes=a.include_quotes, include_code=not a.skip_code, include_changelog=a.include_changelog, chunk_ids=ids)
     if a.command == "prompts":
         chunks = select_chunks(load_chunks(a.dir), **kw)
-        print(json.dumps([{"chunk_id": c["id"], "prompt": prompt_for(c, a.per_chunk)} for c in chunks], ensure_ascii=False))
+        print(json.dumps([{"chunk_id": c["id"], "prompt": prompt_for(c, a.per_chunk, a.mix)} for c in chunks], ensure_ascii=False))
         return
     four = {"true": True, "false": False}.get(str(a.load_in_4bit).lower(), "auto")
     generate(a.dir, a.out, a.model, n=a.per_chunk, load_in_4bit=four, batch_size=a.batch_size,
-             max_new_tokens=a.max_new_tokens, **kw)
+             max_new_tokens=a.max_new_tokens, mix=a.mix, **kw)
 
 
 if __name__ == "__main__":

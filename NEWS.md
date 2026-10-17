@@ -151,6 +151,14 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## From documents to training data
 
+* `dragon_questions(mix = TRUE)`, the new default, asks for a mix of
+  question types per chunk: a "what" or "which", a "why" or "how", and,
+  where the passage compares two things, a "how do they differ". On four
+  FDA guidances comparison questions rose from 11 to 98 of the kept pairs
+  and why/how questions from 113 to 142; 81 percent of pairs were kept
+  instead of 89, and a 3B trained on either set answered the same 23 of 24
+  test questions. `mix = FALSE` asks for any three questions, as before.
+
 * `dragon_questions_dataset()` adds "not covered" rows by default
   (`negatives = 0.15`): a question shown with excerpts from another section,
   answered "The documents do not cover this." Without them every training

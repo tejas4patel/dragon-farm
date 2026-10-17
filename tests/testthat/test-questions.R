@@ -110,8 +110,12 @@ test_that("a teacher's replies go through the same parser and filters", {
   expect_true(qa$keep)
   expect_equal(calls[[1]][1:3], c("prompts", "--dir", normalizePath(f$dir, winslash = "/")))
   expect_true("--per-chunk" %in% calls[[1]] && "2" %in% calls[[1]])
+  expect_true("--mix" %in% calls[[1]])                   # a mix of question types by default
   expect_equal(calls[[2]][1], "filter")
   expect_true(file.exists(attr(qa, "path")))
+  calls <- list()
+  dragon_questions(f$dir, generator = teacher, n_per_chunk = 2, mix = FALSE)
+  expect_false("--mix" %in% calls[[1]])
 })
 
 test_that("questions are written by a local model for real", {

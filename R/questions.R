@@ -21,6 +21,12 @@
 #'   `ellmer` chat, a run, or any function from prompts to replies is called
 #'   from R instead. Local generation runs as a background Python process.
 #' @param n_per_chunk Questions asked for per chunk.
+#' @param mix Ask for a mix of question types: one "what" or "which", one
+#'   "why" or "how", and, where the passage compares two things, one "how do
+#'   they differ". On FDA guidance this raised comparison questions from 11
+#'   to 98 of the kept pairs and why/how questions from 113 to 142, kept 81
+#'   percent of pairs instead of 89, and a 3B trained on either set answered
+#'   the same 23 of 24 test questions. `FALSE` asks for any three questions.
 #' @param include_quotes,include_code,include_changelog Which chunks to use.
 #'   Block quotes are skipped by default (a quoted example reply is not your
 #'   policy), code blocks are included, changelog-like sources are skipped.
@@ -45,7 +51,7 @@
 #' ds <- dragon_questions_dataset(qa, docs)          # excerpts retrieved into every prompt
 #' run <- dragon_train(ds, "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
 #' }
-dragon_questions <- function(docs, generator = NULL, n_per_chunk = 3, include_quotes = FALSE, include_code = TRUE,
+dragon_questions <- function(docs, generator = NULL, n_per_chunk = 3, mix = TRUE, include_quotes = FALSE, include_code = TRUE,
                              include_changelog = FALSE, load_in_4bit = "auto", batch_size = 4,
                              max_new_tokens = 420, wait = TRUE) {
   docs <- as_documents(docs)
@@ -55,7 +61,7 @@ dragon_questions <- function(docs, generator = NULL, n_per_chunk = 3, include_qu
   out <- file.path(out_dir, paste0(format(Sys.time(), "%Y%m%d-%H%M%S"), ".jsonl"))
   sel <- c("--per-chunk", as.character(as.integer(n_per_chunk)),
            if (isTRUE(include_quotes)) "--include-quotes", if (!isTRUE(include_code)) "--skip-code",
-           if (isTRUE(include_changelog)) "--include-changelog")
+           if (isTRUE(include_changelog)) "--include-changelog", if (isTRUE(mix)) "--mix")
 
   local_model <- is.null(generator) || (is.character(generator) && length(generator) == 1L)
   if (!local_model) {
