@@ -40,3 +40,26 @@ FDA_UNANSWERABLE <- c(
   "Which ggplot2 function draws a forest plot?",
   "Which version of the CDISC SDTM implementation guide is required for submissions?"
 )
+
+# Why/how/compare questions, to check that varied practice questions help
+# with explanations (patterns are lenient; read the answers too).
+fda_q2 <- function(...) {
+  m <- matrix(c(...), ncol = 2, byrow = TRUE)
+  data.frame(question = m[, 1], pattern = m[, 2], stringsAsFactors = FALSE)
+}
+FDA_WHY <- fda_q2(
+  "Why can adjusting for baseline covariates improve a trial's analysis?", "(?i)variab|precision|residual|narrower|power|efficien",
+  "Why should covariate-adjusted analyses be specified before unblinding?", "(?i)post.?hoc|prespecif|emphasi",
+  "How does the odds ratio differ from the risk difference in terms of collapsibility?", "(?i)non.?collapsib|not collapsib|unlike the odds ratio|odds ratio[^.]*(differ|vary|not)",
+  "How does a conditional treatment effect differ from an unconditional one?", "(?i)population|subgroup",
+  "Why is testing several endpoints without adjustment a problem?", "(?i)type i error|false|inflat",
+  "How does the Holm procedure differ from the Bonferroni method?", "(?i)less conservative|step.?down|more powerful",
+  "How does the Hochberg procedure differ from the Holm procedure?", "(?i)step.?up|more powerful|assumption",
+  "Why do exploratory endpoints not need a multiplicity adjustment?", "(?i)not (generally )?used to support|support conclusions|hypothes",
+  "How can a composite endpoint help a trial with a reasonable sample size?", "(?i)event rate|power",
+  "Why should the scenario behind a hypothetical strategy be stated precisely?", "(?i)confus|clear|interpret|ambigu",
+  "How does the treatment policy strategy handle intercurrent events?", "(?i)irrespective|regardless|part of the treatment",
+  "How does a sensitivity analysis differ from a supplementary analysis?", "(?i)same estimand|assumption|robust",
+  "Why might nominal standard errors be inaccurate in a covariate-adjusted analysis?", "(?i)misspecif|incorrect|robust|sandwich",
+  "What happens to standard errors if an analysis ignores stratified randomization?", "(?i)overestimat|conservative|too large"
+)
