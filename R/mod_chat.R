@@ -37,7 +37,7 @@ mod_chat_ui <- function(id) {
         bslib::layout_columns(
           col_widths = c(6, 6),
           shiny::numericInput(ns("temperature"), "Temperature", value = 0.7, min = 0, max = 2, step = 0.1),
-          shiny::numericInput(ns("max_new_tokens"), "Max new tokens", value = 256, min = 1, step = 16)
+          shiny::numericInput(ns("max_new_tokens"), "Max new tokens", value = 600, min = 1, step = 16)
         ),
         shiny::numericInput(ns("context_window"), "Context window (tokens, optional)", value = NA, min = 64, step = 64),
         shiny::p(class = "hint", "Leave blank for no limit. When set, the oldest turns are dropped automatically to stay under it."),
@@ -157,7 +157,7 @@ mod_chat_server <- function(id, state, runs_dir) {
       }
       sys <- if (nzchar(trimws(input$system %||% ""))) input$system
       docs <- documents_choice()
-      ch <- dragon_chat(x, system = sys, backend = bk, max_new_tokens = input$max_new_tokens %||% 256,
+      ch <- dragon_chat(x, system = sys, backend = bk, max_new_tokens = input$max_new_tokens %||% 600,
                         temperature = input$temperature %||% 0.7, base = isTRUE(input[[paste0("base", suffix)]]),
                         runs_dir = runs_dir, context_window = context_window_input(), documents = docs)
       ch$messages <- hist

@@ -95,6 +95,12 @@ PDF and as Word, live web pages, and a spreadsheet.
   full answers from a 7B (often 150 words or more), the first words arrived
   after a median 0.8 seconds against 14 seconds for the whole answer.
 
+* `dragon_chat()` and the app's Try it and Chat steps now allow 600 new
+  tokens by default (was 256 and 200), as `dragon_ask()` does: with full
+  answers, 21 of 100 benchmark answers from the 7B ran past 150 words and
+  were cut off mid-sentence at the old limits. It is a ceiling, so short
+  answers are no slower.
+
 * Full answers from documents: `dragon_ask()` and chat with documents ask
   models of 3B and up for complete answers with the figures, steps, or code
   the excerpts hold, instead of one short sentence. On 75 questions with

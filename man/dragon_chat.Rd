@@ -9,7 +9,7 @@ dragon_chat(
   x = NULL,
   system = NULL,
   backend = dragon_backend(),
-  max_new_tokens = 256,
+  max_new_tokens = 600,
   temperature = 0.7,
   top_p = 0.9,
   base = FALSE,

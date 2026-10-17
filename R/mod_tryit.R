@@ -11,7 +11,7 @@ mod_tryit_ui <- function(id) {
                              placeholder = "My Ember thermostat keeps dropping off Wi-Fi."),
         bslib::layout_columns(
           col_widths = c(6, 6),
-          shiny::numericInput(ns("max_new_tokens"), "Max new tokens", value = 200, min = 1, step = 10),
+          shiny::numericInput(ns("max_new_tokens"), "Max new tokens", value = 600, min = 1, step = 10),
           shiny::numericInput(ns("temperature"), "Temperature", value = 0.3, min = 0, max = 2, step = 0.1)
         ),
         shiny::checkboxInput(ns("compare"), "Also show the base model's reply", value = TRUE),

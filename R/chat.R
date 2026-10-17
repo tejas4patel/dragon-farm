@@ -49,7 +49,7 @@
 #' chat$history()
 #' chat$save("good-conversation.json")
 #' }
-dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max_new_tokens = 256,
+dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max_new_tokens = 600,
                         temperature = 0.7, top_p = 0.9, base = FALSE, runs_dir = dragon_runs_dir(),
                         context_window = NULL, documents = NULL, k = 4) {
   if (!is.null(documents)) documents <- as_documents(documents)
