@@ -468,5 +468,95 @@
   "set": "r-heldout",
   "question": "Which package reads SAS7BDAT files?",
   "answer_contains": "sas7bdat"
+ },
+ {
+  "set": "fda-stats",
+  "question": "Does FDA require sponsors to use a specific statistical software package?",
+  "answer_contains": "does not require use of any specific software"
+ },
+ {
+  "set": "fda-stats",
+  "question": "What should a submission document about the statistical software used?",
+  "answer_contains": "version and build identification"
+ },
+ {
+  "set": "fda-stats",
+  "question": "Is an unadjusted analysis acceptable for the primary analysis of an efficacy endpoint?",
+  "answer_contains": "An unadjusted analysis is acceptable for the primary analysis"
+ },
+ {
+  "set": "fda-stats",
+  "question": "Which standard error does FDA suggest for a linear model without treatment-by-covariate interactions?",
+  "answer_contains": "Huber-White"
+ },
+ {
+  "set": "fda-stats",
+  "question": "What is the unconditional odds ratio in Table 1 of the covariate guidance?",
+  "answer_contains": "The unconditional odds ratio in the hypothetical target population is 4.8"
+ },
+ {
+  "set": "fda-stats",
+  "question": "Which treatment effect measures are collapsible?",
+  "answer_contains": "risk difference and relative risk are collapsible"
+ },
+ {
+  "set": "fda-stats",
+  "question": "What other names does the covariate guidance give the g-computation estimator?",
+  "answer_contains": "plug-in"
+ },
+ {
+  "set": "fda-stats",
+  "question": "When randomization is stratified, what should a covariate adjustment model include?",
+  "answer_contains": "should generally include strata variables"
+ },
+ {
+  "set": "fda-stats",
+  "question": "Can sample size be based on unadjusted methods in a covariate-adjusted trial?",
+  "answer_contains": "more conservative sample size"
+ },
+ {
+  "set": "fda-stats",
+  "question": "Without adjustment, what is the Type I error rate for ten independent endpoints?",
+  "answer_contains": "For ten independent endpoints, the Type I error rate is about 22%"
+ },
+ {
+  "set": "fda-stats",
+  "question": "Do exploratory endpoints need a multiplicity adjustment?",
+  "answer_contains": "Exploratory endpoints do not need multiplicity adjustment"
+ },
+ {
+  "set": "fda-stats",
+  "question": "Which multiplicity procedure is a step-up procedure?",
+  "answer_contains": "The Hochberg procedure is a step-up testing procedure"
+ },
+ {
+  "set": "fda-stats",
+  "question": "Should the statistical analysis plan be changed after unmasking of treatment assignments?",
+  "answer_contains": "should not be changed after unmasking"
+ },
+ {
+  "set": "fda-stats",
+  "question": "Which endpoints are often combined into a composite in cardiovascular studies?",
+  "answer_contains": "cardiovascular death, heart attack, and stroke"
+ },
+ {
+  "set": "fda-stats",
+  "question": "What are intercurrent events?",
+  "answer_contains": "Intercurrent events are events occurring after treatment initiation"
+ },
+ {
+  "set": "fda-stats",
+  "question": "What should a sensitivity analysis target?",
+  "answer_contains": "targeting the same estimand"
+ },
+ {
+  "set": "fda-stats",
+  "question": "Which strategy restricts observation time to before the intercurrent event?",
+  "answer_contains": "restricting the observation time of interest to the time before the intercurrent event"
+ },
+ {
+  "set": "fda-stats",
+  "question": "Which covariates does FDA recommend adjusting for?",
+  "answer_contains": "anticipated to be most strongly associated with the outcome"
  }
 ]

@@ -322,3 +322,37 @@ def test_a_numbered_heading_after_a_finished_sentence_starts_a_section():
     text = pages_to_text([page])
     assert "## 6.4 Updating packages" in text
     assert "## 2.5" not in text               # the middle of an unfinished sentence, not a heading
+
+
+def test_outline_headings_start_sections_and_addresses_never_do():
+    # Cover page and body of an FDA guidance: the agency's address used to be
+    # the section of every chunk, and "I. INTRODUCTION" was read as a sentence.
+    from dragonfarm.documents import pages_to_text
+    page = ("10001 New Hampshire Ave., Hillandale Bldg., 4th Floor\n"
+            "Silver Spring, MD 20993-0002\n"
+            "\n"
+            "I. INTRODUCTION\n"
+            "This guidance describes current recommendations for covariates.\n"
+            "\n"
+            "III. ESTIMANDS (A.3)\n"
+            "An estimand is a precise description of the treatment effect.\n"
+            "\n"
+            "A. General Considerations\n"
+            "Sponsors can adjust for baseline covariates.\n"
+            "\n"
+            "A. Smith wrote this. It is a sentence, not a title\n")
+    text = pages_to_text([page])
+    assert "## 10001" not in text
+    assert "## I. INTRODUCTION" in text
+    assert "## III. ESTIMANDS (A.3)" in text
+    assert "## A. General Considerations" in text
+    assert "## A. Smith" not in text
+
+
+def test_address_lines_are_recognised():
+    from dragonfarm.documents import ADDRESS_LINE
+    for s in ["10001 New Hampshire Ave., Hillandale Bldg., 4th Floor", "1600 Pennsylvania Avenue",
+              "221 Baker Street", "Acme Corp, Suite 400"]:
+        assert ADDRESS_LINE.search(s), s
+    for s in ["1 Introduction", "2.5 Model selection", "10 Ways to Fit a Model", "I. INTRODUCTION"]:
+        assert not ADDRESS_LINE.search(s), s

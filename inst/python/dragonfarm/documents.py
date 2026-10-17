@@ -64,7 +64,7 @@ def version_heading(section):
 # Private-use glyphs (icon fonts in HTML, bullets in PDFs) and zero-width marks.
 # Bumped whenever a reader or the chunker changes what a file turns into, so a
 # set built by an older version is re-read rather than reused by checksum.
-READER_VERSION = 15
+READER_VERSION = 16
 # "(dollars in millions, except per share data)": the unit note a filing puts
 # once above a section or statement. Carried into later chunks that show money
 # without a unit word, so "$11,339" is not read as eleven thousand dollars.
@@ -361,6 +361,25 @@ def join_lines(lines):
 
 
 NUMBERED_HEADING = re.compile(r"^\d+(\.\d+){1,3}\s+[A-Z]")
+# Outline headings in guidance and policy documents: "I. INTRODUCTION",
+# "III. RECOMMENDATIONS FOR ...", "A. General Considerations". Their ". " used
+# to mark them as sentences, so in FDA guidances no section after the cover
+# page was ever started. "1. Title" is left out: in R's data import manual
+# those are list items ("4. Missing values"), and as headings they mislabelled
+# the paragraphs after the list.
+OUTLINE_HEADING = re.compile(r"^(?:[IVXL]{1,6}|[A-Z])\.\s+[A-Z][A-Za-z]")
+# A street address or letterhead line ("10001 New Hampshire Ave., Hillandale
+# Bldg., 4th Floor") is never a heading; it labelled 48 of 153 chunks of four
+# FDA guidances.
+ADDRESS_LINE = re.compile(r"^\d{1,6}\s+(?:[A-Z][\w'.-]*\s+){1,4}(?:Ave(?:nue)?|St(?:reet)?|Road|Rd|Blvd|Boulevard|"
+                          r"Drive|Dr|Lane|Ln|Way|Pkwy|Parkway|Court|Ct|Place|Pl|Square|Sq|Highway|Hwy)\b"
+                          r"|,\s*(?:Suite|Ste\.?|Floor|Fl\.|Bldg\.?|Building|Room|P\.?\s?O\.?\s?Box)\b")
+
+
+def outline_heading(line):
+    """An outline-numbered title: one "N. " at the start and no other sentence break."""
+    m = OUTLINE_HEADING.match(line)
+    return bool(m) and ". " not in line[line.index(". ") + 2:]
 
 
 def pages_to_text(pages):
@@ -410,7 +429,8 @@ def pages_to_text(pages):
                 continue
             if page_start:
                 page_start = False
-                if open_sentence() and not re.match(r"^\d+(\.\d+)*\s", line) and not all_caps_title(line):
+                if (open_sentence() and not re.match(r"^\d+(\.\d+)*\s", line) and not all_caps_title(line)
+                        and not outline_heading(line)):
                     # The sentence ran off the previous page: carry on with it
                     # (it is then credited to the page where it ends).
                     buf.append(paras.pop(last_text()))
@@ -419,14 +439,17 @@ def pages_to_text(pages):
                         flush()
                     continue
             following = next((l for l in lines[i + 1:] if l), "")
+            outline = outline_heading(line)
             heading_like = (
-                4 <= len(line) < 55
+                4 <= len(line) < (90 if outline else 55)
                 and (len(line.split()) >= 2 or re.match(r"^\d", line))   # "In", "Mr": a wrapped word, not a title
-                and not re.search(r"[.,;:)\d]$", line)
+                and (not re.search(r"[.,;:)\d]$", line)
+                     or (outline and re.search(r"\((?:[A-Z]\.)?\d+(\.\d+)*\)$", line)))   # "III. ESTIMANDS (A.3)"
                 and not re.match(r"^[\d\W]+$", line)
                 and re.match(r"^[A-Z\d]", line)
                 and not CODE_LINE.search(line)
-                and ". " not in line                       # a sentence, not a title
+                and (". " not in line or outline)          # a sentence, not a title
+                and not ADDRESS_LINE.search(line)          # letterhead: "10001 New Hampshire Ave., ..."
                 and (NUMBERED_HEADING.match(line)          # "6.4 Updating packages" before "update.packages() ..."
                      or not CODE_LINE.search(following))   # "A call such as" before an example
                 and mostly_letters(line)                   # "59.75 93.0 900 5 1.9 yes" is a data row
@@ -438,7 +461,7 @@ def pages_to_text(pages):
             # (only short ones do), so the heading used to be glued on to the
             # end of it and its section was never started. 26 of them in R's
             # installation and data manuals, 29 in An Introduction to R.
-            numbered_after_sentence = (bool(buf) and NUMBERED_HEADING.match(line)
+            numbered_after_sentence = (bool(buf) and (NUMBERED_HEADING.match(line) or outline)
                                        and re.search(r"[.!?)]$", buf[-1]))
             if heading_like and (not buf or numbered_after_sentence):
                 flush()
