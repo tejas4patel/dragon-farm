@@ -145,6 +145,10 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
                                            temperature = temperature, top_p = top_p)[[1]] %||% "")
     if (!citation_only(again)) reply <- again
   }
+  if (citation_only(reply)) {
+    reply <- plain_answer(backend, target, question, hits, reply, system = system, max_new_tokens = max_new_tokens,
+                          temperature = temperature, top_p = top_p)
+  }
   hits$cited <- hits$n %in% parse_citations(reply, nrow(hits))
   structure(list(question = question, answer = reply, sources = hits, model = model_label, documents = docs$name),
             class = "dragon_answer")
@@ -153,10 +157,39 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
 # A reply with no words or figures once citation markers are removed: "[1]",
 # "[1], [2]", or nothing at all.
 citation_only <- function(reply) {
-  # Any bracketed text counts as a marker: besides "[1]", a 1.5B replied with
-  # nothing but an echoed source label, "[R-admin.pdf, p. 28 > 6 Add-on packages]".
-  rest <- gsub("\\[[^]]*\\]", "", reply %||% "")
+  # Numbers in brackets are markers, and so is an echoed source label: besides
+  # "[1]", a 1.5B replied with nothing but "[R-admin.pdf, p. 28 > 6 Add-on
+  # packages]". Other bracketed text is an answer: the 1.5B also replied
+  # "[R_LIBS_USER]", which is right.
+  reply <- reply %||% ""
+  inner <- regmatches(reply, gregexpr("\\[[^]]*\\]", reply))[[1]]
+  label <- "^\\[[0-9 ,;-]*\\]$|[.](pdf|html?|md|markdown|txt|docx|xlsx|xlsm|csv|tsv)\\b|\\bp[.] ?[0-9]|\u203a|>"
+  if (length(inner) && !all(grepl(label, inner, ignore.case = TRUE, perl = TRUE))) return(FALSE)
+  rest <- gsub("\\[[^]]*\\]", "", reply)
   !grepl("[[:alnum:]]", rest)
+}
+
+# Still only "[1]" after the retry: the untrained 1.5B did that on 5 of 100
+# benchmark questions. A fresh, plain prompt holding just the cited excerpts
+# (no numbered list, no answer rules) answered 3 of those 5 right; quoting
+# the excerpt's best-matching sentence instead answered 1. The excerpts it
+# used are cited at the end, as the first reply did.
+plain_answer <- function(backend, target, question, hits, reply, system = NULL, max_new_tokens = 600,
+                         temperature = 0, top_p = 1) {
+  n <- parse_citations(reply, nrow(hits))
+  if (!length(n)) n <- seq_len(min(1L, nrow(hits)))
+  if (!length(n)) return(reply)
+  prompt <- paste0(paste(hits$text[n], collapse = "\n\n"), "\n\nQuestion: ", question,
+                   "\nAnswer the question in one or two full sentences, using only the text above.",
+                   " If the text does not answer it, say that the documents do not cover it.")
+  convo <- list(list(role = "user", content = prompt))
+  if (!is.null(system) && nzchar(system)) convo <- c(list(list(role = "system", content = system)), convo)
+  out <- as.character(backend_generate(backend, target, list(convo), max_new_tokens = as.integer(max_new_tokens),
+                                       temperature = temperature, top_p = top_p)[[1]] %||% "")
+  if (citation_only(out)) return(reply)
+  declined <- grepl("(do|does) not cover|not (explicitly )?(mentioned|covered|stated)", out, ignore.case = TRUE)
+  if (!declined && !grepl("\\[[0-9]+\\]", out)) out <- paste0(trimws(out), " ", paste0("[", n, "]", collapse = ""))
+  out
 }
 
 citation_retry_prompt <- paste(

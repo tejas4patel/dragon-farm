@@ -156,6 +156,11 @@ dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max
                                 max_new_tokens = self$settings$max_new_tokens,
                                 temperature = self$settings$temperature, top_p = self$settings$top_p)[[1]]
       if (!citation_only(again)) reply <- again
+      if (citation_only(reply)) {
+        reply <- plain_answer(self$backend, self$target, text, self$last_sources, reply, system = self$system,
+                              max_new_tokens = self$settings$max_new_tokens,
+                              temperature = self$settings$temperature, top_p = self$settings$top_p)
+      }
     }
     if (!is.null(self$documents) && !is.null(self$last_sources) && nrow(self$last_sources)) {
       self$last_sources$cited <- self$last_sources$n %in% parse_citations(reply, nrow(self$last_sources))

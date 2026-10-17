@@ -321,6 +321,11 @@ PDF and as Word, live web pages, and a spreadsheet.
   on 6 of 65 benchmark questions; with the retry it left none empty and
   answered 28 of 32 questions about R's manuals instead of 24. Chat with
   documents (`dragon_chat(documents = )` and the app's Chat tab) does the same.
+  If the second reply is only a marker too, a third, plain attempt gets just
+  the cited excerpt and the question; on 100 benchmark questions the 1.5B
+  was left with a bare "[2]" twice and now with none (one of the two now
+  right). An answer written in brackets, like "[R_LIBS_USER]", is no longer
+  mistaken for a citation.
 
 * The app no longer slows to a crawl with many runs. Seven panels each
   listed every file under the runs folder every three seconds, checkpoints

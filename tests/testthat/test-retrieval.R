@@ -184,6 +184,9 @@ test_that("a reply that is only a citation is asked again once", {
   expect_false(dragonfarm:::citation_only("2 years [2]"))
   expect_true(dragonfarm:::citation_only("[R-admin.pdf, p. 28 › 6 Add-on packages]"))   # an echoed source label
   expect_false(dragonfarm:::citation_only("Set R_LIBS_USER [1]."))
+  expect_false(dragonfarm:::citation_only("[R_LIBS_USER]"))       # an answer in brackets
+  expect_true(dragonfarm:::citation_only("[1, 3]"))
+  expect_true(dragonfarm:::citation_only("[policy.pdf > Returns]"))
 
   f <- write_fake_set()
   docs <- dragon_documents_load(f$dir)
@@ -207,12 +210,24 @@ test_that("a reply that is only a citation is asked again once", {
   expect_equal(retry[[3]]$content, "[1]")
   expect_equal(ans$sources$cited, c(TRUE, FALSE, FALSE))
 
-  # A second citation-only reply keeps the first, and nothing loops.
-  replies <- list("[2]", "[1]")
+  # Two citation-only replies: one plain attempt with just the cited excerpt;
+  # if that is only brackets too, the first reply stays, and nothing loops.
+  replies <- list("[2]", "[1]", "[2]")
   seen <- list()
   ans2 <- dragon_ask(docs, "q")
   expect_equal(ans2$answer, "[2]")
-  expect_length(seen, 2)
+  expect_length(seen, 3)
+  plain <- seen[[3]]$conversations[[1]]
+  expect_equal(vapply(plain, `[[`, "", "role"), "user")
+  expect_match(plain[[1]]$content, "2-year warranty", fixed = TRUE)
+  expect_false(grepl("30 days", plain[[1]]$content, fixed = TRUE))   # only the cited excerpt
+
+  replies <- list("[2]", "[2]", "Every device has a 2-year warranty.")
+  ans3 <- dragon_ask(docs, "How long is the warranty?")
+  expect_equal(ans3$answer, "Every device has a 2-year warranty. [2]")
+  expect_equal(ans3$sources$cited, c(FALSE, TRUE, FALSE))
+  replies <- list("[1]", "[1]", "The documents do not cover this.")
+  expect_equal(dragon_ask(docs, "q")$answer, "The documents do not cover this.")   # a decline is not cited
 
   # A normal reply is not asked again.
   replies <- list("Two years [2].")
