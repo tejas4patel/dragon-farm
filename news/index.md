@@ -452,6 +452,15 @@ into this release along with everything added since 0.2.0:
 
 ### Everything else added since 0.2.0
 
+- PDFs with outline headings (“I. INTRODUCTION”, “A. General
+  Considerations”, “III. ESTIMANDS (A.3)”), as in FDA and ICH guidances,
+  now get their real sections, and a street address on a cover page is
+  never taken for a heading. Before, the agency’s mailing address
+  labelled 48 of 153 chunks of four FDA guidances. Top-1 retrieval on 18
+  questions about them rose from 44% to 67% (dense search) and from 61%
+  to 72% (hybrid). Other PDFs read exactly as before. Document sets are
+  re-read on next use (reader version 16).
+
 - Full answers from documents:
   [`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md) and
   chat with documents ask models of 3B and up for complete answers with
