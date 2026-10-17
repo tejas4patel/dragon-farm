@@ -103,7 +103,27 @@ a spreadsheet.
   down-weighted, and quoted material and code blocks are marked on each
   chunk.
 
+- PDFs with outline headings (“I. INTRODUCTION”, “A. General
+  Considerations”, “III. ESTIMANDS (A.3)”), as in FDA and ICH guidances,
+  now get their real sections, and a street address on a cover page is
+  never taken for a heading. Before, the agency’s mailing address
+  labelled 48 of 153 chunks of four FDA guidances. Top-1 retrieval on 18
+  questions about them rose from 44% to 67% (dense search) and from 61%
+  to 72% (hybrid). Other PDFs read exactly as before. Document sets are
+  re-read on next use (reader version 16).
+
 ### Asking documents
+
+- Full answers from documents:
+  [`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md) and
+  chat with documents ask models of 3B and up for complete answers with
+  the figures, steps, or code the excerpts hold, instead of one short
+  sentence. On 75 questions with known answers the 7B now gets all 75
+  right (was 72) and the 3B 70 (was 65), still declining all 25 the
+  documents do not cover; answers are longer (a median of 60 words for
+  the 7B) and take about twice as long. Smaller models keep the short
+  instructions, since full answers made them invent more.
+  `max_new_tokens` now defaults to 600.
 
 - Untrained models under 3B get one more line in their instructions when
   answering from documents: “If no excerpt states the answer, reply
@@ -287,6 +307,24 @@ a spreadsheet.
 - Generating for several prompts at once runs them in batches of eight:
   eight short prompts through a 0.5B went from 17 to 37 seconds to 6.
 
+### Name and look
+
+- A dragon of its own: a new hex logo, favicon, and app icon with an
+  original dragon, the slogan “Raise your own dragon”, and a lighter
+  voice in the app’s step headings and on the website. Model cards in
+  the app show a life stage (Egg, Hatchling, Drake, Wyvern, Elder)
+  beside the size. Function names and error messages are unchanged.
+
+- Replies in the app are shown as formatted text: lists, bold, and code
+  blocks render instead of raw Markdown. Nothing a model writes can add
+  its own markup: raw HTML is escaped, links other than http(s) and
+  mailto are neutralised, and images are dropped.
+
+- The GitHub repository is now `tejas4patel/dragonfarm`, matching the
+  package name: `pak::pak("tejas4patel/dragonfarm")`. Old
+  `tejas4patel/dragon-farm` links keep working through GitHub’s
+  redirect.
+
 ### Fixes
 
 - The Monitor shows “Cancel run” only while a run is queued or running,
@@ -451,37 +489,6 @@ into this release along with everything added since 0.2.0:
   real Shiny session, Python, or a GPU.
 
 ### Everything else added since 0.2.0
-
-- PDFs with outline headings (“I. INTRODUCTION”, “A. General
-  Considerations”, “III. ESTIMANDS (A.3)”), as in FDA and ICH guidances,
-  now get their real sections, and a street address on a cover page is
-  never taken for a heading. Before, the agency’s mailing address
-  labelled 48 of 153 chunks of four FDA guidances. Top-1 retrieval on 18
-  questions about them rose from 44% to 67% (dense search) and from 61%
-  to 72% (hybrid). Other PDFs read exactly as before. Document sets are
-  re-read on next use (reader version 16).
-
-- Full answers from documents:
-  [`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md) and
-  chat with documents ask models of 3B and up for complete answers with
-  the figures, steps, or code the excerpts hold, instead of one short
-  sentence. On 75 questions with known answers the 7B now gets all 75
-  right (was 72) and the 3B 70 (was 65), still declining all 25 the
-  documents do not cover; answers are longer (a median of 60 words for
-  the 7B) and take about twice as long. Smaller models keep the short
-  instructions, since full answers made them invent more.
-  `max_new_tokens` now defaults to 600.
-
-- A dragon of its own: a new hex logo, favicon, and app icon with an
-  original dragon, the slogan “Raise your own dragon”, and a lighter
-  voice in the app’s step headings and on the website. Model cards in
-  the app show a life stage (Egg, Hatchling, Drake, Wyvern, Elder)
-  beside the size. Function names and error messages are unchanged.
-
-- The GitHub repository is now `tejas4patel/dragonfarm`, matching the
-  package name: `pak::pak("tejas4patel/dragonfarm")`. Old
-  `tejas4patel/dragon-farm` links keep working through GitHub’s
-  redirect.
 
 - `dragon_reward("command", command = ...)`: a reward for
   [`dragon_reinforce()`](https://dragonfarm.dev/reference/dragon_reinforce.md)
