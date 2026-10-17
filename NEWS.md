@@ -86,7 +86,7 @@ PDF and as Word, live web pages, and a spreadsheet.
   153 chunks of four FDA guidances. Top-1 retrieval on 18 questions about
   them rose from 44% to 67% (dense search) and from 61% to 72% (hybrid). Other
   PDFs read exactly as before. Document sets are re-read on next use (reader
-  version 16).
+  version 17).
 
 ## Asking documents
 
