@@ -190,6 +190,15 @@ a spreadsheet.
 
 ### From documents to training data
 
+- `dragon_questions(mix = TRUE)`, the new default, asks for a mix of
+  question types per chunk: a “what” or “which”, a “why” or “how”, and,
+  where the passage compares two things, a “how do they differ”. On four
+  FDA guidances comparison questions rose from 11 to 98 of the kept
+  pairs and why/how questions from 113 to 142; 81 percent of pairs were
+  kept instead of 89, and a 3B trained on either set answered the same
+  23 of 24 test questions. `mix = FALSE` asks for any three questions,
+  as before.
+
 - [`dragon_questions_dataset()`](https://dragonfarm.dev/reference/dragon_questions_dataset.md)
   adds “not covered” rows by default (`negatives = 0.15`): a question
   shown with excerpts from another section, answered “The documents do
@@ -198,9 +207,11 @@ a spreadsheet.
   0.5B, 1.5B, and 3B declined 0, 1, and 5 of 15 questions the manuals do
   not cover; with negatives all three declined 15 of 15, while
   answerable questions went from 24 to 26, 29 to 28, and 30 to 30 of
+
   32. Wrong, made-up, or wrongly declined answers over all 47 questions
       fell from 23 to 6 (0.5B), 17 to 4 (1.5B), and 12 to 2 (3B).
       (Measured with this release’s reading and search, both sides.)
+
 - New:
   [`dragon_questions()`](https://dragonfarm.dev/reference/dragon_questions.md)
   has a model write questions and answers from each chunk (the local
@@ -214,6 +225,7 @@ a spreadsheet.
   at a time, and long passages are capped.
   [`dragon_questions_save()`](https://dragonfarm.dev/reference/dragon_questions_load.md)
   records your decisions.
+
 - [`dragon_questions_dataset()`](https://dragonfarm.dev/reference/dragon_questions_dataset.md)
   builds the training set with retrieved excerpts in front of each
   question, always including the chunk the pair was written from, and

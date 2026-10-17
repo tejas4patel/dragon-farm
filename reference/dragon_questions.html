@@ -68,6 +68,7 @@ has a screen for it) before training with <code><a href="dragon_questions_datase
 <span>  <span class="va">docs</span>,</span>
 <span>  generator <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_per_chunk <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  mix <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  include_quotes <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  include_code <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  include_changelog <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -100,6 +101,15 @@ from R instead. Local generation runs as a background Python process.</p></dd>
 
 <dt id="arg-n-per-chunk">n_per_chunk<a class="anchor" aria-label="anchor" href="#arg-n-per-chunk"></a></dt>
 <dd><p>Questions asked for per chunk.</p></dd>
+
+
+<dt id="arg-mix">mix<a class="anchor" aria-label="anchor" href="#arg-mix"></a></dt>
+<dd><p>Ask for a mix of question types: one "what" or "which", one
+"why" or "how", and, where the passage compares two things, one "how do
+they differ". On FDA guidance this raised comparison questions from 11
+to 98 of the kept pairs and why/how questions from 113 to 142, kept 81
+percent of pairs instead of 89, and a 3B trained on either set answered
+the same 23 of 24 test questions. <code>FALSE</code> asks for any three questions.</p></dd>
 
 
 <dt id="arg-include-quotes-include-code-include-changelog">include_quotes, include_code, include_changelog<a class="anchor" aria-label="anchor" href="#arg-include-quotes-include-code-include-changelog"></a></dt>
